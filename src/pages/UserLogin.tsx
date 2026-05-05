@@ -60,28 +60,28 @@ export default function UserLogin() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)] px-4 py-12 bg-apple-gray">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)] px-4 py-12 bg-apple-gray dark:bg-slate-950">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
         className="w-full max-w-[440px]"
       >
-        <div className="bg-white rounded-[32px] p-8 md:p-12 shadow-[0_8px_40px_rgba(0,0,0,0.04)] border border-apple-border/50 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 md:p-12 shadow-[0_8px_40px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)] border border-apple-border/50 dark:border-slate-800 relative overflow-hidden">
           {/* Subtle background decoration */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-apple-blue/5 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-apple-blue/5 dark:bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl"></div>
 
           <div className="relative z-10">
             <div className="flex flex-col items-center mb-10">
               <motion.div 
                 whileHover={{ scale: 1.05 }}
-                className="w-16 h-16 bg-apple-blue rounded-2xl flex items-center justify-center text-white shadow-lg mb-6 shadow-apple-blue/20"
+                className="w-16 h-16 bg-apple-blue dark:bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg mb-6 shadow-apple-blue/20 dark:shadow-blue-900/40"
               >
                 <GraduationCap className="w-9 h-9" />
               </motion.div>
-              <h1 className="text-3xl font-bold text-apple-text tracking-tight mb-2">Welcome Back</h1>
-              <p className="text-[15px] text-apple-text-muted text-center max-w-[280px]">
+              <h1 className="text-3xl font-bold text-apple-text dark:text-white tracking-tight mb-2">Welcome Back</h1>
+              <p className="text-[15px] text-apple-text-muted dark:text-slate-400 text-center max-w-[280px]">
                 Sign in to your student account to discover and track coaching institutes.
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function UserLogin() {
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-2">
+                    <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm mb-2">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <p>{error}</p>
                     </div>
@@ -111,7 +111,7 @@ export default function UserLogin() {
                 className={`w-full flex items-center justify-center gap-3 border font-medium py-3.5 rounded-2xl transition-all duration-300 shadow-sm ${
                   isSuccess 
                     ? 'bg-green-500 border-green-500 text-white' 
-                    : 'bg-white border-apple-border hover:bg-apple-gray/50 text-apple-text'
+                    : 'bg-white dark:bg-slate-800 border-apple-border dark:border-slate-700 hover:bg-apple-gray/50 dark:hover:bg-slate-700 text-apple-text dark:text-white'
                 } disabled:opacity-80 disabled:cursor-not-allowed`}
               >
                 <AnimatePresence mode="wait">
@@ -152,31 +152,31 @@ export default function UserLogin() {
 
               <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-apple-border/60"></div>
+                  <div className="w-full border-t border-apple-border/60 dark:border-slate-800"></div>
                 </div>
                 <div className="relative flex justify-center text-[13px] uppercase tracking-wider font-semibold">
-                  <span className="bg-white px-4 text-apple-text-muted/60">Coming Soon</span>
+                  <span className="bg-white dark:bg-slate-900 px-4 text-apple-text-muted/60 dark:text-slate-500">Coming Soon</span>
                 </div>
               </div>
 
               <div className="space-y-3 opacity-50 pointer-events-none">
-                <div className="flex items-center gap-3 bg-apple-gray/20 border border-transparent p-4 rounded-2xl">
-                  <Globe className="w-5 h-5 text-apple-text-muted" />
+                <div className="flex items-center gap-3 bg-apple-gray/20 dark:bg-slate-800/50 border border-transparent p-4 rounded-2xl">
+                  <Globe className="w-5 h-5 text-apple-text-muted dark:text-slate-400" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Apple ID</p>
+                    <p className="text-sm font-medium dark:text-slate-300">Apple ID</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="mt-12 space-y-6">
-              <div className="bg-apple-blue/5 p-4 rounded-2xl border border-apple-blue/10">
+              <div className="bg-apple-blue/5 dark:bg-blue-500/10 p-4 rounded-2xl border border-apple-blue/10 dark:border-blue-500/20">
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-apple-blue/10 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-apple-blue" />
+                  <div className="w-8 h-8 rounded-full bg-apple-blue/10 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-apple-blue dark:text-blue-400" />
                   </div>
-                  <p className="text-[13px] text-apple-text leading-relaxed">
-                    By continuing, you agree to Coacher's <span className="font-semibold cursor-pointer hover:underline">Terms of Service</span> and <span className="font-semibold cursor-pointer hover:underline">Privacy Policy</span>.
+                  <p className="text-[13px] text-apple-text dark:text-slate-300 leading-relaxed">
+                    By continuing, you agree to Coacher's <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Terms of Service</span> and <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Privacy Policy</span>.
                   </p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default function UserLogin() {
               <div className="text-center pt-2">
                 <button 
                   onClick={() => navigate('/login')}
-                  className="text-[13px] font-medium text-apple-blue hover:underline flex items-center justify-center gap-1 mx-auto"
+                  className="text-[13px] font-medium text-apple-blue dark:text-blue-400 hover:text-apple-blue-hover dark:hover:text-blue-300 hover:underline flex items-center justify-center gap-1 mx-auto"
                 >
                   Are you an institute admin? <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -193,8 +193,8 @@ export default function UserLogin() {
           </div>
         </div>
 
-        <p className="text-center mt-8 text-sm text-apple-text-muted">
-          Don't have an account? <span className="text-apple-blue font-semibold hover:underline cursor-pointer">Sign up</span>
+        <p className="text-center mt-8 text-sm text-apple-text-muted dark:text-slate-400">
+          Don't have an account? <span className="text-apple-blue dark:text-blue-400 font-semibold hover:underline cursor-pointer hover:text-apple-blue-hover dark:hover:text-blue-300">Sign up</span>
         </p>
       </motion.div>
     </div>

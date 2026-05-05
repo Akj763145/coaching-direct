@@ -11,7 +11,7 @@ export default function SubAdminDashboard() {
   // Batch Form
   const [batchForm, setBatchForm] = useState({
     teacher_name: '', teacher_image: '', subject: '', batch_name: '', 
-    batch_timing: '', batch_duration: '', start_date: '', fee_structure: ''
+    batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', status: 'running'
   });
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function SubAdminDashboard() {
       body: JSON.stringify(batchForm)
     });
     if (res.ok) {
-      setBatchForm({ teacher_name: '', teacher_image: '', subject: '', batch_name: '', batch_timing: '', batch_duration: '', start_date: '', fee_structure: '' });
+      setBatchForm({ teacher_name: '', teacher_image: '', subject: '', batch_name: '', batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', status: 'running' });
       fetchData(token!);
     }
   };
@@ -167,7 +167,7 @@ export default function SubAdminDashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Duration</label>
-                    <input type="text" value={batchForm.duration} onChange={e => setBatchForm({...batchForm, batch_duration: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="6 Months" />
+                    <input type="text" value={batchForm.batch_duration} onChange={e => setBatchForm({...batchForm, batch_duration: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="6 Months" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -179,6 +179,13 @@ export default function SubAdminDashboard() {
                     <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Fee</label>
                     <input type="text" value={batchForm.fee_structure} onChange={e => setBatchForm({...batchForm, fee_structure: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="$500/mo" />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Enrollment/Course Status</label>
+                  <select value={batchForm.status || 'running'} onChange={e => setBatchForm({...batchForm, status: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px] appearance-none">
+                    <option value="running">Running</option>
+                    <option value="not_running">Not Running</option>
+                  </select>
                 </div>
                 <button type="submit" className="w-full bg-apple-text text-white font-medium py-3 rounded-xl hover:bg-black transition-colors mt-2">Create Batch</button>
               </form>
@@ -198,7 +205,15 @@ export default function SubAdminDashboard() {
                   {batch.teacher_image ? <img src={batch.teacher_image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-apple-text-muted font-medium text-xl">{batch.teacher_name.charAt(0)}</div>}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[18px] text-apple-text">{batch.batch_name}</h3>
+                  <h3 className="font-semibold text-[18px] text-apple-text">
+                    {batch.batch_name}
+                    {batch.status === 'running' 
+                      ? <span className="ml-3 text-[11px] font-bold uppercase tracking-wider bg-green-100 text-green-700 px-2 py-0.5 rounded-full inline-block align-middle">Running</span>
+                      : batch.status === 'not_running' 
+                      ? <span className="ml-3 text-[11px] font-bold uppercase tracking-wider bg-red-100 text-red-700 px-2 py-0.5 rounded-full inline-block align-middle">Not Running</span>
+                      : null
+                    }
+                  </h3>
                   <div className="text-[13px] font-medium text-apple-blue mb-3 bg-apple-blue/5 border border-apple-blue/10 rounded-md px-2 py-0.5 inline-block mt-1">{batch.subject} • {batch.teacher_name}</div>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[14px] text-apple-text pt-2">
                     <div className="flex gap-2"><span className="text-apple-text-muted font-medium">Timing:</span> <span>{batch.batch_timing || '-'}</span></div>

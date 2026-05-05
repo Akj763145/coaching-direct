@@ -6,7 +6,7 @@ interface SkeletonProps {
 }
 
 export default function Skeleton({ className = '', variant = 'rectangular' }: SkeletonProps) {
-  const baseClasses = "bg-apple-gray animate-pulse";
+  const baseClasses = "bg-slate-200 dark:bg-slate-700/50 animate-pulse";
   const variantClasses = {
     rectangular: "rounded-xl",
     circular: "rounded-full",
@@ -27,7 +27,7 @@ export function HomeSkeleton() {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white rounded-3xl overflow-hidden border border-apple-border/30 p-0">
+        <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 p-0 shadow-sm">
           <Skeleton className="h-32 w-full rounded-none" />
           <div className="p-6 space-y-4">
             <Skeleton className="h-7 w-3/4" />
@@ -52,7 +52,7 @@ export function HomeSkeleton() {
 export function DetailSkeleton() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 md:space-y-10">
-      <div className="bg-white rounded-[28px] md:rounded-[32px] p-6 md:p-10 border border-apple-border/40 flex flex-col md:flex-row gap-6 md:gap-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[28px] md:rounded-[32px] p-6 md:p-10 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-6 md:gap-8 shadow-sm">
         <Skeleton className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[20px] md:rounded-[28px]" />
         <div className="flex-1 space-y-4 md:pt-2">
           <Skeleton className="h-8 md:h-10 w-2/3" />

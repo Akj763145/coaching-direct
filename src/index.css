@@ -2,6 +2,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --font-sans: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --color-apple-gray: #fbfbfd;
@@ -14,8 +16,6 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-apple-gray);
-  color: var(--color-apple-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -34,3 +34,4 @@ html {
     display: none;
   }
 }
+
