@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MasterDashboard() {
@@ -28,7 +28,7 @@ export default function MasterDashboard() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const res = await fetch('/api/master/institutes', {

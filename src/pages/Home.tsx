@@ -24,20 +24,16 @@ export default function Home() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-12 pb-24">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 py-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
-          Find your perfect <span className="text-indigo-600">coaching institute</span>
-        </h1>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          Explore top-rated institutes, discover specialized batches, and compare fee structures to kickstart your learning journey.
-        </p>
-        <div className="max-w-xl mx-auto relative pt-4">
-          <Search className="absolute left-4 top-1/2 translate-y-[-10%] text-slate-400 w-5 h-5" />
+      {/* Search Header */}
+      <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6">
+        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Available Institutes</h2>
+        
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input 
             type="text" 
-            placeholder="Search by institute name, subject, or batch..." 
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 rounded-full shadow-sm text-lg outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition"
+            placeholder="Search by institute or subject..." 
+            className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -46,8 +42,8 @@ export default function Home() {
 
       {/* Institutes Grid */}
       <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Available Institutes ({filtered.length})</h2>
+        <div className="flex items-center text-slate-500 text-sm mb-6 pb-4 border-b border-slate-100">
+          <span>Showing {filtered.length} institutes</span>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { createClient } from '@supabase/supabase-js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const SECRET_KEY = process.env.SECRET_KEY || 'super-secret-jwt-key-for-coaching-hub';
 
 app.use(express.json());

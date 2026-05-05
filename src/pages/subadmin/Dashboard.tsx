@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SubAdminDashboard() {
@@ -31,7 +31,7 @@ export default function SubAdminDashboard() {
     if (bRes.ok) setBatches(await bRes.json());
   };
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     await fetch('/api/institute/profile', {
@@ -42,7 +42,7 @@ export default function SubAdminDashboard() {
     alert('Profile updated');
   };
 
-  const handleAddBatch = async (e: React.FormEvent) => {
+  const handleAddBatch = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const res = await fetch('/api/institute/batches', {
