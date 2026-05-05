@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, DollarSign, User, BookOpen } from 'lucide-react';
 import { motion } from 'motion/react';
+import { DetailSkeleton } from '../components/Skeleton';
 
 export default function InstituteDetail() {
   const { id } = useParams();
@@ -13,14 +14,22 @@ export default function InstituteDetail() {
   }, [id]);
 
   const fetchInstitute = async () => {
-    const res = await fetch(`/api/public/institutes/${id}`);
-    if (res.ok) {
-        setInstitute(await res.json());
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/public/institutes/${id}`);
+      if (res.ok) {
+          setInstitute(await res.json());
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  if (loading) return <div className="p-12 text-center text-apple-text-muted">Loading...</div>;
+  if (loading) return (
+    <div className="p-6 md:p-10">
+      <DetailSkeleton />
+    </div>
+  );
   if (!institute) return <div className="p-12 text-center text-apple-text-muted font-medium">Institute not found</div>;
 
   // Convert youtube watch URL to embed URL for iframe
@@ -38,27 +47,27 @@ export default function InstituteDetail() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-      className="max-w-5xl mx-auto p-6 md:p-10 space-y-10 pb-20"
+      className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 md:space-y-10 pb-20"
     >
       
       {/* Header Profile */}
-      <div className="bg-white rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-apple-border/40 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
+      <div className="bg-white rounded-[28px] md:rounded-[32px] p-6 md:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-apple-border/40 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-apple-blue/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none transition-all duration-1000"></div>
         {institute.logo ? (
-          <motion.img layoutId={`logo-${institute.id}`} src={institute.logo} alt={institute.name} className="w-32 h-32 md:w-40 md:h-40 rounded-[28px] object-contain bg-apple-gray shadow-sm border border-apple-border/50 z-10 p-2" />
+          <motion.img layoutId={`logo-${institute.id}`} src={institute.logo} alt={institute.name} className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[20px] md:rounded-[28px] object-contain bg-apple-gray shadow-sm border border-apple-border/50 z-10 p-2" />
         ) : (
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-[28px] bg-apple-gray border border-apple-border/50 text-apple-blue flex items-center justify-center font-semibold text-5xl shrink-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[20px] md:rounded-[28px] bg-apple-gray border border-apple-border/50 text-apple-blue flex items-center justify-center font-semibold text-3xl sm:text-5xl shrink-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
             {institute.name.charAt(0)}
           </div>
         )}
         
-        <div className="flex-1 z-10 pt-2">
-          <h1 className="text-3xl md:text-[40px] font-semibold text-apple-text tracking-tight leading-tight">{institute.name}</h1>
-          <div className="flex flex-wrap gap-4 mt-6 text-[15px] font-medium text-apple-text-muted">
-            {institute.address && <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 opacity-60"/> {institute.address}</div>}
-            {institute.phone && <div className="flex items-center gap-1.5"><Phone className="w-4 h-4 opacity-60"/> {institute.phone}</div>}
-            {institute.email && <div className="flex items-center gap-1.5"><Mail className="w-4 h-4 opacity-60"/> {institute.email}</div>}
-            {institute.website && <div className="flex items-center gap-1.5"><Globe className="w-4 h-4 opacity-60"/> <a href={institute.website} target="_blank" className="text-apple-blue hover:text-apple-blue-hover hover:underline transition-colors">Website</a></div>}
+        <div className="flex-1 z-10 md:pt-2">
+          <h1 className="text-2xl sm:text-3xl md:text-[40px] font-semibold text-apple-text tracking-tight leading-tight">{institute.name}</h1>
+          <div className="flex flex-wrap gap-x-5 gap-y-3 mt-5 md:mt-6 text-[13px] md:text-[15px] font-medium text-apple-text-muted">
+            {institute.address && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> {institute.address}</div>}
+            {institute.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> {institute.phone}</div>}
+            {institute.email && <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> {institute.email}</div>}
+            {institute.website && <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> <a href={institute.website} target="_blank" className="text-apple-blue hover:text-apple-blue-hover hover:underline transition-colors">Website</a></div>}
           </div>
         </div>
       </div>
@@ -159,7 +168,7 @@ export default function InstituteDetail() {
                <h3 className="font-semibold text-apple-text mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-apple-blue"/> Location</h3>
                <p className="text-[14px] text-apple-text-muted mb-5 leading-relaxed">{institute.location}</p>
                {institute.location.includes('http') || institute.location.includes('iframe') ? (
-                 <div className="aspect-squares overflow-hidden rounded-2xl bg-apple-gray border border-apple-border/30" dangerouslySetInnerHTML={{__html: institute.location.startsWith('<iframe') ? institute.location : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`}}></div>
+                 <div className="aspect-square overflow-hidden rounded-2xl bg-apple-gray border border-apple-border/30" dangerouslySetInnerHTML={{__html: institute.location.startsWith('<iframe') ? institute.location : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`}}></div>
                ) : null}
             </motion.div>
           )}

@@ -2,18 +2,25 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
+import { HomeSkeleton } from '../components/Skeleton';
 
 export default function Home() {
   const [institutes, setInstitutes] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchInstitutes();
   }, []);
 
   const fetchInstitutes = async () => {
-    const res = await fetch('/api/public/institutes');
-    if (res.ok) setInstitutes(await res.json());
+    setLoading(true);
+    try {
+      const res = await fetch('/api/public/institutes');
+      if (res.ok) setInstitutes(await res.json());
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = institutes.filter(inst => {
@@ -24,22 +31,22 @@ export default function Home() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-10 pb-24">
+    <div className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 md:space-y-10 pb-24">
       {/* Search Header */}
       <motion.section 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-5 pt-4 md:pt-6"
       >
-        <h2 className="text-3xl md:text-4xl font-semibold text-apple-text tracking-tight">Available Institutes</h2>
+        <h2 className="text-2xl md:text-4xl font-semibold text-apple-text tracking-tight px-1">Available Institutes</h2>
         
         <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-text-muted w-5 h-5 pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-text-muted w-4 h-4 md:w-5 md:h-5 pointer-events-none" />
           <input 
             type="text" 
             placeholder="Search by institute or subject..." 
-            className="w-full pl-11 pr-4 py-3 bg-white border border-apple-border/50 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] text-base outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all duration-300"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-apple-border/50 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] text-sm md:text-base outline-none focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue transition-all duration-300"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -52,13 +59,16 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex items-center text-apple-text-muted text-sm mb-6 pb-4 border-b border-apple-border/30"
+          className="flex items-center text-apple-text-muted text-[13px] mb-5 pb-3 border-b border-apple-border/30 px-1"
         >
-          <span>Showing {filtered.length} institutes</span>
+          <span>{loading ? 'Discovering institutes...' : `Showing ${filtered.length} institutes`}</span>
         </motion.div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((inst, i) => (
+        {loading ? (
+          <HomeSkeleton />
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((inst, i) => (
             <motion.a 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -107,6 +117,7 @@ export default function Home() {
             </motion.a>
           ))}
         </div>
+        )}
       </section>
     </div>
   );

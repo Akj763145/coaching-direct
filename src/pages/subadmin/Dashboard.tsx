@@ -84,12 +84,12 @@ export default function SubAdminDashboard() {
         <button onClick={handleLogout} className="text-[13px] font-medium text-apple-text-muted hover:text-apple-text transition-colors">Log out</button>
       </div>
 
-      <div className="flex mb-8 space-x-6 relative">
-        <button className={`pb-3 font-medium text-[15px] transition-colors relative ${activeTab === 'profile' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('profile')}>
+      <div className="flex mb-8 space-x-6 relative overflow-x-auto no-scrollbar pb-1">
+        <button className={`pb-3 font-medium text-[15px] transition-colors relative whitespace-nowrap ${activeTab === 'profile' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('profile')}>
           Institute Profile
           {activeTab === 'profile' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-text rounded-t-full" />}
         </button>
-        <button className={`pb-3 font-medium text-[15px] transition-colors relative ${activeTab === 'batches' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('batches')}>
+        <button className={`pb-3 font-medium text-[15px] transition-colors relative whitespace-nowrap ${activeTab === 'batches' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('batches')}>
           Manage Batches
           {activeTab === 'batches' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-text rounded-t-full" />}
         </button>
