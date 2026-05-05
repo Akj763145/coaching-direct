@@ -43,7 +43,9 @@ export default function UserLogin() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.origin.includes('localhost') 
+            ? 'https://ais-dev-kumbynxsgsmd2ffqhsuzrf-653632020489.asia-southeast1.run.app'
+            : window.location.origin
         }
       });
 
