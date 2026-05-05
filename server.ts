@@ -87,7 +87,8 @@ if (isSupabaseEnabled) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('MASTER', 'SUB_ADMIN'))
+      role TEXT NOT NULL CHECK (role IN ('MASTER', 'SUB_ADMIN', 'USER')),
+      email TEXT UNIQUE
     );
     CREATE TABLE IF NOT EXISTS institutes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +122,7 @@ if (isSupabaseEnabled) {
 }
 
 // Authentication Middleware
-const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -130,6 +131,20 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
     return;
   }
 
+  // First check if it's a Supabase token
+  if (isSupabaseEnabled) {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (!error && user) {
+      (req as any).user = {
+        id: user.id,
+        username: user.email,
+        role: user.user_metadata?.role || 'USER'
+      };
+      return next();
+    }
+  }
+
+  // Fallback to local JWT
   jwt.verify(token, SECRET_KEY, (err, user) => {
     if (err) {
       res.status(403).json({ error: 'Forbidden' });
@@ -174,12 +189,12 @@ app.post('/api/login', async (req, res) => {
       user = db.prepare('SELECT * FROM users WHERE username = ?').get(cleanUsername) as any;
     }
     
-    if (user && bcrypt.compareSync(cleanPassword, user.password)) {
+    if (user && user.password && bcrypt.compareSync(cleanPassword, user.password)) {
       console.log(`✅ Login successful for: ${cleanUsername} (${user.role})`);
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
       res.json({ token, role: user.role });
     } else {
-      console.log(`❌ Login failed for: ${cleanUsername} - ${!user ? 'User not found' : 'Invalid password'}`);
+      console.log(`❌ Login failed for: ${cleanUsername} - ${!user ? 'User not found' : 'Invalid password or password-less account'}`);
       res.status(401).json({ error: 'Invalid credentials' });
     }
   } catch (err: any) {
