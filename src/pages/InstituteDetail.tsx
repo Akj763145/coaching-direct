@@ -62,7 +62,7 @@ export default function InstituteDetail() {
         )}
         
         <div className="flex-1 z-10 md:pt-2">
-          <h1 className="text-2xl sm:text-3xl md:text-[40px] font-semibold text-apple-text tracking-tight leading-tight">{institute.name}</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-[40px] font-semibold text-apple-text tracking-tight leading-tight break-words">{institute.name}</h1>
           <div className="flex flex-wrap gap-x-5 gap-y-3 mt-5 md:mt-6 text-[13px] md:text-[15px] font-medium text-apple-text-muted">
             {institute.address && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> {institute.address}</div>}
             {institute.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-60"/> {institute.phone}</div>}
@@ -88,11 +88,11 @@ export default function InstituteDetail() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
                   key={batch.id} 
-                  className="bg-white p-6 md:p-8 rounded-[24px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-apple-border/80 transition-all duration-300"
+                  className="bg-white p-4 sm:p-6 md:p-8 rounded-[22px] md:rounded-[24px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-apple-border/80 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-5 flex-col sm:flex-row gap-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-apple-text tracking-tight">{batch.batch_name}</h3>
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-semibold text-apple-text tracking-tight break-words">{batch.batch_name}</h3>
                       <p className="text-apple-blue font-medium text-[13px] px-2.5 py-1 bg-apple-blue/5 border border-apple-blue/10 rounded-lg inline-block mt-3">{batch.subject}</p>
                     </div>
                     <div className="flex items-center gap-3 bg-apple-gray px-3 py-1.5 rounded-full border border-apple-border/50">
@@ -103,22 +103,22 @@ export default function InstituteDetail() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-6 border-t border-apple-border/30">
-                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
-                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Calendar className="w-3.5 h-3.5" /> Start</div> 
-                      <span className="font-medium">{batch.start_date || 'TBA'}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-6 pt-6 border-t border-apple-border/30">
+                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Calendar className="w-3.5 h-3.5" /> Start</div> 
+                      <span className="font-semibold">{batch.start_date || 'TBA'}</span>
                     </div>
-                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
-                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Clock className="w-3.5 h-3.5" /> Timing</div> 
-                      <span className="font-medium">{batch.batch_timing || 'TBA'}</span>
+                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Clock className="w-3.5 h-3.5" /> Timing</div> 
+                      <span className="font-semibold">{batch.batch_timing || 'TBA'}</span>
                     </div>
-                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
-                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium">Duration</div> 
-                      <span className="font-medium">{batch.batch_duration || '-'}</span>
+                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-apple-text-muted uppercase tracking-widest font-medium">Duration</div> 
+                      <span className="font-semibold">{batch.batch_duration || '-'}</span>
                     </div>
-                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
-                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><DollarSign className="w-3.5 h-3.5" /> Fee</div> 
-                      <span className="font-medium">{batch.fee_structure || 'Contact for fee'}</span>
+                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-apple-text-muted uppercase tracking-widest font-medium"><DollarSign className="w-3.5 h-3.5" /> Fee</div> 
+                      <span className="font-semibold">{batch.fee_structure || 'Contact for fee'}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -167,8 +167,17 @@ export default function InstituteDetail() {
             >
                <h3 className="font-semibold text-apple-text mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-apple-blue"/> Location</h3>
                <p className="text-[14px] text-apple-text-muted mb-5 leading-relaxed">{institute.location}</p>
-               {institute.location.includes('http') || institute.location.includes('iframe') ? (
-                 <div className="aspect-square overflow-hidden rounded-2xl bg-apple-gray border border-apple-border/30" dangerouslySetInnerHTML={{__html: institute.location.startsWith('<iframe') ? institute.location : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`}}></div>
+               {institute.location && (institute.location.includes('http') || institute.location.includes('iframe')) ? (
+                 <div className="aspect-square w-full overflow-hidden rounded-2xl bg-apple-gray border border-apple-border/30 relative">
+                   <div 
+                     className="absolute inset-0 [&>iframe]:w-full [&>iframe]:h-full" 
+                     dangerouslySetInnerHTML={{
+                       __html: institute.location.startsWith('<iframe') 
+                         ? institute.location.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"') 
+                         : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`
+                     }}
+                   />
+                 </div>
                ) : null}
             </motion.div>
           )}

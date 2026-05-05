@@ -51,29 +51,29 @@ export function HomeSkeleton() {
 
 export function DetailSkeleton() {
   return (
-    <div className="max-w-5xl mx-auto space-y-10">
-      <div className="bg-white rounded-[32px] p-8 md:p-10 border border-apple-border/40 flex flex-col md:flex-row gap-8">
-        <Skeleton className="w-32 h-32 md:w-40 md:h-40 rounded-[28px]" />
-        <div className="flex-1 space-y-4 pt-2">
-          <Skeleton className="h-10 w-2/3" />
-          <div className="flex gap-4">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-5 w-32" />
+    <div className="max-w-6xl mx-auto space-y-8 md:space-y-10">
+      <div className="bg-white rounded-[28px] md:rounded-[32px] p-6 md:p-10 border border-apple-border/40 flex flex-col md:flex-row gap-6 md:gap-8">
+        <Skeleton className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[20px] md:rounded-[28px]" />
+        <div className="flex-1 space-y-4 md:pt-2">
+          <Skeleton className="h-8 md:h-10 w-2/3" />
+          <div className="flex flex-wrap gap-4">
+            <Skeleton className="h-4 md:h-5 w-24 md:w-32" />
+            <Skeleton className="h-4 md:h-5 w-24 md:w-32" />
           </div>
         </div>
       </div>
-      <div className="grid md:grid-cols-3 gap-10">
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-6 md:space-y-8">
           <Skeleton className="h-8 w-48" />
           {[...Array(3)].map((_, i) => (
             <div key={i}>
-              <Skeleton className="h-48 w-full rounded-[24px]" />
+              <Skeleton className="h-48 w-full rounded-[22px] md:rounded-[24px]" />
             </div>
           ))}
         </div>
         <div className="space-y-6">
-          <Skeleton className="h-64 w-full rounded-[24px]" />
-          <Skeleton className="h-48 w-full rounded-[24px]" />
+          <Skeleton className="h-64 w-full rounded-[22px] md:rounded-[24px]" />
+          <Skeleton className="h-48 w-full rounded-[22px] md:rounded-[24px]" />
         </div>
       </div>
     </div>
