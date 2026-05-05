@@ -71,14 +71,33 @@ export default function BatchDetail() {
   const [loading, setLoading] = useState(true);
   const [batch, setBatch] = useState<any>(null);
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
+  
+  // Demo Booking State
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [demoForm, setDemoForm] = useState({ name: '', phone: '' });
+  const [demoStatus, setDemoStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
 
   useEffect(() => {
-    // Simulate API fetch delay
-    const timer = setTimeout(() => {
-      setBatch(MOCK_BATCH);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    // Actually fetch the real batch instead of mock if we have a database setup,
+    // but for now we'll simulate or use the fetched data if provided by parent/api.
+    const fetchBatch = async () => {
+      try {
+        const res = await fetch(`/api/public/batches/${id}`);
+        if(res.ok) {
+          const data = await res.json();
+          // parse curriculum if string
+          if(typeof data.curriculum === 'string') data.curriculum = JSON.parse(data.curriculum);
+          setBatch(data);
+        } else {
+          setBatch(MOCK_BATCH); // fallback to mock if api not ready
+        }
+      } catch {
+        setBatch(MOCK_BATCH);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBatch();
   }, [id]);
 
   const toggleModule = (moduleId: number) => {
@@ -89,7 +108,38 @@ export default function BatchDetail() {
   };
 
   const handleBookDemo = () => {
-    window.alert('Demo request opened!');
+    setIsDemoModalOpen(true);
+  };
+
+  const submitDemoForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDemoStatus('submitting');
+    try {
+      const res = await fetch('/api/public/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institute_id: batch.institute_id,
+          student_name: demoForm.name,
+          phone: demoForm.phone,
+          target_batch: batch.batch_name
+        })
+      });
+      if (res.ok) {
+        setDemoStatus('success');
+        setTimeout(() => {
+          setIsDemoModalOpen(false);
+          setDemoStatus('idle');
+          setDemoForm({ name: '', phone: '' });
+        }, 2500);
+      } else {
+        setDemoStatus('idle');
+        alert('Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      setDemoStatus('idle');
+      alert('Error submitting request.');
+    }
   };
 
   if (loading) return (
@@ -296,7 +346,7 @@ export default function BatchDetail() {
       {/* Mobile Sticky CTA */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-8px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] z-40 flex items-center gap-3">
         <a
-          href={`https://wa.me/919876543210?text=${encodeURIComponent(`Hi, I want to know more about the ${batch.batch_name} batch at ${batch.institute_name}.`)}`}
+          href={`https://wa.me/${batch.whatsapp_number || '919876543210'}?text=${encodeURIComponent(`Hi, I want to know more about the ${batch.batch_name} batch at ${batch.institute_name}.`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors border border-slate-200 dark:border-slate-700"
@@ -311,6 +361,78 @@ export default function BatchDetail() {
           Book Free Demo
         </button>
       </div>
+
+      <AnimatePresence>
+        {isDemoModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setIsDemoModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[24px] p-6 shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800"
+            >
+              <button 
+                onClick={() => setIsDemoModalOpen(false)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              {demoStatus === 'success' ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckSquare className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Request Sent!</h3>
+                  <p className="text-slate-500 dark:text-slate-400">The institute will contact you shortly to schedule your demo.</p>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Book Free Demo</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Enter your details to request a demo call.</p>
+                  
+                  <form onSubmit={submitDemoForm} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Your Full Name</label>
+                      <input 
+                        required 
+                        type="text" 
+                        value={demoForm.name} 
+                        onChange={e => setDemoForm({...demoForm, name: e.target.value})} 
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" 
+                        placeholder="John Doe" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">WhatsApp / Phone Number</label>
+                      <input 
+                        required 
+                        type="tel" 
+                        value={demoForm.phone} 
+                        onChange={e => setDemoForm({...demoForm, phone: e.target.value})} 
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" 
+                        placeholder="+91 98765 43210" 
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={demoStatus === 'submitting'}
+                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                    >
+                      {demoStatus === 'submitting' ? 'Submitting...' : 'Request Demo'}
+                    </button>
+                  </form>
+                </>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

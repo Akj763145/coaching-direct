@@ -33,8 +33,8 @@ function Navigation() {
   }, []);
 
   return (
-    <div className="sticky top-0 z-50 w-full px-3 pt-3 md:px-8 md:pt-6 pointer-events-none">
-      <header className="max-w-7xl mx-auto bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] py-2.5 px-4 md:py-3 md:px-6 rounded-[20px] md:rounded-[24px] flex items-center justify-between pointer-events-auto transition-all duration-300">
+    <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 transition-all duration-300">
+      <header className="max-w-7xl mx-auto py-3 px-4 md:px-8 flex items-center justify-between">
         <a href="/" className="text-lg md:text-xl font-bold tracking-tight text-apple-text dark:text-white flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity">
           <div className="w-7 h-7 md:w-8 md:h-8 bg-apple-blue rounded-[9px] md:rounded-[10px] flex items-center justify-center text-white shadow-sm">
             <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />

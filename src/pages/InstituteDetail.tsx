@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, MessageCircle, X, Star, Bell, Download } from 'lucide-react';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, MessageCircle, X, Star, Bell, Download, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
 
@@ -77,6 +77,7 @@ export default function InstituteDetail() {
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchInstitute();
@@ -121,15 +122,23 @@ export default function InstituteDetail() {
   const embedUrl = getEmbedUrl(institute.demo_video_url);
 
   return (
-    <motion.div 
+    <motion.main 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-      className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-8 md:space-y-10 pb-32"
+      className="max-w-7xl mx-auto flex flex-col min-h-screen pt-4 md:pt-6 pb-32"
     >
-      
-      {/* Header Profile */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-800 relative overflow-hidden transition-all duration-300">
+      <div className="px-4 md:px-8 pb-4 flex items-center gap-1.5 text-slate-500 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0">
+        <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
+        <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+        <span className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer capitalize">Location</span>
+        <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+        <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
+      </div>
+
+      <div className="px-4 md:px-8 w-full">
+        {/* Header Profile */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-800 relative overflow-hidden transition-all duration-300">
         <div className="h-32 md:h-48 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative">
           <div className="absolute inset-0 bg-white/10 dark:bg-black/20 backdrop-blur-sm mix-blend-overlay"></div>
         </div>
@@ -159,12 +168,12 @@ export default function InstituteDetail() {
             </div>
             
             {institute.phone && (
-              <div className="mt-6 md:mt-8">
+              <div className="mt-6 md:mt-8 flex items-center gap-3 lg:hidden">
                 <a
                   href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct and would like to know more about your classes.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors cursor-pointer w-full md:w-auto shadow-sm min-h-[44px]"
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors cursor-pointer shadow-sm min-h-[44px]"
                 >
                   <MessageCircle className="w-5 h-5" />
                   Chat on WhatsApp
@@ -174,12 +183,37 @@ export default function InstituteDetail() {
           </div>
         </div>
       </div>
+      </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="sticky top-[60px] z-40 bg-white/80 dark:bg-[#0b1120]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 lg:hidden px-4 mt-6 pb-2 pt-2">
+        <div className="flex overflow-x-auto snap-x scrollbar-hide gap-6">
+          {['overview', 'batches', 'reviews', 'updates'].map(tab => (
+            <button 
+              key={tab} 
+              onClick={() => setActiveTab(tab)}
+              className={`snap-start whitespace-nowrap text-sm font-semibold transition-colors pb-1 border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4 md:px-8 mt-6 lg:mt-10 lg:grid lg:grid-cols-12 lg:gap-8 flex-1 items-start">
         
-        {/* Main Content: Batches */}
-        <div className="md:col-span-2 space-y-8">
-          <section>
+        {/* Main Content Column */}
+        <div className="lg:col-span-8 flex flex-col gap-10">
+          <section className={`lg:block ${activeTab === 'overview' ? 'block' : 'hidden'} space-y-6 lg:hidden`}>
+             {/* Mobile Overview handled via sticky elements usually, but we keep an overview section if needed */}
+             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+               <h3 className="font-semibold text-slate-900 dark:text-white mb-2">About Institute</h3>
+               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                 Welcome to {institute.name}. We provide high quality coaching...
+               </p>
+             </div>
+          </section>
+
+          <section className={`lg:block ${activeTab === 'batches' || activeTab === 'overview' ? 'block' : 'hidden'} lg:!block`}>
             <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2 tracking-tight">
               <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Available Batches
@@ -219,7 +253,7 @@ export default function InstituteDetail() {
                       </div>
                       <div className="mt-2">
                         {batch.subject?.split(',').map((s:string) => s.trim()).filter(Boolean).map((sub: string) => (
-                           <span key={sub} className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs font-medium inline-block mt-1 mr-1 capitalize">
+                           <span key={sub} className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 dark:border dark:border-blue-500/30 text-[10px] md:text-xs font-medium inline-block mt-1 mr-1 capitalize">
                              {formatAcronyms(sub)}
                            </span>
                         ))}
@@ -250,29 +284,31 @@ export default function InstituteDetail() {
                       <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatFee(batch.fee_structure)}</span>
                     </div>
                   </div>
-                  <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-                    <a
-                      href={`/batch/${batch.id}`}
-                      className="inline-flex items-center justify-center gap-2 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 min-h-[44px] px-6 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full sm:w-auto"
-                    >
-                      View Details
-                    </a>
-                    <a
-                      href="/bbb.pdf"
-                      download="bbb.pdf"
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] px-6 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full sm:w-auto"
-                    >
-                      <Download className="w-4 h-4" />
-                      Syllabus
-                    </a>
+                  <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <a
+                        href={`/batch/${batch.id}`}
+                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full"
+                      >
+                        View Details
+                      </a>
+                      <a
+                        href="/bbb.pdf"
+                        download="bbb.pdf"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full"
+                      >
+                        <Download className="w-4 h-4" />
+                        Syllabus
+                      </a>
+                    </div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedBatch(batch);
                         setModalOpen(true);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-6 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full sm:w-auto"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-6 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer shadow-sm shadow-blue-600/20"
                     >
                       Book Free Demo
                     </button>
@@ -286,7 +322,7 @@ export default function InstituteDetail() {
             </div>
           </section>
 
-          <section className="pt-8 border-t border-slate-100 dark:border-slate-800">
+          <section className={`lg:block ${activeTab === 'reviews' ? 'block' : 'hidden'} lg:!block pt-8 lg:pt-10 border-t border-slate-100 dark:border-slate-800`}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
                 <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -329,8 +365,39 @@ export default function InstituteDetail() {
           </section>
         </div>
 
-        {/* Sidebar: Demo Video & Location */}
-        <div className="space-y-6">
+        {/* Sticky Conversion Sidebar (Desktop & 'updates'/'overview' on Mobile) */}
+        <div className={`lg:col-span-4 lg:sticky lg:top-28 lg:block flex-col gap-6 lg:h-fit ${activeTab === 'overview' || activeTab === 'updates' ? 'flex' : 'hidden'}`}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm hidden lg:block overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Connect with Us</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Have questions or want to try our classes? Get in touch instantly.</p>
+            
+            <div className="space-y-3 mb-6 font-medium text-sm text-slate-600 dark:text-slate-300">
+              {institute.phone && <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-slate-400 shrink-0"/> <span>{institute.phone}</span></div>}
+              {institute.email && <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-slate-400 shrink-0"/> <span>{institute.email}</span></div>}
+              {institute.website && <div className="flex items-center gap-3"><Globe className="w-4 h-4 text-slate-400 shrink-0"/> <a href={institute.website} target="_blank" className="hover:text-blue-600 dark:hover:text-blue-400 underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4 transition-colors">Visit Website</a></div>}
+            </div>
+
+            <div className="space-y-3">
+              <button 
+                onClick={() => setModalOpen(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-6 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-600/20"
+              >
+                Book a Free Demo
+              </button>
+              {institute.phone && (
+                <a
+                  href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-green-50/50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 px-6 py-2 rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
+                >
+                  <MessageCircle className="w-4 h-4" /> 
+                  Chat on WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -404,7 +471,6 @@ export default function InstituteDetail() {
             </motion.div>
           )}
         </div>
-        
       </div>
 
       <AnimatePresence>
@@ -473,6 +539,6 @@ export default function InstituteDetail() {
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </motion.main>
   );
 }
