@@ -4,6 +4,17 @@ import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar } from 'lucide-
 import { motion } from 'motion/react';
 import { HomeSkeleton } from '../components/Skeleton';
 
+const formatAcronyms = (text: string) => {
+  if (!text) return '';
+  const acronyms = ['neet', 'jee', 'iit', 'cbse', 'icse', 'upsc', 'ssc', 'bpsc'];
+  let formatted = text;
+  acronyms.forEach(acronym => {
+    const regex = new RegExp(`\\b${acronym}\\b`, 'gi');
+    formatted = formatted.replace(regex, acronym.toUpperCase());
+  });
+  return formatted;
+};
+
 export default function Home() {
   const [institutes, setInstitutes] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -94,11 +105,11 @@ export default function Home() {
                 )}
               </div>
               <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <h3 className="text-[22px] font-semibold text-apple-text tracking-tight transition-colors line-clamp-1 capitalize">{inst.name}</h3>
+                <h3 className="text-[22px] font-semibold text-apple-text tracking-tight transition-colors line-clamp-1 capitalize">{formatAcronyms(inst.name)}</h3>
                 
                 <div className="flex items-center gap-2 mt-2 text-sm text-apple-text-muted">
                   <MapPin className="w-4 h-4 shrink-0 opacity-70" />
-                  <span className="truncate capitalize">{getLocationText(inst)}</span>
+                  <span className="truncate capitalize">{formatAcronyms(getLocationText(inst))}</span>
                 </div>
                 
                 <div className="mt-6 space-y-3">
@@ -106,7 +117,7 @@ export default function Home() {
                   <div className="flex flex-wrap gap-0">
                     {Array.from(new Set(inst.batches?.flatMap((b:any) => b.subject?.split(',').map((s:string) => s.trim()).filter(Boolean)) || [])).slice(0, 3).map((sub: any) => (
                       <span key={sub} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] md:text-xs font-medium inline-block mt-1 mr-1 capitalize">
-                        {sub}
+                        {formatAcronyms(sub)}
                       </span>
                     ))}
                     {(!inst.batches || inst.batches.length === 0) && (
