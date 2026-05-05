@@ -80,9 +80,16 @@ export default function Login() {
         </form>
         
         <div className="mt-8 pt-6 border-t border-apple-border/30">
-          <p className="text-[13px] text-apple-text-muted text-center leading-relaxed">
+          <p className="text-[13px] text-apple-text-muted text-center leading-relaxed mb-4">
             First time? Master login is <br/><code className="bg-apple-gray text-apple-text font-mono text-[12px] px-2 py-0.5 rounded-md border border-apple-border/40">admin</code> / <code className="bg-apple-gray text-apple-text font-mono text-[12px] px-2 py-0.5 rounded-md border border-apple-border/40">admin123</code>
           </p>
+          <button 
+            type="button"
+            onClick={() => navigate('/user/login')}
+            className="w-full text-[13px] font-medium text-apple-blue hover:underline py-2 rounded-lg border border-apple-blue/10 bg-apple-blue/5 transition-all duration-300"
+          >
+            Looking for Student Login? Sign in with Google
+          </button>
         </div>
       </motion.div>
     </div>
