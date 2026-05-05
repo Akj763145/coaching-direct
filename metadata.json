@@ -1,0 +1,6 @@
+{
+  "name": "Remix: Coaching Directory Platform",
+  "description": "A multi-tenant platform for students to explore coaching institutes, and for institutes to manage their profiles and batches.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
