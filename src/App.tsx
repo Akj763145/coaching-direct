@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { GraduationCap } from 'lucide-react';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import InstituteDetail from './pages/InstituteDetail';
@@ -8,18 +9,23 @@ import SubAdminDashboard from './pages/subadmin/Dashboard';
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
-        <header className="bg-white border-b border-slate-200 py-4 px-6 flex items-center justify-between sticky top-0 z-50">
-          <a href="/" className="text-xl font-bold text-indigo-600 tracking-tight flex items-center gap-2">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
-            InstituteHub
-          </a>
-          <nav>
-            <a href="/login" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Admin Portal</a>
-          </nav>
-        </header>
+      <div className="min-h-screen bg-apple-gray text-apple-text font-sans flex flex-col selection:bg-apple-blue/20">
+        <div className="sticky top-0 z-50 w-full px-4 pt-4 md:px-8 md:pt-6 pointer-events-none">
+          <header className="max-w-6xl mx-auto bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)] py-3 px-6 rounded-[24px] flex items-center justify-between pointer-events-auto transition-all duration-300">
+            <a href="/" className="text-xl font-bold tracking-tight text-apple-text flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 bg-apple-blue rounded-[10px] flex items-center justify-center text-white shadow-sm">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              Coacher
+            </a>
+            <nav className="flex items-center gap-6">
+              <a href="/" className="text-sm font-medium text-apple-text-muted hover:text-apple-text transition-colors hidden sm:block">Explore</a>
+              <a href="/login" className="text-sm font-semibold text-apple-blue hover:text-apple-blue-hover transition-colors px-5 py-2.5 bg-apple-blue/5 rounded-full">Admin Portal</a>
+            </nav>
+          </header>
+        </div>
         
-        <main className="flex-1">
+        <main className="flex-1 mt-4">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/institute/:id" element={<InstituteDetail />} />

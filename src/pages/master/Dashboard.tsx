@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -50,67 +51,104 @@ export default function MasterDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Master Admin Dashboard</h1>
-        <p className="text-slate-500 mt-1">Manage platform tenants (Institutes)</p>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-6xl mx-auto p-6 md:p-10 space-y-8"
+    >
+      <div className="flex justify-between items-end pb-6 border-b border-apple-border/30">
+        <div>
+          <h1 className="text-3xl font-semibold text-apple-text tracking-tight">Master Admin Dashboard</h1>
+          <p className="text-apple-text-muted mt-1 text-[15px]">Manage platform tenants (Institutes)</p>
+        </div>
+        <button onClick={handleLogout} className="text-[13px] font-medium text-apple-text-muted hover:text-apple-text transition-colors">Log out</button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-1">
-          <form onSubmit={handleCreate} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Onboard New Institute</h2>
+        <div className="md:col-span-1 space-y-6">
+          <motion.form 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onSubmit={handleCreate} 
+            className="bg-white p-6 md:p-8 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-apple-border/40"
+          >
+            <h2 className="text-lg font-semibold text-apple-text mb-5">Onboard New Institute</h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Institute Name</label>
-                <input required type="text" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-600 focus:border-indigo-600 outline-none" value={name} onChange={e => setName(e.target.value)} />
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Institute Name</label>
+                <input required type="text" className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Acme Coaching" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
-                <input type="text" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-600 focus:border-indigo-600 outline-none" value={logo} onChange={e => setLogo(e.target.value)} placeholder="https://..." />
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Logo URL (optional)</label>
+                <input type="text" className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" value={logo} onChange={e => setLogo(e.target.value)} placeholder="https://..." />
               </div>
-              <button type="submit" className="w-full bg-slate-900 text-white font-medium py-2 rounded-lg hover:bg-slate-800 transition">Create Institute</button>
+              <button type="submit" className="w-full bg-apple-text text-white font-medium py-3 rounded-xl hover:bg-black transition-colors mt-2">Create Institute</button>
             </div>
-          </form>
+          </motion.form>
 
           {newCredentials && (
-            <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-2xl shadow-sm">
-              <h3 className="text-green-800 font-bold mb-2">Institute Created!</h3>
-              <p className="text-sm text-green-700 mb-4">Save these Sub-Admin credentials. They will only be shown once.</p>
-              <div className="bg-white rounded-lg p-3 border border-green-200 font-mono text-sm space-y-1">
-                <div><span className="text-slate-400">Username:</span> {newCredentials.username}</div>
-                <div><span className="text-slate-400">Password:</span> {newCredentials.password}</div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-6 bg-[#E8F5E9] border border-[#C8E6C9] p-6 md:p-8 rounded-[24px] shadow-sm"
+            >
+              <h3 className="text-[#2E7D32] font-semibold mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Institute Created!
+              </h3>
+              <p className="text-[13px] text-[#2E7D32]/80 mb-4">Save these Sub-Admin credentials. They will only be shown once.</p>
+              <div className="bg-white rounded-xl p-4 border border-[#C8E6C9] font-mono text-[13px] space-y-2 shadow-sm">
+                <div className="flex justify-between"><span className="text-apple-text-muted">Username:</span> <span className="font-semibold text-apple-text">{newCredentials.username}</span></div>
+                <div className="flex justify-between"><span className="text-apple-text-muted">Password:</span> <span className="font-semibold text-apple-text">{newCredentials.password}</span></div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
-        <div className="md:col-span-2 space-y-4">
-          <h2 className="text-xl font-bold text-slate-900">Registered Institutes</h2>
-          {institutes.length === 0 ? (
-            <p className="text-slate-500">No institutes added yet.</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {institutes.map(inst => (
-                <div key={inst.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
-                  {inst.logo ? (
-                    <img src={inst.logo} alt="" className="w-12 h-12 rounded object-cover bg-slate-100" />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl shrink-0">
-                      {inst.name.charAt(0)}
+        <div className="md:col-span-2 space-y-6">
+          <motion.div
+             initial={{ opacity: 0, y: 10 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-xl font-semibold text-apple-text mb-4 px-1">Registered Institutes</h2>
+            {institutes.length === 0 ? (
+              <div className="bg-apple-gray rounded-[24px] border border-apple-border/30 p-10 text-center text-apple-text-muted">No institutes added yet.</div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {institutes.map((inst, i) => (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 + 0.3 }}
+                    key={inst.id} 
+                    className="bg-white p-5 rounded-[20px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)] transition-shadow"
+                  >
+                    {inst.logo ? (
+                      <img src={inst.logo} alt="" className="w-14 h-14 rounded-xl object-contain bg-apple-gray p-1 border border-apple-border/30" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-apple-gray border border-apple-border/30 text-apple-blue flex items-center justify-center font-semibold text-2xl shrink-0">
+                        {inst.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-apple-text leading-tight truncate">{inst.name}</h3>
+                      <p className="text-[13px] text-apple-text-muted mt-1 font-mono truncate">@{inst.username}</p>
                     </div>
-                  )}
-                  <div>
-                    <h3 className="font-bold text-slate-900 leading-tight">{inst.name}</h3>
-                    <p className="text-sm text-slate-500 mt-1 font-mono">@{inst.username}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

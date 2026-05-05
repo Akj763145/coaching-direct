@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, DollarSign, User, BookOpen } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function InstituteDetail() {
   const { id } = useParams();
@@ -19,8 +20,8 @@ export default function InstituteDetail() {
     setLoading(false);
   };
 
-  if (loading) return <div className="p-12 text-center text-slate-500">Loading...</div>;
-  if (!institute) return <div className="p-12 text-center text-slate-500 font-medium">Institute not found</div>;
+  if (loading) return <div className="p-12 text-center text-apple-text-muted">Loading...</div>;
+  if (!institute) return <div className="p-12 text-center text-apple-text-muted font-medium">Institute not found</div>;
 
   // Convert youtube watch URL to embed URL for iframe
   const getEmbedUrl = (url: string) => {
@@ -33,26 +34,31 @@ export default function InstituteDetail() {
   const embedUrl = getEmbedUrl(institute.demo_video_url);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8 pb-20">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+      className="max-w-5xl mx-auto p-6 md:p-10 space-y-10 pb-20"
+    >
       
       {/* Header Profile */}
-      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+      <div className="bg-white rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-apple-border/40 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-apple-blue/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none transition-all duration-1000"></div>
         {institute.logo ? (
-          <img src={institute.logo} alt={institute.name} className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover bg-white shadow-sm border border-slate-100 z-10" />
+          <motion.img layoutId={`logo-${institute.id}`} src={institute.logo} alt={institute.name} className="w-32 h-32 md:w-40 md:h-40 rounded-[28px] object-contain bg-apple-gray shadow-sm border border-apple-border/50 z-10 p-2" />
         ) : (
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-5xl shrink-0 z-10">
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-[28px] bg-apple-gray border border-apple-border/50 text-apple-blue flex items-center justify-center font-semibold text-5xl shrink-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
             {institute.name.charAt(0)}
           </div>
         )}
         
-        <div className="flex-1 z-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{institute.name}</h1>
-          <div className="flex flex-wrap gap-4 mt-4 text-sm font-medium text-slate-600">
-            {institute.address && <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-400"/> {institute.address}</div>}
-            {institute.phone && <div className="flex items-center gap-1.5"><Phone className="w-4 h-4 text-slate-400"/> {institute.phone}</div>}
-            {institute.email && <div className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400"/> {institute.email}</div>}
-            {institute.website && <div className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-slate-400"/> <a href={institute.website} target="_blank" className="text-indigo-600 hover:underline">Website</a></div>}
+        <div className="flex-1 z-10 pt-2">
+          <h1 className="text-3xl md:text-[40px] font-semibold text-apple-text tracking-tight leading-tight">{institute.name}</h1>
+          <div className="flex flex-wrap gap-4 mt-6 text-[15px] font-medium text-apple-text-muted">
+            {institute.address && <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 opacity-60"/> {institute.address}</div>}
+            {institute.phone && <div className="flex items-center gap-1.5"><Phone className="w-4 h-4 opacity-60"/> {institute.phone}</div>}
+            {institute.email && <div className="flex items-center gap-1.5"><Mail className="w-4 h-4 opacity-60"/> {institute.email}</div>}
+            {institute.website && <div className="flex items-center gap-1.5"><Globe className="w-4 h-4 opacity-60"/> <a href={institute.website} target="_blank" className="text-apple-blue hover:text-apple-blue-hover hover:underline transition-colors">Website</a></div>}
           </div>
         </div>
       </div>
@@ -62,43 +68,53 @@ export default function InstituteDetail() {
         {/* Main Content: Batches */}
         <div className="md:col-span-2 space-y-8">
           <section>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-2xl font-semibold text-apple-text mb-6 flex items-center gap-2 tracking-tight">
+              <BookOpen className="w-5 h-5 text-apple-blue" />
               Available Batches
             </h2>
             <div className="space-y-4">
-              {institute.batches && institute.batches.length > 0 ? institute.batches.map((batch: any) => (
-                <div key={batch.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors">
-                  <div className="flex items-start justify-between mb-4">
+              {institute.batches && institute.batches.length > 0 ? institute.batches.map((batch: any, i: number) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
+                  key={batch.id} 
+                  className="bg-white p-6 md:p-8 rounded-[24px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-apple-border/80 transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between mb-5 flex-col sm:flex-row gap-4">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">{batch.batch_name}</h3>
-                      <p className="text-indigo-600 font-medium text-sm px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded inline-block mt-2">{batch.subject}</p>
+                      <h3 className="text-xl font-semibold text-apple-text tracking-tight">{batch.batch_name}</h3>
+                      <p className="text-apple-blue font-medium text-[13px] px-2.5 py-1 bg-apple-blue/5 border border-apple-blue/10 rounded-lg inline-block mt-3">{batch.subject}</p>
                     </div>
-                    <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
-                      <div className="w-6 h-6 rounded-full overflow-hidden bg-white">
-                        {batch.teacher_image ? <img src={batch.teacher_image} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-bold text-xs text-slate-400">{batch.teacher_name.charAt(0)}</div>}
+                    <div className="flex items-center gap-3 bg-apple-gray px-3 py-1.5 rounded-full border border-apple-border/50">
+                      <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-apple-border/30">
+                        {batch.teacher_image ? <img src={batch.teacher_image} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-medium text-xs text-apple-text-muted">{batch.teacher_name.charAt(0)}</div>}
                       </div>
-                      <span className="text-sm font-medium text-slate-700">{batch.teacher_name}</span>
+                      <span className="text-[14px] font-medium text-apple-text pr-1">{batch.teacher_name}</span>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar className="w-4 h-4 text-slate-400" /> {batch.start_date || 'TBA'}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-6 border-t border-apple-border/30">
+                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Calendar className="w-3.5 h-3.5" /> Start</div> 
+                      <span className="font-medium">{batch.start_date || 'TBA'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Clock className="w-4 h-4 text-slate-400" /> {batch.batch_timing || 'TBA'}
+                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><Clock className="w-3.5 h-3.5" /> Timing</div> 
+                      <span className="font-medium">{batch.batch_timing || 'TBA'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                       <span className="text-slate-400 font-medium">Duration:</span> {batch.batch_duration || '-'}
+                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium">Duration</div> 
+                      <span className="font-medium">{batch.batch_duration || '-'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <DollarSign className="w-4 h-4 text-slate-400" /> {batch.fee_structure || 'Contact for fee'}
+                    <div className="flex flex-col gap-1 text-[14px] text-apple-text">
+                      <div className="flex items-center gap-1.5 text-xs text-apple-text-muted uppercase tracking-widest font-medium"><DollarSign className="w-3.5 h-3.5" /> Fee</div> 
+                      <span className="font-medium">{batch.fee_structure || 'Contact for fee'}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )) : (
-                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center text-slate-500">
+                <div className="bg-apple-gray p-8 rounded-[24px] border border-apple-border/30 text-center text-apple-text-muted shadow-inner">
                   No active batches listed right now.
                 </div>
               )}
@@ -109,12 +125,17 @@ export default function InstituteDetail() {
         {/* Sidebar: Demo Video & Location */}
         <div className="space-y-6">
           {embedUrl && (
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white rounded-[24px] border border-apple-border/40 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
+            >
+              <div className="p-5 border-b border-apple-border/30 font-semibold text-apple-text flex items-center gap-2.5">
+                <svg className="w-5 h-5 text-red-500 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                 Demo Class
               </div>
-              <div className="aspect-video w-full bg-slate-900">
+              <div className="aspect-video w-full bg-apple-text">
                 <iframe 
                   width="100%" 
                   height="100%" 
@@ -125,21 +146,26 @@ export default function InstituteDetail() {
                   allowFullScreen
                 ></iframe>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {institute.location && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-               <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-indigo-600"/> Location</h3>
-               <p className="text-sm text-slate-600 mb-4">{institute.location}</p>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white rounded-[24px] border border-apple-border/40 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
+            >
+               <h3 className="font-semibold text-apple-text mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-apple-blue"/> Location</h3>
+               <p className="text-[14px] text-apple-text-muted mb-5 leading-relaxed">{institute.location}</p>
                {institute.location.includes('http') || institute.location.includes('iframe') ? (
-                 <div className="aspect-square bg-slate-100 rounded-xl overflow-hidden" dangerouslySetInnerHTML={{__html: institute.location.startsWith('<iframe') ? institute.location : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`}}></div>
+                 <div className="aspect-squares overflow-hidden rounded-2xl bg-apple-gray border border-apple-border/30" dangerouslySetInnerHTML={{__html: institute.location.startsWith('<iframe') ? institute.location : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`}}></div>
                ) : null}
-            </div>
+            </motion.div>
           )}
         </div>
         
       </div>
-    </div>
+    </motion.div>
   );
 }

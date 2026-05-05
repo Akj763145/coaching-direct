@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -62,135 +63,156 @@ export default function SubAdminDashboard() {
     fetchData(token!);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   if (!profile) return null;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-6xl mx-auto p-6 md:p-10"
+    >
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 pb-6 border-b border-apple-border/30 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">{profile.name} - Dashboard</h1>
-          <p className="text-slate-500">Manage your institute profile and active batches</p>
+          <h1 className="text-3xl font-semibold text-apple-text tracking-tight">{profile.name} - Dashboard</h1>
+          <p className="text-apple-text-muted mt-1 text-[15px]">Manage your institute profile and active batches</p>
         </div>
+        <button onClick={handleLogout} className="text-[13px] font-medium text-apple-text-muted hover:text-apple-text transition-colors">Log out</button>
       </div>
 
-      <div className="flex border-b border-slate-200 mb-8 space-x-8">
-        <button className={`pb-4 font-medium text-sm transition-colors ${activeTab === 'profile' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`} onClick={() => setActiveTab('profile')}>
+      <div className="flex mb-8 space-x-6 relative">
+        <button className={`pb-3 font-medium text-[15px] transition-colors relative ${activeTab === 'profile' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('profile')}>
           Institute Profile
+          {activeTab === 'profile' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-text rounded-t-full" />}
         </button>
-        <button className={`pb-4 font-medium text-sm transition-colors ${activeTab === 'batches' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`} onClick={() => setActiveTab('batches')}>
+        <button className={`pb-3 font-medium text-[15px] transition-colors relative ${activeTab === 'batches' ? 'text-apple-text' : 'text-apple-text-muted hover:text-apple-text'}`} onClick={() => setActiveTab('batches')}>
           Manage Batches
+          {activeTab === 'batches' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-text rounded-t-full" />}
         </button>
+        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-apple-border/30 -z-10" />
       </div>
 
       {activeTab === 'profile' && (
-        <form onSubmit={handleProfileUpdate} className="space-y-6 max-w-2xl bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Institute Name</label>
-              <input type="text" value={profile.name || ''} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <form onSubmit={handleProfileUpdate} className="space-y-6 max-w-3xl bg-white p-8 rounded-[24px] border border-apple-border/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Institute Name</label>
+                <input type="text" value={profile.name || ''} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Logo URL</label>
+                <input type="text" value={profile.logo || ''} onChange={e => setProfile({...profile, logo: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Full Address</label>
+                <textarea value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" rows={3}></textarea>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Location (Google Maps Embed/URL)</label>
+                <input type="text" value={profile.location || ''} onChange={e => setProfile({...profile, location: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Phone</label>
+                <input type="text" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Email</label>
+                <input type="email" value={profile.email || ''} onChange={e => setProfile({...profile, email: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Website</label>
+                <input type="text" value={profile.website || ''} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Demo Video (YouTube URL)</label>
+                <input type="text" value={profile.demo_video_url || ''} onChange={e => setProfile({...profile, demo_video_url: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" placeholder="https://www.youtube.com/watch?v=..." />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
-              <input type="text" value={profile.logo || ''} onChange={e => setProfile({...profile, logo: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Address</label>
-              <textarea value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows={3}></textarea>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Location (Google Maps Embed/URL)</label>
-              <input type="text" value={profile.location || ''} onChange={e => setProfile({...profile, location: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-              <input type="text" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-              <input type="email" value={profile.email || ''} onChange={e => setProfile({...profile, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Website</label>
-              <input type="text" value={profile.website || ''} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Demo Video (YouTube URL)</label>
-              <input type="text" value={profile.demo_video_url || ''} onChange={e => setProfile({...profile, demo_video_url: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="https://www.youtube.com/watch?v=..." />
-            </div>
-          </div>
-          <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700">Save Profile</button>
-        </form>
+            <button type="submit" className="w-full sm:w-auto px-8 py-3 bg-apple-blue text-white rounded-xl font-medium hover:bg-apple-blue-hover transition-colors shadow-sm">Save Profile</button>
+          </form>
+        </motion.div>
       )}
 
       {activeTab === 'batches' && (
-        <div className="grid lg:grid-cols-3 gap-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm sticky top-24">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Add New Batch</h2>
+            <div className="bg-white p-7 rounded-[24px] border border-apple-border/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] sticky top-24">
+              <h2 className="text-lg font-semibold text-apple-text mb-5 tracking-tight">Add New Batch</h2>
               <form onSubmit={handleAddBatch} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase">Batch Name</label>
-                  <input required type="text" value={batchForm.batch_name} onChange={e => setBatchForm({...batchForm, batch_name: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Target JEE 2027" />
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Batch Name</label>
+                  <input required type="text" value={batchForm.batch_name} onChange={e => setBatchForm({...batchForm, batch_name: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="e.g. Target JEE 2027" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase">Subject</label>
-                  <input required type="text" value={batchForm.subject} onChange={e => setBatchForm({...batchForm, subject: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="Physics" />
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Subject</label>
+                  <input required type="text" value={batchForm.subject} onChange={e => setBatchForm({...batchForm, subject: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="Physics" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase">Teacher Name</label>
-                  <input required type="text" value={batchForm.teacher_name} onChange={e => setBatchForm({...batchForm, teacher_name: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Teacher Name</label>
+                  <input required type="text" value={batchForm.teacher_name} onChange={e => setBatchForm({...batchForm, teacher_name: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase">Teacher Image URL</label>
-                  <input type="text" value={batchForm.teacher_image} onChange={e => setBatchForm({...batchForm, teacher_image: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase">Start Date</label>
-                    <input type="date" value={batchForm.start_date} onChange={e => setBatchForm({...batchForm, start_date: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase">Duration</label>
-                    <input type="text" value={batchForm.duration} onChange={e => setBatchForm({...batchForm, batch_duration: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="6 Months" />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Teacher Image URL</label>
+                  <input type="text" value={batchForm.teacher_image} onChange={e => setBatchForm({...batchForm, teacher_image: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase">Timing</label>
-                    <input type="text" value={batchForm.batch_timing} onChange={e => setBatchForm({...batchForm, batch_timing: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="4 PM - 6 PM" />
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Start Date</label>
+                    <input type="date" value={batchForm.start_date} onChange={e => setBatchForm({...batchForm, start_date: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase">Fee</label>
-                    <input type="text" value={batchForm.fee_structure} onChange={e => setBatchForm({...batchForm, fee_structure: e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="$500/mo" />
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Duration</label>
+                    <input type="text" value={batchForm.duration} onChange={e => setBatchForm({...batchForm, batch_duration: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="6 Months" />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-slate-900 text-white font-medium py-2 rounded-lg hover:bg-slate-800">Create Batch</button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Timing</label>
+                    <input type="text" value={batchForm.batch_timing} onChange={e => setBatchForm({...batchForm, batch_timing: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="4 PM - 6 PM" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-apple-text-muted uppercase tracking-wider ml-1">Fee</label>
+                    <input type="text" value={batchForm.fee_structure} onChange={e => setBatchForm({...batchForm, fee_structure: e.target.value})} className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[14px]" placeholder="$500/mo" />
+                  </div>
+                </div>
+                <button type="submit" className="w-full bg-apple-text text-white font-medium py-3 rounded-xl hover:bg-black transition-colors mt-2">Create Batch</button>
               </form>
             </div>
           </div>
           <div className="lg:col-span-2 space-y-4">
-            {batches.map(batch => (
-              <div key={batch.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-5 relative">
-                <button onClick={() => handleDeleteBatch(batch.id)} className="absolute top-4 right-4 text-slate-400 hover:text-red-600 text-sm font-medium">Delete</button>
-                <div className="w-16 h-16 shrink-0 rounded-full bg-slate-100 overflow-hidden">
-                  {batch.teacher_image ? <img src={batch.teacher_image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl">{batch.teacher_name.charAt(0)}</div>}
+            {batches.map((batch, i) => (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                key={batch.id} 
+                className="bg-white p-6 rounded-[24px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col md:flex-row gap-5 relative hover:shadow-[0_4px_15px_rgba(0,0,0,0.04)] transition-shadow"
+              >
+                <button onClick={() => handleDeleteBatch(batch.id)} className="absolute top-4 right-5 text-apple-text-muted hover:text-red-500 text-[13px] font-medium transition-colors">Delete</button>
+                <div className="w-16 h-16 shrink-0 rounded-full bg-apple-gray border border-apple-border/30 overflow-hidden">
+                  {batch.teacher_image ? <img src={batch.teacher_image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-apple-text-muted font-medium text-xl">{batch.teacher_name.charAt(0)}</div>}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900">{batch.batch_name}</h3>
-                  <div className="text-sm font-medium text-indigo-600 mb-3">{batch.subject} • {batch.teacher_name}</div>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-600">
-                    <div><span className="text-slate-400">Timing:</span> {batch.batch_timing}</div>
-                    <div><span className="text-slate-400">Duration:</span> {batch.batch_duration}</div>
-                    <div><span className="text-slate-400">Start:</span> {batch.start_date}</div>
-                    <div><span className="text-slate-400">Fee:</span> {batch.fee_structure}</div>
+                  <h3 className="font-semibold text-[18px] text-apple-text">{batch.batch_name}</h3>
+                  <div className="text-[13px] font-medium text-apple-blue mb-3 bg-apple-blue/5 border border-apple-blue/10 rounded-md px-2 py-0.5 inline-block mt-1">{batch.subject} • {batch.teacher_name}</div>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[14px] text-apple-text pt-2">
+                    <div className="flex gap-2"><span className="text-apple-text-muted font-medium">Timing:</span> <span>{batch.batch_timing || '-'}</span></div>
+                    <div className="flex gap-2"><span className="text-apple-text-muted font-medium">Duration:</span> <span>{batch.batch_duration || '-'}</span></div>
+                    <div className="flex gap-2"><span className="text-apple-text-muted font-medium">Start:</span> <span>{batch.start_date || '-'}</span></div>
+                    <div className="flex gap-2"><span className="text-apple-text-muted font-medium">Fee:</span> <span>{batch.fee_structure || '-'}</span></div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-            {batches.length === 0 && <div className="text-slate-500 text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">No batches created yet. Add one from the sidebar.</div>}
+            {batches.length === 0 && <div className="text-apple-text-muted text-center py-12 border border-dashed border-apple-border/50 rounded-[24px] bg-apple-gray/50 text-[15px]">No batches created yet. Add one from the sidebar.</div>}
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
