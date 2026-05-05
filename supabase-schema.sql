@@ -77,6 +77,6 @@ USING (true);
 INSERT INTO public.app_users (username, password_hash, role) 
 VALUES (
   'admin', 
-  '$2a$10$wY9Pj/5rP0XzOW0l91.aUeT5N3qM91aYmOaC5IpHC8rG6vQ/K1lCW', 
+  '$2b$10$ze3T6M7syyzQD/fAxk3vKOjGeqLec5WPN21AW7fMBQNYIaGCN/QMm', 
   'MASTER'
 ) ON CONFLICT (username) DO NOTHING;

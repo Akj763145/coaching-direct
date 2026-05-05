@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { createClient } from '@supabase/supabase-js';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const SECRET_KEY = process.env.SECRET_KEY || 'super-secret-jwt-key-for-coaching-hub';
 
 app.use(express.json());
@@ -18,9 +18,64 @@ const isSupabaseEnabled = Boolean(supabaseUrl && supabaseKey);
 let supabase: any = null;
 let db: any = null;
 
+// Initialization function to ensure a Master Admin exists
+async function ensureMasterAdmin() {
+  const masterUsername = 'admin';
+  const masterPassword = 'admin123';
+  const role = 'MASTER';
+
+  if (isSupabaseEnabled) {
+    try {
+      const { data: existingUser } = await supabase
+        .from('app_users')
+        .select('id, password_hash')
+        .eq('username', masterUsername)
+        .maybeSingle();
+
+      const hash = bcrypt.hashSync(masterPassword, 10);
+
+      if (!existingUser) {
+        console.log('👷 Supabase: No Master Admin found. Creating default...');
+        const { error } = await supabase
+          .from('app_users')
+          .insert({ username: masterUsername, password_hash: hash, role });
+        
+        if (error) console.error('❌ Failed to create default master in Supabase:', error.message);
+        else console.log('✅ Default Master Admin created in Supabase -> [admin : admin123]');
+      } else {
+        // Double check if the password is valid for the 'admin' user
+        if (!bcrypt.compareSync(masterPassword, existingUser.password_hash)) {
+          console.log('📝 Supabase: Default admin found but password hash is legacy/invalid. Updating...');
+          const { error } = await supabase
+            .from('app_users')
+            .update({ password_hash: hash })
+            .eq('id', existingUser.id);
+          
+          if (error) console.error('❌ Failed to update admin password:', error.message);
+          else console.log('✅ Default Master Admin password updated to "admin123"');
+        }
+      }
+    } catch (err) {
+      console.error('❌ Supabase initialization error:', err);
+    }
+  } else {
+    const existingMaster = db.prepare('SELECT id, password FROM users WHERE username = ?').get(masterUsername);
+    const masterHash = bcrypt.hashSync(masterPassword, 10);
+    
+    if (!existingMaster) {
+      db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run(masterUsername, masterHash, 'MASTER');
+      console.log('✅ Default Master Admin created in SQLite -> [admin : admin123]');
+    } else if (!bcrypt.compareSync(masterPassword, existingMaster.password)) {
+      db.prepare('UPDATE users SET password = ? WHERE id = ?').run(masterHash, existingMaster.id);
+      console.log('✅ Default Master Admin password updated in SQLite -> [admin : admin123]');
+    }
+  }
+}
+
 if (isSupabaseEnabled) {
   console.log('🔗 Supabase configured. Using PostgreSQL database.');
   supabase = createClient(supabaseUrl!, supabaseKey!);
+  ensureMasterAdmin();
 } else {
   console.log('⚠️ Supabase keys missing. Falling back to local SQLite.');
   db = new Database('platform.db');
@@ -62,12 +117,7 @@ if (isSupabaseEnabled) {
     );
   `);
 
-  const existingMaster = db.prepare('SELECT id FROM users WHERE role = ?').get('MASTER');
-  if (!existingMaster) {
-    const masterHash = bcrypt.hashSync('admin123', 10);
-    db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run('admin', masterHash, 'MASTER');
-    console.log('Default Master Admin created -> [admin : admin123]');
-  }
+  ensureMasterAdmin();
 }
 
 // Authentication Middleware
@@ -104,22 +154,34 @@ const requireRole = (role: string) => {
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
+  console.log(`🔑 Login attempt for: ${username}`);
+  
   let user;
 
-  if (isSupabaseEnabled) {
-    const { data } = await supabase.from('app_users').select('*').eq('username', username).single();
-    if (data) {
-      user = { id: data.id, username: data.username, password: data.password_hash, role: data.role };
+  try {
+    if (isSupabaseEnabled) {
+      const { data, error } = await supabase.from('app_users').select('*').eq('username', username).maybeSingle();
+      if (error) {
+        console.error('❌ Supabase login query error:', error.message);
+      }
+      if (data) {
+        user = { id: data.id, username: data.username, password: data.password_hash, role: data.role };
+      }
+    } else {
+      user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
     }
-  } else {
-    user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
-  }
-  
-  if (user && bcrypt.compareSync(password, user.password)) {
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
-    res.json({ token, role: user.role });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+    
+    if (user && bcrypt.compareSync(password, user.password)) {
+      console.log(`✅ Login successful for: ${username} (${user.role})`);
+      const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
+      res.json({ token, role: user.role });
+    } else {
+      console.log(`❌ Login failed for: ${username} - ${!user ? 'User not found' : 'Invalid password'}`);
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  } catch (err: any) {
+    console.error('❌ Login error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
