@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Mail, GraduationCap, ArrowLeft } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 export default function UserAuth() {
   const [error, setError] = useState('');
@@ -10,36 +9,30 @@ export default function UserAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!supabase) return;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        localStorage.setItem('token', session.access_token);
-        localStorage.setItem('supabase_session', 'true');
+    const handleOAuthMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        const { token } = event.data;
+        localStorage.setItem('token', token);
         navigate('/');
       }
-    });
-
-    return () => subscription?.unsubscribe();
+    };
+    window.addEventListener('message', handleOAuthMessage);
+    return () => window.removeEventListener('message', handleOAuthMessage);
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
-    if (!supabase) {
-      setError('Connection system is not ready. Please try again later.');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/signin'
-        }
-      });
-      if (error) throw error;
+      const res = await fetch('/api/auth/google/url');
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.open(data.url, 'google_login_popup', 'width=500,height=600');
+      } else {
+        setError(data.error || 'Failed to initialize Google login');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to start login process');
+      setError('Connection error. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };

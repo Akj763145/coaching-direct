@@ -8,32 +8,26 @@ import UserAuth from './pages/UserAuth';
 import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
 import Chatbot from './components/Chatbot';
-import { supabase } from './lib/supabase';
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<{ username: string; role: string } | null>(null);
 
   useEffect(() => {
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-      });
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-      });
-
-      return () => subscription.unsubscribe();
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({ username: payload.username, role: payload.role });
+      } catch (e) {
+        console.error('Invalid token', e);
+        localStorage.removeItem('token');
+      }
     }
   }, []);
 
-  const handleLogout = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+  const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('supabase_session');
-    window.location.reload();
+    window.location.href = '/';
   };
 
   return (
@@ -49,11 +43,11 @@ export default function App() {
             </a>
             <nav className="flex items-center gap-3 md:gap-6">
               <a href="/" className="text-sm font-medium text-apple-text-muted hover:text-apple-text transition-colors hidden md:block">Explore</a>
-              {session ? (
+              {user ? (
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="md:flex hidden items-center gap-1.5 px-2.5 py-1 bg-apple-blue/5 border border-apple-blue/10 rounded-full">
                     <User className="w-3.5 h-3.5 text-apple-blue" />
-                    <span className="text-[12px] font-medium text-apple-blue truncate max-w-[100px]">{session.user.email?.split('@')[0]}</span>
+                    <span className="text-[12px] font-medium text-apple-blue truncate max-w-[100px]">{user.username?.split('@')[0]}</span>
                   </div>
                   <button 
                     onClick={handleLogout}
