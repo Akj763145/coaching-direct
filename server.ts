@@ -154,13 +154,16 @@ const requireRole = (role: string) => {
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  console.log(`🔑 Login attempt for: ${username}`);
+  const cleanUsername = String(username || '').trim().toLowerCase();
+  const cleanPassword = String(password || '').trim();
+
+  console.log(`🔑 Login attempt for: ${cleanUsername}`);
   
   let user;
 
   try {
     if (isSupabaseEnabled) {
-      const { data, error } = await supabase.from('app_users').select('*').eq('username', username).maybeSingle();
+      const { data, error } = await supabase.from('app_users').select('*').eq('username', cleanUsername).maybeSingle();
       if (error) {
         console.error('❌ Supabase login query error:', error.message);
       }
@@ -168,15 +171,15 @@ app.post('/api/login', async (req, res) => {
         user = { id: data.id, username: data.username, password: data.password_hash, role: data.role };
       }
     } else {
-      user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
+      user = db.prepare('SELECT * FROM users WHERE username = ?').get(cleanUsername) as any;
     }
     
-    if (user && bcrypt.compareSync(password, user.password)) {
-      console.log(`✅ Login successful for: ${username} (${user.role})`);
+    if (user && bcrypt.compareSync(cleanPassword, user.password)) {
+      console.log(`✅ Login successful for: ${cleanUsername} (${user.role})`);
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
       res.json({ token, role: user.role });
     } else {
-      console.log(`❌ Login failed for: ${username} - ${!user ? 'User not found' : 'Invalid password'}`);
+      console.log(`❌ Login failed for: ${cleanUsername} - ${!user ? 'User not found' : 'Invalid password'}`);
       res.status(401).json({ error: 'Invalid credentials' });
     }
   } catch (err: any) {
@@ -204,22 +207,39 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
   if (!name) return res.status(400).json({ error: 'Institute name is required' });
 
   const uniqueId = Math.floor(1000 + Math.random() * 9000);
-  const username = `${name.toLowerCase().replace(/\s+/g, '')}${uniqueId}`;
+  const username = `${name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}${uniqueId}`;
   const password = Math.random().toString(36).slice(-8);
   const hash = bcrypt.hashSync(password, 10);
 
   if (isSupabaseEnabled) {
-    // 1. Create sub-admin
-    const { data: userData, error: userError } = await supabase.from('app_users')
-      .insert({ username, password_hash: hash, role: 'SUB_ADMIN' }).select().single();
-    if (userError) return res.status(500).json({ error: userError.message });
-    
-    // 2. Create institute
-    const { data: instData, error: instError } = await supabase.from('institutes')
-      .insert({ user_id: userData.id, name, logo: logo || '' }).select().single();
-    if (instError) return res.status(500).json({ error: instError.message });
+    try {
+      // 1. Create sub-admin
+      const { data: userData, error: userError } = await supabase.from('app_users')
+        .insert({ username, password_hash: hash, role: 'SUB_ADMIN' }).select().maybeSingle();
+      
+      if (userError) {
+        console.error('❌ Supabase creation error:', userError);
+        return res.status(500).json({ error: userError.message });
+      }
+      
+      if (!userData) {
+        return res.status(500).json({ error: 'Failed to create user' });
+      }
+      
+      // 2. Create institute
+      const { data: instData, error: instError } = await supabase.from('institutes')
+        .insert({ user_id: userData.id, name, logo: logo || '' }).select().maybeSingle();
+      
+      if (instError) {
+        console.error('❌ Supabase institute creation error:', instError);
+        return res.status(500).json({ error: instError.message });
+      }
 
-    res.json({ message: 'Institute generated successfully', credentials: { id: instData.id, username, password } });
+      res.json({ message: 'Institute generated successfully', credentials: { id: instData.id, username, password } });
+    } catch (err: any) {
+      console.error('❌ System error during institute creation:', err);
+      res.status(500).json({ error: err.message });
+    }
   } else {
     const tx = db.transaction(() => {
       const userRes = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run(username, hash, 'SUB_ADMIN');
