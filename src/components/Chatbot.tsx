@@ -45,6 +45,7 @@ export default function Chatbot() {
 
     try {
       const { GoogleGenAI } = await import('@google/genai');
+      // In AI Studio, process.env.GEMINI_API_KEY is typically available at runtime in the preview
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       let currentInstitutes = institutes;
@@ -78,14 +79,18 @@ Be friendly, concise, and professional. Recommend specific institutes and batche
         }
       });
 
-      if (response.text) {
+      if (response && response.text) {
         setMessages([...newMessages, { role: 'model', text: response.text }]);
       } else {
         setMessages([...newMessages, { role: 'model', text: 'Sorry, I returned an empty response.' }]);
       }
     } catch (err: any) {
-      console.error(err);
-      setMessages([...newMessages, { role: 'model', text: `Sorry, I encountered an error: ${err.message}` }]);
+      console.error('Gemini Error:', err);
+      let errorMsg = err.message || 'Unknown error occurred';
+      if (errorMsg.includes('API key not valid')) {
+        errorMsg = 'The AI model requires a valid API key. Please check your environment settings.';
+      }
+      setMessages([...newMessages, { role: 'model', text: `Sorry, I encountered an error: ${errorMsg}` }]);
     } finally {
       setIsLoading(false);
       scrollToBottom();

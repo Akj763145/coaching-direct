@@ -66,7 +66,9 @@ export function DetailSkeleton() {
         <div className="md:col-span-2 space-y-6">
           <Skeleton className="h-8 w-48" />
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-[24px]" />
+            <div key={i}>
+              <Skeleton className="h-48 w-full rounded-[24px]" />
+            </div>
           ))}
         </div>
         <div className="space-y-6">
