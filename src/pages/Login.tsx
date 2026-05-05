@@ -22,7 +22,6 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         if (data.role === 'MASTER') navigate('/master');
         else if (data.role === 'SUB_ADMIN') navigate('/admin');
-        else navigate('/');
       } else {
         setError(data.error || 'Login failed');
       }
@@ -80,9 +79,9 @@ export default function Login() {
           </button>
         </form>
         
-        <div className="mt-10 pt-8 border-t border-apple-border/30">
+        <div className="mt-8 pt-6 border-t border-apple-border/30">
           <p className="text-[13px] text-apple-text-muted text-center leading-relaxed">
-            Restricted access. This portal is for authorized personnel only.
+            First time? Master login is <br/><code className="bg-apple-gray text-apple-text font-mono text-[12px] px-2 py-0.5 rounded-md border border-apple-border/40">admin</code> / <code className="bg-apple-gray text-apple-text font-mono text-[12px] px-2 py-0.5 rounded-md border border-apple-border/40">admin123</code>
           </p>
         </div>
       </motion.div>
