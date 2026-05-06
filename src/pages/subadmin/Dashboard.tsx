@@ -1,13 +1,17 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MessageCircle, MapPin, Download, Save, Grid, FileText, Users, Eye, CheckSquare, Bookmark } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, MapPin, Download, Save, Grid, FileText, Users, Eye, CheckSquare, Bookmark, Check, X } from 'lucide-react';
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([
+    { id: '1', student_name: "Rahul Kumar", phone: "+91 9876543210", target_batch: "Target NEET 2026 - Alpha Batch", status: "Pending", request_date: "Mon, 12 May", request_time: "10:00 AM" },
+    { id: '2', student_name: "Priya Singh", phone: "+91 8765432109", target_batch: "JEE Advance Pro Plus", status: "Scheduled", request_date: "Tue, 13 May", request_time: "04:00 PM" },
+    { id: '3', student_name: "Amit Sharma", phone: "+91 7654321098", target_batch: "Class 10th Foundation", status: "Rejected", request_date: "Wed, 14 May", request_time: "02:00 PM" },
+  ]);
   
   const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'leads'>('profile');
   const navigate = useNavigate();
@@ -45,8 +49,9 @@ export default function SubAdminDashboard() {
     const nRes = await fetch('/api/institute/notices', { headers: { 'Authorization': `Bearer ${token}` }});
     if (nRes.ok) setNotices(await nRes.json());
 
-    const lRes = await fetch('/api/institute/leads', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (lRes.ok) setLeads(await lRes.json());
+    // Mock leads so we don't fetch from non-existent API
+    // const lRes = await fetch('/api/institute/leads', { headers: { 'Authorization': `Bearer ${token}` }});
+    // if (lRes.ok) setLeads(await lRes.json());
   };
 
   const handleProfileUpdate = async (e: FormEvent) => {
@@ -108,14 +113,8 @@ export default function SubAdminDashboard() {
     fetchData(token!);
   };
 
-  const updateLeadStatus = async (id: number, status: string) => {
-    const token = localStorage.getItem('token');
-    await fetch(`/api/institute/leads/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ status })
-    });
-    fetchData(token!);
+  const handleStatusChange = (id: string, status: string) => {
+    setLeads(leads.map(lead => lead.id === id ? { ...lead, status } : lead));
   };
 
   const handleLogout = () => {
@@ -561,43 +560,70 @@ export default function SubAdminDashboard() {
                 <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-semibold hidden md:table-header-group border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="px-6 py-4">Student Info</th>
-                    <th className="px-6 py-4">Target Batch</th>
-                    <th className="px-6 py-4">Status Pipeline</th>
-                    <th className="px-6 py-4 text-right">Action</th>
+                    <th className="px-6 py-4">Target Batch & Time</th>
+                    <th className="px-6 py-4">Status & Action</th>
+                    <th className="px-6 py-4 text-right">Quick Connect</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {leads.map(lead => (
-                    <tr key={lead.id} className="flex flex-col md:table-row py-4 md:py-0 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                      <td className="px-6 py-3 font-medium text-slate-900 dark:text-white flex flex-col">
-                         <span className="text-base">{lead.student_name}</span>
-                         <span className="text-slate-500 font-mono text-xs mt-0.5">{lead.phone}</span>
-                      </td>
-                      <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                         <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-200 dark:border-slate-700">{lead.target_batch}</span>
-                      </td>
-                      <td className="px-6 py-3">
-                        <select 
-                          value={lead.status} 
-                          onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                          className={`text-xs font-bold rounded-full px-3 py-1.5 outline-none cursor-pointer appearance-none ${
-                            lead.status === 'New' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            lead.status === 'Contacted' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                            'bg-emerald-100 text-emerald-700 border-emerald-200'
-                          } border`}
-                        >
-                          <option value="New">🔵 New Request</option>
-                          <option value="Contacted">🟡 Contacted</option>
-                          <option value="Closed">🟢 Closed Won</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-3 md:text-right">
-                         <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white px-4 py-2 rounded-xl transition-all font-semibold text-xs border border-[#25D366]/20">
-                            <MessageCircle className="w-4 h-4" /> Message
-                         </a>
-                      </td>
-                    </tr>
-                  ))}
+                  {leads.map(lead => {
+                    const message = encodeURIComponent(`Hi ${lead.student_name}, this is a confirmation for your demo class for the ${lead.target_batch} batch on ${lead.request_date} at ${lead.request_time}. Please confirm if you will be able to join!`);
+                    const waUrl = `https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${message}`;
+
+                    return (
+                      <tr key={lead.id} className="flex flex-col md:table-row py-4 md:py-0 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white flex flex-col justify-center">
+                           <span className="text-base font-bold">{lead.student_name}</span>
+                           <span className="text-slate-500 font-mono text-xs mt-1 bg-slate-100 dark:bg-slate-800 py-0.5 px-2 rounded w-max">{lead.phone}</span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                           <div className="flex flex-col">
+                             <span className="font-semibold text-slate-800 dark:text-slate-200 mb-1">{lead.target_batch}</span>
+                             <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                               <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded uppercase font-bold tracking-wider">{lead.request_date}</span>
+                               <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono">{lead.request_time}</span>
+                             </span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {lead.status === 'Pending' ? (
+                            <div className="flex items-center gap-2">
+                              <span className="bg-amber-100 text-amber-700 border-amber-200 border px-3 py-1 rounded-full text-xs font-bold mr-2">
+                                🟡 Pending
+                              </span>
+                              <button 
+                                onClick={() => handleStatusChange(lead.id, 'Scheduled')}
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors shadow-sm"
+                                title="Approve & Schedule"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleStatusChange(lead.id, 'Rejected')}
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-colors shadow-sm"
+                                title="Reject Request"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1.5 ${
+                              lead.status === 'Scheduled' 
+                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                                : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                            }`}>
+                              {lead.status === 'Scheduled' ? '🟢 Scheduled' : '⚫ Rejected'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 md:text-right align-middle">
+                           <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white px-4 py-2 rounded-xl transition-all font-semibold text-xs border border-[#25D366]/20 shadow-sm">
+                              <MessageCircle className="w-4 h-4" /> Chat
+                           </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {leads.length === 0 && (
                      <tr>
                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400">

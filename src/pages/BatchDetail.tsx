@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+import BookingModal from '../components/BookingModal';
 
 const formatAcronyms = (text: string) => {
   if (!text) return '';
@@ -362,77 +363,12 @@ export default function BatchDetail() {
         </button>
       </div>
 
-      <AnimatePresence>
-        {isDemoModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setIsDemoModalOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[24px] p-6 shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800"
-            >
-              <button 
-                onClick={() => setIsDemoModalOpen(false)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              {demoStatus === 'success' ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckSquare className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Request Sent!</h3>
-                  <p className="text-slate-500 dark:text-slate-400">The institute will contact you shortly to schedule your demo.</p>
-                </div>
-              ) : (
-                <>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Book Free Demo</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Enter your details to request a demo call.</p>
-                  
-                  <form onSubmit={submitDemoForm} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Your Full Name</label>
-                      <input 
-                        required 
-                        type="text" 
-                        value={demoForm.name} 
-                        onChange={e => setDemoForm({...demoForm, name: e.target.value})} 
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" 
-                        placeholder="John Doe" 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">WhatsApp / Phone Number</label>
-                      <input 
-                        required 
-                        type="tel" 
-                        value={demoForm.phone} 
-                        onChange={e => setDemoForm({...demoForm, phone: e.target.value})} 
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" 
-                        placeholder="+91 98765 43210" 
-                      />
-                    </div>
-                    <button 
-                      type="submit" 
-                      disabled={demoStatus === 'submitting'}
-                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md disabled:opacity-70 disabled:cursor-not-allowed mt-2"
-                    >
-                      {demoStatus === 'submitting' ? 'Submitting...' : 'Request Demo'}
-                    </button>
-                  </form>
-                </>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <BookingModal 
+        isOpen={isDemoModalOpen} 
+        onClose={() => setIsDemoModalOpen(false)} 
+        instituteName={batch.institute_name || "Institute"} 
+        batchName={batch.batch_name || "Batch details"} 
+      />
     </div>
   );
 }

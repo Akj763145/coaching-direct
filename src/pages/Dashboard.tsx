@@ -65,6 +65,25 @@ export default function Dashboard() {
   const [compareList, setCompareList] = React.useState<string[]>([]);
   const [savedInstitutes, setSavedInstitutes] = React.useState(MockSavedInstitutes);
 
+  // Review State
+  const [reviewingId, setReviewingId] = React.useState<number | null>(null);
+  const [rating, setRating] = React.useState(0);
+  const [hoverRating, setHoverRating] = React.useState(0);
+  const [reviewText, setReviewText] = React.useState('');
+  const [submittedReviews, setSubmittedReviews] = React.useState<Record<number, { rating: number; text: string }>>({});
+
+  const handleOpenReview = (id: number) => {
+    setReviewingId(id);
+    setRating(0);
+    setHoverRating(0);
+    setReviewText('');
+  };
+
+  const handleSubmitReview = (id: number) => {
+    setSubmittedReviews(prev => ({ ...prev, [id]: { rating, text: reviewText } }));
+    setReviewingId(null);
+  };
+
   const toggleCompare = (id: string) => {
     setCompareList(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -159,7 +178,8 @@ export default function Dashboard() {
               </div>
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {MockDemos.map((demo) => (
-                  <motion.div key={demo.id} variants={itemVariants} className="p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                  <React.Fragment key={demo.id}>
+                  <motion.div variants={itemVariants} className="p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
                         <h3 className="font-semibold text-slate-900 dark:text-white text-base">{demo.institute}</h3>
@@ -184,13 +204,90 @@ export default function Dashboard() {
                           <Clock className="w-4 h-4" /> Reschedule
                         </button>
                       )}
-                      {demo.status === 'Completed' && (
-                        <button className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-                          <CheckCircle className="w-4 h-4" /> Rate Class
+                      {demo.status === 'Completed' && !submittedReviews[demo.id] && reviewingId !== demo.id && (
+                        <button 
+                          onClick={() => handleOpenReview(demo.id)}
+                          className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Star className="w-4 h-4" /> Leave a Review
                         </button>
+                      )}
+                      {demo.status === 'Completed' && submittedReviews[demo.id] && (
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-1 mb-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                className={`w-4 h-4 ${star <= submittedReviews[demo.id].rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} 
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-end gap-1">
+                            <CheckCircle className="w-3 h-3" /> Thank you!
+                          </span>
+                        </div>
                       )}
                     </div>
                   </motion.div>
+                  
+                  {/* Inline Review Component */}
+                  {reviewingId === demo.id && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="px-5 md:px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-800/10"
+                    >
+                      <div className="max-w-xl">
+                        <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">
+                          How was your experience?
+                        </label>
+                        <div className="flex items-center gap-2 mb-4">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setRating(star)}
+                              onMouseEnter={() => setHoverRating(star)}
+                              onMouseLeave={() => setHoverRating(0)}
+                              className="p-1 -ml-1 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full"
+                            >
+                              <Star 
+                                className={`w-7 h-7 ${(hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} 
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">
+                          Write your review <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <textarea
+                          placeholder="What did you like or dislike?"
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none min-h-[100px] mb-4"
+                        />
+                        
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleSubmitReview(demo.id)}
+                            disabled={rating === 0}
+                            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-blue-900/50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold shadow-sm transition-all"
+                          >
+                            Submit Review
+                          </button>
+                          <button
+                            onClick={() => setReviewingId(null)}
+                            className="px-5 py-2.5 bg-transparent hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl text-sm font-semibold transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </React.Fragment>
                 ))}
               </div>
             </motion.section>

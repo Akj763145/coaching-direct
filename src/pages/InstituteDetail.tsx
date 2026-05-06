@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, MessageCircle, X, Star, Bell, Download, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+import BookingModal from '../components/BookingModal';
 
 const formatAcronyms = (text: string) => {
   if (!text) return '';
@@ -473,72 +474,12 @@ export default function InstituteDetail() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden"
-            >
-              <div className="flex items-center justify-between p-5 md:p-6 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xl font-semibold text-slate-800 dark:text-white">Book Free Demo</h3>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-5 md:p-6 space-y-4">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                  Interested in <span className="font-semibold text-slate-700 dark:text-slate-200">{formatAcronyms(selectedBatch?.batch_name || '')}</span>? Leave your details below and the institute will contact you soon.
-                </p>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="e.g. John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 min-h-[44px]"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone Number</label>
-                    <input
-                      required
-                      type="tel"
-                      placeholder="e.g. 9876543210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 min-h-[44px]"
-                    />
-                  </div>
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] rounded-xl font-medium transition-colors cursor-pointer"
-                    >
-                      Submit Request
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <BookingModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        instituteName={institute?.name || "Institute"} 
+        batchName={selectedBatch?.batch_name || "General Inquiry"} 
+      />
     </motion.main>
   );
 }
