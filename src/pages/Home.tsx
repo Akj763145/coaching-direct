@@ -1,9 +1,33 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 import { HomeSkeleton } from '../components/Skeleton';
+import { supabase } from '../lib/supabase';
+
+interface Batch {
+  id: string;
+  batch_name: string;
+  subject: string;
+  fee_value?: number;
+  medium?: string;
+  fee_structure?: string;
+}
+
+interface Institute {
+  id: string;
+  name: string;
+  logo?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  location?: string;
+  rating?: number;
+  reviewCount?: number;
+  batches?: Batch[];
+  isActive?: boolean;
+}
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371; // Radius of the earth in km
@@ -43,7 +67,8 @@ export default function Home() {
     }, { replace: true });
   };
   const [loading, setLoading] = useState(true);
-  
+  const [error, setError] = useState<string | null>(null);
+
   // Filter states
   const [selectedMediums, setSelectedMediums] = useState<string[]>([]);
   const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
@@ -198,21 +223,36 @@ export default function Home() {
 
   const fetchInstitutes = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/public/institutes');
-      if (res.ok) {
-        const data = await res.json();
+      const { data, error: supaError } = await supabase
+        .from('institutes')
+        .select(`
+          *,
+          batches:batches(*)
+        `)
+        .order('rating', { ascending: false });
+
+      if (supaError) {
+        throw new Error(supaError.message);
+      }
+
+      if (data) {
         // Enrich data with mock properties for filtering if they don't exist
         const enriched = data.map((inst: any) => ({
           ...inst,
+          reviewCount: inst.review_count || 0,
           batches: inst.batches?.map((b: any) => ({
             ...b,
             medium: b.medium || MEDIUMS[Math.floor(Math.random() * MEDIUMS.length)],
             fee_value: parseInt(b.fee_structure?.replace(/\D/g, '') || Math.floor(Math.random() * 8000 + 1000).toString())
-          }))
+          })) || []
         }));
-        setInstitutes(enriched);
+        setInstitutes(enriched as Institute[]);
       }
+    } catch (err: any) {
+      console.error(err);
+      setError("Unable to load institutes right now. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -572,6 +612,15 @@ export default function Home() {
           
           {loading ? (
             <HomeSkeleton />
+          ) : error ? (
+             <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Error Loading Data</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-md">{error}</p>
+                <button onClick={fetchInstitutes} className="mt-6 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors">
+                  Try Again
+                </button>
+             </div>
           ) : filtered.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">

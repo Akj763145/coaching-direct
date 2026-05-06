@@ -7,11 +7,7 @@ export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([
-    { id: '1', student_name: "Rahul Kumar", phone: "+91 9876543210", target_batch: "Target NEET 2026 - Alpha Batch", status: "Pending", request_date: "Mon, 12 May", request_time: "10:00 AM" },
-    { id: '2', student_name: "Priya Singh", phone: "+91 8765432109", target_batch: "JEE Advance Pro Plus", status: "Scheduled", request_date: "Tue, 13 May", request_time: "04:00 PM" },
-    { id: '3', student_name: "Amit Sharma", phone: "+91 7654321098", target_batch: "Class 10th Foundation", status: "Rejected", request_date: "Wed, 14 May", request_time: "02:00 PM" },
-  ]);
+  const [leads, setLeads] = useState<any[]>([]);
   
   const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'leads'>('profile');
   const navigate = useNavigate();

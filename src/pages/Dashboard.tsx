@@ -7,59 +7,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const MockDemos = [
-  {
-    id: 1,
-    institute: 'Future Will Academy',
-    course: 'Science Foundation',
-    date: 'May 12, 2026',
-    time: '10:00 AM',
-    status: 'Pending',
-  },
-  {
-    id: 2,
-    institute: 'Rajesh Classes',
-    course: 'Math Mastery',
-    date: 'May 10, 2026',
-    time: '04:00 PM',
-    status: 'Scheduled',
-  },
-  {
-    id: 3,
-    institute: 'Aim Institute',
-    course: 'Chemistry Basics',
-    date: 'May 01, 2026',
-    time: '02:00 PM',
-    status: 'Completed',
-  }
-];
+const MockDemos: any[] = [];
 
-const MockSavedInstitutes = [
-  {
-    id: 'fwa-1',
-    name: 'Future Will Academy',
-    logo: 'https://api.dicebear.com/7.x/initials/svg?seed=FW&backgroundColor=0ea5e9',
-    distance: '2.5 km',
-    rating: 4.8,
-    reviewCount: 124,
-  },
-  {
-    id: 'sg-2',
-    name: 'Saraswati Gyan Mandir',
-    logo: 'https://api.dicebear.com/7.x/initials/svg?seed=SG&backgroundColor=f59e0b',
-    distance: '3.1 km',
-    rating: 4.6,
-    reviewCount: 89,
-  },
-  {
-    id: 'vk-3',
-    name: 'Vidya Kendra',
-    logo: 'https://api.dicebear.com/7.x/initials/svg?seed=VK&backgroundColor=10b981',
-    distance: '1.8 km',
-    rating: 4.9,
-    reviewCount: 204,
-  }
-];
+const MockSavedInstitutes: any[] = [];
 
 export default function Dashboard() {
   const [compareList, setCompareList] = React.useState<string[]>([]);
