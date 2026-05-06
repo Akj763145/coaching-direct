@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS public.institutes (
     email TEXT,
     website TEXT,
     demo_video_url TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT unique_user_institute UNIQUE (user_id)
 );

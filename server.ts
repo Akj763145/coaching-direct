@@ -101,6 +101,8 @@ if (isSupabaseEnabled) {
       website TEXT,
       demo_video_url TEXT,
       whatsapp_number TEXT,
+      latitude REAL,
+      longitude REAL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS batches (
@@ -153,6 +155,8 @@ if (isSupabaseEnabled) {
   try { db.exec('ALTER TABLE batches ADD COLUMN syllabus_pdf TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE batches ADD COLUMN teacher_bio TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE batches ADD COLUMN curriculum TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN latitude REAL'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN longitude REAL'); } catch(e) {}
 
   ensureMasterAdmin();
 }
@@ -305,11 +309,11 @@ app.get('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number } = req.body;
+  const { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude } = req.body;
   
   if (isSupabaseEnabled) {
     const { error } = await supabase.from('institutes')
-      .update({ name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number })
+      .update({ name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude })
       .eq('user_id', userId);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
@@ -317,9 +321,9 @@ app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
     try {
       db.prepare(`
         UPDATE institutes SET 
-          name = ?, logo = ?, address = ?, location = ?, phone = ?, email = ?, website = ?, demo_video_url = ?, whatsapp_number = ?
+          name = ?, logo = ?, address = ?, location = ?, phone = ?, email = ?, website = ?, demo_video_url = ?, whatsapp_number = ?, latitude = ?, longitude = ?
         WHERE user_id = ?
-      `).run(name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, userId);
+      `).run(name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude, userId);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

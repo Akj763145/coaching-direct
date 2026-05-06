@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MessageCircle, MapPin, Download, Save, Grid, FileText, Users, Eye } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, MapPin, Download, Save, Grid, FileText, Users, Eye, CheckSquare, Bookmark } from 'lucide-react';
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -149,7 +149,7 @@ export default function SubAdminDashboard() {
           {[
             { id: 'profile', label: 'Profile Settings', icon: Grid },
             { id: 'batches', label: 'Advanced Batch Builder', icon: FileText },
-            { id: 'notices', label: 'Notice Board', icon: BookmarkIcon },
+            { id: 'notices', label: 'Notice Board', icon: Bookmark },
             { id: 'leads', label: 'Demo Requests', icon: Users }
           ].map(tab => {
             const Icon = tab.icon;
@@ -199,9 +199,101 @@ export default function SubAdminDashboard() {
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Verified WhatsApp Number</label>
                   <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({...profile, whatsapp_number: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 9876543210" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location Data (Maps URL)</label>
-                  <input type="text" value={profile.location || ''} onChange={e => setProfile({...profile, location: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="Google Maps Share Link or Coordinates" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-500" />
+                      Location (Maps URL or Address)
+                    </label>
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if ("geolocation" in navigator) {
+                            navigator.geolocation.getCurrentPosition((pos) => {
+                              setProfile({
+                                ...profile,
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                              });
+                              alert("Location detected! Don't forget to click 'Save Profile' below.");
+                            }, (err) => {
+                              alert("Could not detect location. Please ensure location permissions are granted.");
+                            });
+                          }
+                        }}
+                        className="text-[10px] font-bold text-slate-500 hover:text-blue-600 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md transition-colors"
+                      >
+                        Auto-detect Here
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const loc = profile.location || '';
+                          const extracted = (function(str: string) {
+                            if (!str) return null;
+                            // More robust patterns handling integer and decimal variants
+                            const patterns = [
+                              /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+                              /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+                              /\/search\/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+                              /\/place\/[^/]+\/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+                              /(-?\d+(?:\.\d+)?)\s*[,]\s*(-?\d+(?:\.\d+)?)/
+                            ];
+                            for (const p of patterns) {
+                              const m = str.match(p);
+                              if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+                            }
+                            return null;
+                          })(loc);
+
+                          if (extracted) {
+                            setProfile({
+                              ...profile, 
+                              latitude: extracted.lat, 
+                              longitude: extracted.lng 
+                            });
+                            alert("Coordinates parsed successfully! Please click 'Save Profile' to apply changes.");
+                          } else {
+                            alert("Could not parse coordinates. Try pasting a full Google Maps URL or enter Decimal Degrees (e.g. 26.65, 84.89)");
+                          }
+                        }}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md transition-colors"
+                      >
+                        Parse from URL
+                      </button>
+                    </div>
+                  </div>
+                  <input 
+                    type="text" 
+                    value={profile.location || ''} 
+                    onChange={e => setProfile({...profile, location: e.target.value})} 
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" 
+                    placeholder="Paste Google Maps URL here (e.g. from Share button)" 
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Hint: Copy the full URL from your browser or the Google Maps app's "Share" button, then click "Parse from URL" above.</p>
+                </div>
+
+                {/* Explicit Coordinate Fields */}
+                <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Map Coordinates</span>
+                    {(profile.latitude && profile.longitude) && (
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
+                        <CheckSquare className="w-3 h-3" /> Ready
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Latitude</label>
+                      <input step="any" type="number" value={profile.latitude || ''} onChange={e => setProfile({...profile, latitude: parseFloat(e.target.value)})} className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="26.6575" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Longitude</label>
+                      <input step="any" type="number" value={profile.longitude || ''} onChange={e => setProfile({...profile, longitude: parseFloat(e.target.value)})} className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="84.8989" />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -523,10 +615,4 @@ export default function SubAdminDashboard() {
   );
 }
 
-function BookmarkIcon(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-    </svg>
-  );
-}
+

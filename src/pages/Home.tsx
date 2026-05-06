@@ -49,9 +49,29 @@ export default function Home() {
   const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
   const [maxFee, setMaxFee] = useState<number>(50000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  const enrichedInstitutes = React.useMemo(() => {
+    return institutes.map(inst => {
+      if (!userLocation) return inst;
+      
+      // Use DB coordinates if they are valid numbers and not 0 (unlikely for specific institutes)
+      const hasValidCoords = typeof inst.latitude === 'number' && typeof inst.longitude === 'number' && 
+                            !isNaN(inst.latitude) && !isNaN(inst.longitude) &&
+                            (inst.latitude !== 0 || inst.longitude !== 0);
+
+      const instLat = hasValidCoords ? inst.latitude : 26.6575 + (Math.sin(inst.id.length) * 0.02);
+      const instLng = hasValidCoords ? inst.longitude : 84.8989 + (Math.cos(inst.id.length) * 0.02);
+      
+      const dist = calculateDistance(userLocation.lat, userLocation.lng, instLat, instLng);
+      return {
+        ...inst,
+        distance: dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`,
+        isMockDistance: !hasValidCoords
+      };
+    });
+  }, [institutes, userLocation]);
 
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -129,13 +149,6 @@ export default function Home() {
     };
   }, [institutes]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning! Ready to find the perfect batch?';
-    if (hour < 18) return 'Good Afternoon! Discover your potential today.';
-    return 'Good Evening! Planning for a bright tomorrow?';
-  };
-
   // Compare states
   const [compareList, setCompareList] = useState<any[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -161,25 +174,6 @@ export default function Home() {
     }
   }, []);
 
-  // Update distances when userLocation is available
-  useEffect(() => {
-    if (userLocation && institutes.length > 0) {
-      setInstitutes(prev => prev.map(inst => {
-        // Stable mock coordinates for data consistency if not in DB
-        const instLat = inst.latitude || 26.6575 + (Math.sin(inst.id.length) * 0.02);
-        const instLng = inst.longitude || 84.8989 + (Math.cos(inst.id.length) * 0.02);
-        
-        const dist = calculateDistance(userLocation.lat, userLocation.lng, instLat, instLng);
-        return {
-          ...inst,
-          latitude: instLat,
-          longitude: instLng,
-          distance: dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`
-        };
-      }));
-    }
-  }, [userLocation]);
-
   const fetchInstitutes = async () => {
     setLoading(true);
     try {
@@ -202,37 +196,13 @@ export default function Home() {
     }
   };
 
-  const handleFindNearMe = () => {
-    setIsLocating(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setIsLocating(false);
-          // Mock distances for institutes
-          setInstitutes(prev => prev.map(inst => ({
-            ...inst,
-            distance: (Math.random() * 5 + 0.5).toFixed(1) + ' km'
-          })));
-        },
-        (error) => {
-          console.error(error);
-          setIsLocating(false);
-          alert('Could not get your location.');
-        }
-      );
-    } else {
-      setIsLocating(false);
-      alert('Geolocation is not supported by your browser.');
-    }
-  };
-
   const getLocationText = (inst: any) => {
     if (inst.address) return inst.address;
     if (inst.location && !inst.location.includes('<iframe')) return inst.location;
     return 'Location not specified';
   };
 
-  const filtered = institutes.filter(inst => {
+  const filtered = enrichedInstitutes.filter(inst => {
     const searchLower = search.toLowerCase();
     const instName = inst.name.toLowerCase();
     const hasBatchMatch = inst.batches?.some((b: any) => b.subject?.toLowerCase().includes(searchLower) || b.batch_name?.toLowerCase().includes(searchLower));
@@ -360,7 +330,7 @@ export default function Home() {
   return (
     <main className="w-full pb-32">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-32 pb-28 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
+      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-32 pb-12 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <motion.h1 
             initial={{ opacity: 0, y: -20 }}
@@ -374,14 +344,21 @@ export default function Home() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium"
           >
-            {getGreeting()}
+            {institutes.length > 0 ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                {institutes.length}+ Verified Institutes Available
+              </span>
+            ) : (
+              'Discover your potential with the best coaching centers today.'
+            )}
           </motion.p>
         </div>
 
         {/* Featured Institutes Carousel */}
-        <div className="mt-20 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
+        <div className="mt-12 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
           <div className="flex items-center justify-between">
              <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
                <Sparkles className="w-6 h-6 text-amber-500 fill-amber-500 animate-pulse" />
@@ -393,7 +370,7 @@ export default function Home() {
             ref={featuredScrollRef}
             className="flex overflow-x-auto scrollbar-hide gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0"
           >
-             {[...institutes.slice(0, 4), ...institutes.slice(0, 4), ...institutes.slice(0, 4)].map((inst, i) => (
+             {[...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4)].map((inst, i) => (
                <motion.a 
                  key={`featured-${inst.id}-${i}`}
                  href={`/institute/${inst.id}`}
@@ -422,9 +399,9 @@ export default function Home() {
                    </div>
                    <h4 className="font-bold text-slate-900 dark:text-white text-xl line-clamp-1 tracking-tight capitalize group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{formatAcronyms(inst.name)}</h4>
                    {inst.distance && (
-                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 mt-1">
-                       <Navigation2 className="w-3 h-3 fill-blue-600/20" />
-                       <span>{inst.distance} away</span>
+                     <div className={`flex items-center gap-1.5 text-[11px] font-bold mt-1 ${inst.isMockDistance ? 'text-slate-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                       <Navigation2 className={`w-3 h-3 ${inst.isMockDistance ? 'fill-slate-400/20' : 'fill-blue-600/20'}`} />
+                       <span>{inst.distance} away {inst.isMockDistance && '(est.)'}</span>
                      </div>
                    )}
                    <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -443,6 +420,7 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-20 space-y-6">
+        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Available Institutes</h3>
         {/* Quick Categories */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -579,9 +557,9 @@ export default function Home() {
                   </button>
 
                   {inst.distance && (
-                    <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-slate-700 dark:text-slate-300 text-[10px] font-semibold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1 z-20">
-                      <MapPin className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                      {inst.distance} away
+                    <div className={`absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 z-20 ${inst.isMockDistance ? 'text-slate-500 border border-slate-200 dark:border-slate-800' : 'text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50'}`}>
+                      <Navigation2 className={`w-3 h-3 ${inst.isMockDistance ? 'fill-slate-400/20' : 'fill-blue-600/20'}`} />
+                      {inst.distance} away {inst.isMockDistance && '(est.)'}
                     </div>
                   )}
                   {inst.logo ? (
