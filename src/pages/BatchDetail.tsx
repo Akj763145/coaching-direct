@@ -123,6 +123,7 @@ export default function BatchDetail() {
           institute_id: batch.institute_id,
           student_name: demoForm.name,
           phone: demoForm.phone,
+          batch_id: batch.id,
           target_batch: batch.batch_name
         })
       });

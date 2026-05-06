@@ -45,9 +45,8 @@ export default function SubAdminDashboard() {
     const nRes = await fetch('/api/institute/notices', { headers: { 'Authorization': `Bearer ${token}` }});
     if (nRes.ok) setNotices(await nRes.json());
 
-    // Mock leads so we don't fetch from non-existent API
-    // const lRes = await fetch('/api/institute/leads', { headers: { 'Authorization': `Bearer ${token}` }});
-    // if (lRes.ok) setLeads(await lRes.json());
+    const lRes = await fetch('/api/institute/leads', { headers: { 'Authorization': `Bearer ${token}` }});
+    if (lRes.ok) setLeads(await lRes.json());
   };
 
   const handleProfileUpdate = async (e: FormEvent) => {
@@ -109,8 +108,14 @@ export default function SubAdminDashboard() {
     fetchData(token!);
   };
 
-  const handleStatusChange = (id: string, status: string) => {
+  const handleStatusChange = async (id: string, status: string) => {
     setLeads(leads.map(lead => lead.id === id ? { ...lead, status } : lead));
+    const token = localStorage.getItem('token');
+    await fetch(`/api/institute/leads/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
   };
 
   const handleLogout = () => {

@@ -96,13 +96,33 @@ export default function InstituteDetail() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Lead submitted:', { name, phone, batchId: selectedBatch?.id, instituteId: institute?.id });
-    window.alert('Request sent to institute!');
-    setModalOpen(false);
-    setName('');
-    setPhone('');
+    try {
+      const res = await fetch('/api/public/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institute_id: institute.id,
+          student_name: name,
+          phone: phone,
+          batch_id: selectedBatch?.id,
+          target_batch: selectedBatch?.batch_name || 'General Inquiry'
+        })
+      });
+      
+      if (res.ok) {
+        window.alert('Request sent successfully! The institute will contact you soon.');
+        setModalOpen(false);
+        setName('');
+        setPhone('');
+      } else {
+        alert('Failed to send request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting lead:', error);
+      alert('Network error. Please check your connection.');
+    }
   };
 
   if (loading) return (

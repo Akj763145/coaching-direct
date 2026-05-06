@@ -312,9 +312,13 @@ app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
   const { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude } = req.body;
   
   if (isSupabaseEnabled) {
+    // Only update allowed fields to avoid metadata conflicts
+    const updateData: any = { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude };
+    
     const { error } = await supabase.from('institutes')
-      .update({ name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude })
+      .update(updateData)
       .eq('user_id', userId);
+    
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
   } else {
@@ -437,8 +441,23 @@ app.get('/api/institute/leads', authenticateToken, requireRole('SUB_ADMIN'), asy
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
     if (!inst) return res.status(404).json({ error: 'Institute not found' });
-    const { data: leads } = await supabase.from('leads').select('*').eq('institute_id', inst.id);
-    res.json(leads || []);
+    
+    // Simpler query for direct leads data
+    const { data: leads, error } = await supabase.from('demo_requests').select(`
+      *,
+      batches (
+        batch_name
+      )
+    `).eq('institute_id', inst.id).order('created_at', { ascending: false });
+    
+    if (error) return res.status(500).json({ error: error.message });
+
+    const formattedLeads = leads?.map((l: any) => ({
+      ...l,
+      target_batch: l.batches?.batch_name || l.target_batch || 'General Demo'
+    })) || [];
+    
+    res.json(formattedLeads);
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     if (!institute) return res.status(404).json({ error: 'Institute not found' });
@@ -450,9 +469,12 @@ app.put('/api/institute/leads/:id', authenticateToken, requireRole('SUB_ADMIN'),
   const userId = (req as any).user.id;
   const leadId = req.params.id;
   const { status } = req.body;
+  
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    await supabase.from('leads').update({ status }).eq('id', leadId).eq('institute_id', inst.id);
+    if (!inst) return res.status(404).json({ error: 'Institute not found' });
+    const { error } = await supabase.from('demo_requests').update({ status }).eq('id', leadId).eq('institute_id', inst.id);
+    if(error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
@@ -462,12 +484,18 @@ app.put('/api/institute/leads/:id', authenticateToken, requireRole('SUB_ADMIN'),
 });
 
 app.post('/api/public/leads', async (req, res) => {
-  const { institute_id, student_name, phone, target_batch } = req.body;
+  const { institute_id, student_name, phone, target_batch, batch_id } = req.body;
   if (!institute_id || !student_name || !phone) return res.status(400).json({ error: 'Missing required fields' });
 
   if (isSupabaseEnabled) {
-    const { error } = await supabase.from('leads').insert({
-      institute_id, student_name, phone, target_batch, status: 'New'
+    const { error } = await supabase.from('demo_requests').insert({
+      institute_id, 
+      student_name, 
+      phone, 
+      batch_id, 
+      status: 'Pending',
+      request_date: new Date().toISOString().split('T')[0],
+      request_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
     });
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
