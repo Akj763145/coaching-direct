@@ -138,13 +138,13 @@ export default function InstituteDetail() {
 
       <div className="px-4 md:px-8 w-full">
         {/* Header Profile */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-800 relative overflow-hidden transition-all duration-300">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 relative overflow-hidden transition-all duration-300 text-left">
         <div className="h-32 md:h-48 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative">
           <div className="absolute inset-0 bg-white/10 dark:bg-black/20 backdrop-blur-sm mix-blend-overlay"></div>
         </div>
 
-        <div className="px-6 md:px-10 pb-6 md:pb-10 pt-4 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative">
-          <div className="-mt-16 sm:-mt-20 md:-mt-24 relative z-10 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] md:rounded-[30px] shadow-md lg:shadow-lg flex-shrink-0 border border-slate-100 dark:border-slate-800">
+        <div className="px-6 md:px-10 pb-6 md:pb-10 pt-4 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative text-left">
+          <div className="ml-4 md:ml-8 -mt-16 sm:-mt-20 md:-mt-24 relative z-10 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] md:rounded-[30px] shadow-md lg:shadow-lg flex-shrink-0 border border-slate-300 dark:border-slate-500">
              {institute.logo ? (
               <motion.img layoutId={`logo-${institute.id}`} src={institute.logo} alt={institute.name} className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-[16px] md:rounded-[24px] object-contain bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 z-10 mix-blend-darken dark:mix-blend-screen" />
             ) : (
@@ -205,7 +205,7 @@ export default function InstituteDetail() {
         <div className="lg:col-span-8 flex flex-col gap-10">
           <section className={`lg:block ${activeTab === 'overview' ? 'block' : 'hidden'} space-y-6 lg:hidden`}>
              {/* Mobile Overview handled via sticky elements usually, but we keep an overview section if needed */}
-             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+             <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500">
                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">About Institute</h3>
                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                  Welcome to {institute.name}. We provide high quality coaching...
@@ -225,9 +225,9 @@ export default function InstituteDetail() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
                   key={batch.id} 
-                  className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm transition-all duration-300 overflow-hidden"
+                  className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500 transition-all duration-300 overflow-hidden"
                 >
-                  <div className="flex flex-col mb-5 relative">
+                  <div className="flex flex-col mb-3 relative">
                     {(() => {
                         const seatsLeft = (batch.id.toString().length % 15) || 5;
                         if (seatsLeft < 10) {
@@ -259,14 +259,14 @@ export default function InstituteDetail() {
                         ))}
                       </div>
                       
-                      <div className="flex items-center gap-3 mt-4">
+                      <div className="flex items-center gap-3 mt-2">
                         <TeacherAvatar src={batch.teacher_image} name={batch.teacher_name} />
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 break-words line-clamp-1 capitalize">{batch.teacher_name}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <div className="flex flex-col gap-1 text-[13px] md:text-[14px]">
                       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-medium"><Calendar className="w-3.5 h-3.5" /> Start</div> 
                       <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatDate(batch.start_date)}</span>
@@ -284,11 +284,11 @@ export default function InstituteDetail() {
                       <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatFee(batch.fee_structure)}</span>
                     </div>
                   </div>
-                  <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col">
-                    <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
                       <a
                         href={`/batch/${batch.id}`}
-                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full"
+                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full"
                       >
                         View Details
                       </a>
@@ -296,7 +296,7 @@ export default function InstituteDetail() {
                         href="/bbb.pdf"
                         download="bbb.pdf"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full"
+                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full"
                       >
                         <Download className="w-4 h-4" />
                         Syllabus
@@ -308,7 +308,7 @@ export default function InstituteDetail() {
                         setSelectedBatch(batch);
                         setModalOpen(true);
                       }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-6 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer shadow-sm shadow-blue-600/20"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer shadow-sm shadow-blue-600/20"
                     >
                       Book Free Demo
                     </button>
@@ -343,9 +343,9 @@ export default function InstituteDetail() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                  className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm"
+                  className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500"
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
                         {review.name.charAt(0)}
@@ -367,7 +367,7 @@ export default function InstituteDetail() {
 
         {/* Sticky Conversion Sidebar (Desktop & 'updates'/'overview' on Mobile) */}
         <div className={`lg:col-span-4 lg:sticky lg:top-28 lg:block flex-col gap-6 lg:h-fit ${activeTab === 'overview' || activeTab === 'updates' ? 'flex' : 'hidden'}`}>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm hidden lg:block overflow-hidden relative">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 px-4 py-3 hidden lg:block overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Connect with Us</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Have questions or want to try our classes? Get in touch instantly.</p>
@@ -402,7 +402,7 @@ export default function InstituteDetail() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl border-l-4 border-l-indigo-500 border-t border-b border-r border-slate-100 dark:border-slate-800 p-6 shadow-sm"
+            className="bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl border border-slate-300 dark:border-slate-500 border-l-4 border-l-indigo-500 px-4 py-3"
           >
             <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -425,7 +425,7 @@ export default function InstituteDetail() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 overflow-hidden hover:-translate-y-1 transition-all duration-300"
             >
               <div className="p-5 border-b border-gray-100 dark:border-slate-800 font-semibold text-slate-900 dark:text-white flex items-center gap-2.5">
                 <svg className="w-5 h-5 text-red-500 drop-shadow-sm shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
@@ -450,7 +450,7 @@ export default function InstituteDetail() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 px-4 py-3 hover:-translate-y-1 transition-all duration-300"
             >
                <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0"/> Location</h3>
                <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-5 leading-relaxed capitalize">

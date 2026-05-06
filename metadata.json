@@ -1,6 +1,6 @@
 {
   "name": "Coacher",
   "description": "A premium multi-tenant platform for students to explore coaching institutes and for institutes to manage their batches.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": []
 }

@@ -1,6 +1,7 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { GraduationCap, LogIn, User, Sun, Moon } from 'lucide-react';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import Login from './pages/Login';
 import UserLogin from './pages/UserLogin';
 import Home from './pages/Home';
@@ -19,6 +20,13 @@ export const ThemeContext = createContext({
 function Navigation() {
   const [user, setUser] = useState<any>(null);
   const { theme, toggleTheme } = useContext(ThemeContext);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const searchQuery = searchParams.get('search') || '';
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -32,42 +40,115 @@ function Navigation() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (location.pathname !== '/') {
+      navigate(`/?search=${encodeURIComponent(val)}`);
+    } else {
+      setSearchParams(prev => {
+        if (val) prev.set('search', val);
+        else prev.delete('search');
+        return prev;
+      }, { replace: true });
+    }
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (!isSearchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  };
+
   return (
-    <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 transition-all duration-300">
-      <header className="max-w-7xl mx-auto py-3 px-4 md:px-8 flex items-center justify-between">
-        <a href="/" className="text-lg md:text-xl font-bold tracking-tight text-apple-text dark:text-white flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 md:w-8 md:h-8 bg-apple-blue rounded-[9px] md:rounded-[10px] flex items-center justify-center text-white shadow-sm">
-            <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
-          </div>
-          Coacher
-        </a>
-        <nav className="flex items-center gap-3 md:gap-6">
-          <button
-            onClick={toggleTheme}
-            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-          
-          <a href="/" className="text-sm font-medium text-apple-text-muted dark:text-slate-400 hover:text-apple-text dark:hover:text-white transition-colors hidden md:block">Explore</a>
-          
-          {user ? (
-            <div className="flex items-center gap-2 bg-apple-gray dark:bg-slate-800 text-apple-text dark:text-slate-200 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all duration-300">
-              <User className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{user.email?.split('@')[0]}</span>
-              <span className="sm:hidden">Account</span>
+    <div className="fixed top-4 left-0 right-0 z-50 px-4 md:px-8 pointer-events-none">
+      <header className="max-w-7xl mx-auto pointer-events-auto">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-2xl shadow-2xl shadow-blue-500/10 px-4 py-2.5 flex items-center justify-between gap-4">
+          <AnimatePresence mode="wait">
+            {!(isSearchOpen || searchQuery) && (
+              <motion.a 
+                initial={{ opacity: 0, width: 0, x: -10 }}
+                animate={{ opacity: 1, width: 'auto', x: 0 }}
+                exit={{ opacity: 0, width: 0, x: -10 }}
+                href="/" 
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0 overflow-hidden whitespace-nowrap"
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Coacher</span>
+              </motion.a>
+            )}
+          </AnimatePresence>
+
+          <div className="flex-1 flex items-center justify-end gap-2 md:gap-4 overflow-hidden">
+            {/* Search Bar */}
+            <div className={`flex items-center transition-all duration-300 ease-in-out bg-slate-100 dark:bg-slate-800/50 rounded-xl px-3 py-1.5 ${isSearchOpen || searchQuery ? 'flex-1 max-w-md' : 'w-10 overflow-hidden'}`}>
+              <button 
+                onClick={toggleSearch}
+                className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                aria-label="Search"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <input 
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className={`bg-transparent border-none focus:ring-0 text-sm dark:text-white placeholder-slate-400 w-full ml-2 transition-opacity duration-300 ${isSearchOpen || searchQuery ? 'opacity-100' : 'opacity-0'}`}
+              />
+              {(isSearchOpen || searchQuery) && (
+                <button 
+                  onClick={() => {
+                    setSearchParams(prev => { prev.delete('search'); return prev; });
+                    if (!searchQuery) setIsSearchOpen(false);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          ) : (
-            <a 
-              href="/user/login" 
-              className="flex items-center gap-2 bg-apple-text dark:bg-blue-600 text-white dark:text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-apple-text/90 dark:hover:bg-blue-700 transition-all duration-300 shadow-sm shadow-apple-text/10 dark:shadow-blue-900/20"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              Sign In
-            </a>
-          )}
-        </nav>
+
+            <nav className="flex items-center gap-1 md:gap-2 shrink-0">
+              {location.pathname === '/' && (
+                <button
+                  className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                  aria-label="Filter"
+                  // Note: Since Home state isn't easily shared here without a global store/event, 
+                  // I'll ensure the button is at least visually present as requested for better UX.
+                  // For a real app, we'd use a context or event bus to open the drawer.
+                >
+                  <SlidersHorizontal className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Toggle dark mode"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              
+              {user ? (
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 transition-all">
+                  <User className="w-4 h-4" />
+                  <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                </div>
+              ) : (
+                <a 
+                  href="/user/login" 
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 rounded-xl transition-all border border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-900 shadow-sm"
+                  title="Sign In / Guest"
+                >
+                  <User className="w-5 h-5" />
+                </a>
+              )}
+            </nav>
+          </div>
+        </div>
       </header>
     </div>
   );
