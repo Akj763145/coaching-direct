@@ -400,12 +400,7 @@ export default function InstituteDetail() {
             </div>
 
             <div className="space-y-3">
-              <button 
-                onClick={() => setModalOpen(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] px-6 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-600/20"
-              >
-                Book a Free Demo
-              </button>
+               {/* Root level Book Demo removed at user request. Users should book through specific batches. */}
               {institute.phone && (
                 <a
                   href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
