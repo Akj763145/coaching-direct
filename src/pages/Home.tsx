@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, LayoutList, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2 } from 'lucide-react';
+import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, LayoutList, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 import { HomeSkeleton } from '../components/Skeleton';
@@ -528,7 +528,7 @@ export default function Home() {
               variants={containerVariants}
               initial="hidden"
               animate="show"
-              className="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+              className="grid lg:grid-cols-2 gap-4"
             >
               {filtered.map((inst, i) => {
                 const isSelectedForCompare = compareList.some(p => p.id === inst.id);
@@ -536,68 +536,70 @@ export default function Home() {
                 return (
               <motion.a 
                 variants={itemVariants}
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -2 }}
                 key={inst.id} 
                 href={`/institute/${inst.id}`} 
-                className={`group flex flex-col border shadow-sm rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 hover:shadow-md cursor-pointer min-h-[44px] ${isSelectedForCompare ? 'border-blue-500 ring-1 ring-blue-500 shadow-blue-500/10' : 'border-slate-200 dark:border-slate-800'}`}
+                className={`group flex flex-row items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer ${isSelectedForCompare ? 'border shadow-sm border-blue-500 shadow-blue-500/10 ring-1 ring-blue-500/20' : 'border border-slate-200 shadow-sm dark:border-slate-800'}`}
               >
-                <div className="h-32 bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center p-6 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 mix-blend-multiply dark:mix-blend-screen transition-opacity duration-500 group-hover:opacity-50"></div>
+                {/* Left (Visual) */}
+                <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                   {inst.logo ? (
+                     <motion.img layoutId={`logo-${inst.id}`} src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
+                   ) : (
+                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xl uppercase">
+                        {inst.name.charAt(0)}
+                      </span>
+                   )}
+                </div>
+
+                {/* Middle (Data) */}
+                <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight truncate capitalize pr-2">{formatAcronyms(inst.name)}</h3>
                   
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {inst.distance ? (
+                       <span className="flex items-center gap-1 font-medium">
+                         <Navigation2 className="w-3 h-3 text-blue-500" />
+                         {inst.distance} {inst.isMockDistance && '(est.)'}
+                       </span>
+                    ) : (
+                       <span className="flex items-center gap-1">
+                         <MapPin className="w-3 h-3 opacity-70" />
+                         {formatAcronyms(getLocationText(inst))}
+                       </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {Array.from(new Set(inst.batches?.flatMap((b:any) => b.subject?.split(',').map((s:string) => s.trim()).filter(Boolean)) || [])).slice(0, 3).map((sub: any) => (
+                      <span key={sub} className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50 text-[10px] font-medium inline-block capitalize truncate max-w-[80px]">
+                        {formatAcronyms(sub)}
+                      </span>
+                    ))}
+                    {(!inst.batches || inst.batches.length === 0) && (
+                      <span className="text-slate-400 dark:text-slate-500 text-[10px]">No active batches</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right (Action) */}
+                <div className="flex flex-col items-end justify-center gap-2 shrink-0">
                   <button 
                     onClick={(e) => handleToggleCompare(e, inst)}
-                    className="absolute top-3 left-3 z-30 p-1.5 rounded-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                    className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                     title={isSelectedForCompare ? 'Remove from comparison' : 'Add to comparison'}
                   >
                     {isSelectedForCompare ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600" />
+                      <CheckSquare className="w-4 h-4 text-blue-600" />
                     ) : (
-                      <Square className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      <Square className="w-4 h-4 text-slate-300 dark:text-slate-600" />
                     )}
                   </button>
-
-                  {inst.distance && (
-                    <div className={`absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 z-20 ${inst.isMockDistance ? 'text-slate-500 border border-slate-200 dark:border-slate-800' : 'text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50'}`}>
-                      <Navigation2 className={`w-3 h-3 ${inst.isMockDistance ? 'fill-slate-400/20' : 'fill-blue-600/20'}`} />
-                      {inst.distance} away {inst.isMockDistance && '(est.)'}
-                    </div>
-                  )}
-                  {inst.logo ? (
-                    <motion.img layoutId={`logo-${inst.id}`} src={inst.logo} alt={inst.name} className="h-full object-contain relative z-10 mix-blend-darken dark:mix-blend-screen scale-95 group-hover:scale-100 transition-transform duration-500 ease-out" />
-                  ) : (
-                     <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-3xl shrink-0 border border-slate-200 dark:border-slate-700 scale-95 group-hover:scale-100 transition-transform duration-500 ease-out capitalize">
-                       {inst.name.charAt(0)}
-                     </div>
-                  )}
-                </div>
-                <div className="p-4 md:p-6 flex-1 flex flex-col">
-                  <h3 className="text-[20px] md:text-[22px] font-semibold text-slate-900 dark:text-white tracking-tight transition-colors line-clamp-1 capitalize">{formatAcronyms(inst.name)}</h3>
-                  
-                  <div className="flex items-center gap-2 mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    <MapPin className="w-4 h-4 shrink-0 opacity-70" />
-                    <span className="truncate capitalize">{formatAcronyms(getLocationText(inst))}</span>
-                  </div>
-                  
-                  <div className="mt-6 space-y-3">
-                    <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">Top Subjects</div>
-                    <div className="flex flex-wrap gap-0">
-                      {Array.from(new Set(inst.batches?.flatMap((b:any) => b.subject?.split(',').map((s:string) => s.trim()).filter(Boolean)) || [])).slice(0, 3).map((sub: any) => (
-                        <span key={sub} className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs font-medium inline-block mt-1 mr-1 capitalize">
-                          {formatAcronyms(sub)}
-                        </span>
-                      ))}
-                      {(!inst.batches || inst.batches.length === 0) && (
-                        <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">No batches listed</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{inst.batches?.length || 0} active batches</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all duration-300 min-h-[44px]">View <span className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300">&rarr;</span></span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors">
+                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
                   </div>
                 </div>
-                </motion.a>
+              </motion.a>
               )})}
             </motion.div>
           )}
