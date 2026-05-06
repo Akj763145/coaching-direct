@@ -7,6 +7,7 @@ import UserLogin from './pages/UserLogin';
 import Home from './pages/Home';
 import InstituteDetail from './pages/InstituteDetail';
 import BatchDetail from './pages/BatchDetail';
+import Dashboard from './pages/Dashboard';
 import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
 import Chatbot from './components/Chatbot';
@@ -115,11 +116,15 @@ function Navigation() {
             <nav className="flex items-center gap-1 md:gap-2 shrink-0">
               {location.pathname === '/' && (
                 <button
-                  className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={() => {
+                    setSearchParams(prev => {
+                      if (prev.get('filters') === 'open') prev.delete('filters');
+                      else prev.set('filters', 'open');
+                      return prev;
+                    }, { replace: true });
+                  }}
+                  className={`p-2 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40' : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
                   aria-label="Filter"
-                  // Note: Since Home state isn't easily shared here without a global store/event, 
-                  // I'll ensure the button is at least visually present as requested for better UX.
-                  // For a real app, we'd use a context or event bus to open the drawer.
                 >
                   <SlidersHorizontal className="w-5 h-5" />
                 </button>
@@ -133,10 +138,10 @@ function Navigation() {
               </button>
               
               {user ? (
-                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 transition-all">
+                <a href="/dashboard" className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 transition-all shadow-sm">
                   <User className="w-4 h-4" />
                   <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
-                </div>
+                </a>
               ) : (
                 <a 
                   href="/user/login" 
@@ -219,6 +224,7 @@ export default function App() {
               <Route path="/batch/:id" element={<BatchDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/user/login" element={<UserLogin />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/master/*" element={<MasterDashboard />} />
               <Route path="/admin/*" element={<SubAdminDashboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />

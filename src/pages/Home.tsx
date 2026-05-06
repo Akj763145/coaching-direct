@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, LayoutList, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 import { HomeSkeleton } from '../components/Skeleton';
@@ -49,7 +49,23 @@ export default function Home() {
   const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
   const [maxFee, setMaxFee] = useState<number>(50000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'rating' | 'distance' | 'fee'>('name');
+
+  useEffect(() => {
+    if (searchParams.get('filters') === 'open') {
+      setIsFilterOpen(true);
+    } else {
+      setIsFilterOpen(false);
+    }
+  }, [searchParams]);
+
+  const closeFilters = () => {
+    setIsFilterOpen(false);
+    setSearchParams(prev => {
+      prev.delete('filters');
+      return prev;
+    }, { replace: true });
+  };
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const enrichedInstitutes = React.useMemo(() => {
@@ -65,9 +81,15 @@ export default function Home() {
       const instLng = hasValidCoords ? inst.longitude : 84.8989 + (Math.cos(inst.id.length) * 0.02);
       
       const dist = calculateDistance(userLocation.lat, userLocation.lng, instLat, instLng);
+      const minFee = inst.batches?.length > 0 
+        ? Math.min(...inst.batches.map((b: any) => b.fee_value || 100000)) 
+        : 100000;
+
       return {
         ...inst,
         distance: dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`,
+        numericDistance: dist,
+        minFee: minFee,
         isMockDistance: !hasValidCoords
       };
     });
@@ -229,6 +251,12 @@ export default function Home() {
     }
 
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+    if (sortBy === 'distance') return (a.numericDistance || 0) - (b.numericDistance || 0);
+    if (sortBy === 'fee') return (a.minFee || 100000) - (b.minFee || 100000);
+    return 0; // relevance (default order)
   });
 
   const handleToggleCompare = (e: React.MouseEvent, inst: any) => {
@@ -327,6 +355,16 @@ export default function Home() {
     show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } }
   };
 
+  const topRatedInstitutes = React.useMemo(() => {
+    return [...enrichedInstitutes]
+      .filter((inst: any) => inst.rating && inst.rating >= 4.0)
+      .sort((a: any, b: any) => {
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        return (b.reviewCount || 0) - (a.reviewCount || 0);
+      })
+      .slice(0, 5);
+  }, [enrichedInstitutes]);
+
   return (
     <main className="w-full pb-32">
       {/* Hero Section */}
@@ -360,19 +398,25 @@ export default function Home() {
         {/* Featured Institutes Carousel */}
         <div className="mt-12 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
           <div className="flex items-center justify-between">
-             <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-               <Sparkles className="w-6 h-6 text-amber-500 fill-amber-500 animate-pulse" />
-               Top Rated in Motihari
-             </h3>
-             <span className="text-[10px] font-black tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">SPONSORED</span>
+             <div className="flex flex-col mb-1.5 mt-2">
+               <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+                 <Sparkles className="w-6 h-6 text-amber-500 fill-amber-500 animate-pulse" />
+                 Top Rated in Motihari
+               </h3>
+               <span className="text-xs text-slate-500 font-normal pl-8">Based on verified student reviews</span>
+             </div>
           </div>
-          <div 
+          <motion.div 
             ref={featuredScrollRef}
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
             className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0"
           >
-             {[...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4)].map((inst, i) => (
+             {topRatedInstitutes.map((inst, i) => (
                <motion.a 
                  key={`featured-${inst.id}-${i}`}
+                 variants={itemVariants}
                  href={`/institute/${inst.id}`}
                  whileHover={{ y: -2 }}
                  className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300"
@@ -394,7 +438,7 @@ export default function Home() {
                  
                  {/* Middle (Data) */}
                  <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                   <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight truncate capitalize pr-2">{formatAcronyms(inst.name)}</h4>
+                   <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight capitalize pr-2 leading-tight">{formatAcronyms(inst.name)}</h4>
                    
                    <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
                      {inst.distance ? (
@@ -410,9 +454,20 @@ export default function Home() {
                      )}
                    </div>
                    
-                   <div className="flex items-center gap-1 mt-2">
-                     {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />)}
-                     <span className="text-[10px] font-bold text-amber-600 ml-1">4.9</span>
+                   <div className="flex items-center gap-1 mt-2 min-h-[16px]">
+                     {inst.rating ? (
+                       <>
+                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                         <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
+                           {inst.rating.toFixed(1)}
+                         </span>
+                         <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
+                           ({inst.reviewCount || 0} {(inst.reviewCount === 1) ? 'review' : 'reviews'})
+                         </span>
+                       </>
+                     ) : (
+                       <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">New</span>
+                     )}
                    </div>
                  </div>
                  
@@ -426,7 +481,7 @@ export default function Home() {
                  <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
                </motion.a>
              ))}
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -472,7 +527,7 @@ export default function Home() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm z-40 md:hidden" 
-                onClick={() => setIsFilterOpen(false)} 
+                onClick={closeFilters} 
               />
               <motion.div 
                 initial={{ x: '100%' }}
@@ -481,7 +536,7 @@ export default function Home() {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="fixed inset-y-0 right-0 w-[300px] max-w-[80vw] bg-white dark:bg-slate-900 z-50 p-6 md:hidden overflow-y-auto shadow-2xl"
               >
-                  <FilterContent onClose={() => setIsFilterOpen(false)} />
+                  <FilterContent onClose={closeFilters} />
               </motion.div>
             </>
           )}
@@ -496,22 +551,27 @@ export default function Home() {
             className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[13px] mb-5 pb-3 border-b border-slate-200 dark:border-slate-800 px-1"
           >
             <span>{loading ? 'Discovering institutes...' : `Showing ${filtered.length} Institute${filtered.length === 1 ? '' : 's'}`}</span>
+            
+            {!loading && filtered.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline">Sort by:</span>
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent border-none text-[13px] font-semibold text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-0 pr-6"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="name">A to Z</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="distance">Nearest</option>
+                  <option value="fee">Lowest Fee</option>
+                </select>
+              </div>
+            )}
           </motion.div>
           
           {loading ? (
             <HomeSkeleton />
-          ) : viewMode === 'map' ? (
-             <div className="h-[600px] w-full bg-slate-100 dark:bg-slate-800 rounded-3xl border border-slate-300 dark:border-slate-700 overflow-hidden relative">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14309.846549308118!2d84.89886751761614!3d26.6575196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399335ef00000001%3A0xe54e60fc82669e7d!2sMotihari%2C%20Bihar!5e0!3m2!1sen!2sin!4v1714981718000!5m2!1sen!2sin" 
-                  className="w-full h-full border-0 grayscale dark:invert-[0.9] dark:hue-rotate-180" 
-                  loading="lazy"
-                ></iframe>
-                <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-[240px]">
-                   <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2">Map View (BETA)</h4>
-                   <p className="text-xs text-slate-500 leading-relaxed">Pins for all institutes are automatically generated based on their proximity to Motihari center.</p>
-                </div>
-             </div>
           ) : filtered.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
@@ -594,16 +654,25 @@ export default function Home() {
                 </div>
 
                 {/* Right (Action) */}
-                <div className="flex flex-col items-end justify-center gap-2 shrink-0">
+                <div className="flex flex-col items-end justify-center gap-3 shrink-0">
                   <button 
                     onClick={(e) => handleToggleCompare(e, inst)}
-                    className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                    title={isSelectedForCompare ? 'Remove from comparison' : 'Add to comparison'}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold tracking-tight uppercase ${
+                      isSelectedForCompare 
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-500 hover:text-blue-600'
+                    }`}
                   >
                     {isSelectedForCompare ? (
-                      <CheckSquare className="w-4 h-4 text-blue-600" />
+                      <>
+                        <CheckSquare className="w-3.5 h-3.5" />
+                        <span>Added</span>
+                      </>
                     ) : (
-                      <Square className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+                      <>
+                        <Square className="w-3.5 h-3.5" />
+                        <span>Compare</span>
+                      </>
                     )}
                   </button>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors">
@@ -617,28 +686,6 @@ export default function Home() {
         </section>
       </div>
     </div>
-
-      {/* View Mode Toggle FAB */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
-          className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-full shadow-2xl shadow-blue-500/20 font-bold border border-slate-700 dark:border-slate-200"
-        >
-          {viewMode === 'list' ? (
-            <>
-              <MapIcon className="w-5 h-5" />
-              <span>Show Map</span>
-            </>
-          ) : (
-            <>
-              <LayoutList className="w-5 h-5" />
-              <span>Show List</span>
-            </>
-          )}
-        </motion.button>
-      </div>
 
       {/* Floating Compare Action Bar */}
       <AnimatePresence>
