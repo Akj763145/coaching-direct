@@ -368,51 +368,62 @@ export default function Home() {
           </div>
           <div 
             ref={featuredScrollRef}
-            className="flex overflow-x-auto scrollbar-hide gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0"
+            className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0"
           >
              {[...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4), ...enrichedInstitutes.slice(0, 4)].map((inst, i) => (
                <motion.a 
                  key={`featured-${inst.id}-${i}`}
                  href={`/institute/${inst.id}`}
-                 whileHover={{ y: -8, scale: 1.02 }}
-                 className="min-w-[280px] md:min-w-[380px] bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-200 dark:border-amber-900/50 shadow-xl shadow-amber-500/5 relative overflow-hidden group"
+                 whileHover={{ y: -2 }}
+                 className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300"
                >
-                 <div className="absolute top-4 right-4 z-20">
-                   <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg shadow-amber-500/40">
-                     <Star className="w-4 h-4 fill-white" />
-                   </div>
+                 <div className="absolute top-2 right-2 z-20">
+                   <Star className="w-4 h-4 fill-amber-400 text-amber-500 opacity-80" />
                  </div>
                  
-                 <div className="h-32 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10 flex items-center justify-center p-8 relative">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-200/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                 {/* Left (Visual) */}
+                 <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
                     {inst.logo ? (
-                      <img src={inst.logo} alt={inst.name} className="h-full object-contain relative z-10 mix-blend-darken dark:mix-blend-screen transition-all group-hover:scale-110 duration-700 ease-out" />
+                      <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
                     ) : (
-                      <span className="text-5xl font-black text-amber-600/20 dark:text-amber-500/20 absolute inset-0 flex items-center justify-center select-none group-hover:scale-150 transition-transform duration-1000">{inst.name.charAt(0)}</span>
+                       <span className="text-amber-600 dark:text-amber-500 font-bold text-xl uppercase">
+                         {inst.name.charAt(0)}
+                       </span>
                     )}
                  </div>
                  
-                 <div className="p-6">
-                   <div className="flex items-center gap-1 mb-2">
-                     {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
-                     <span className="text-xs font-bold text-amber-600 ml-1">4.9</span>
+                 {/* Middle (Data) */}
+                 <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                   <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight truncate capitalize pr-2">{formatAcronyms(inst.name)}</h4>
+                   
+                   <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                     {inst.distance ? (
+                       <span className="flex items-center gap-1 font-medium">
+                         <Navigation2 className="w-3 h-3 text-blue-500" />
+                         {inst.distance} {inst.isMockDistance && '(est.)'}
+                       </span>
+                     ) : (
+                       <span className="flex items-center gap-1">
+                         <MapPin className="w-3 h-3 opacity-70" />
+                         {formatAcronyms(getLocationText(inst))}
+                       </span>
+                     )}
                    </div>
-                   <h4 className="font-bold text-slate-900 dark:text-white text-xl line-clamp-1 tracking-tight capitalize group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{formatAcronyms(inst.name)}</h4>
-                   {inst.distance && (
-                     <div className={`flex items-center gap-1.5 text-[11px] font-bold mt-1 ${inst.isMockDistance ? 'text-slate-400' : 'text-blue-600 dark:text-blue-400'}`}>
-                       <Navigation2 className={`w-3 h-3 ${inst.isMockDistance ? 'fill-slate-400/20' : 'fill-blue-600/20'}`} />
-                       <span>{inst.distance} away {inst.isMockDistance && '(est.)'}</span>
-                     </div>
-                   )}
-                   <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                       <MapPin className="w-4 h-4 text-blue-500" />
-                     </div>
-                     <span className="truncate font-medium">{getLocationText(inst)}</span>
+                   
+                   <div className="flex items-center gap-1 mt-2">
+                     {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />)}
+                     <span className="text-[10px] font-bold text-amber-600 ml-1">4.9</span>
                    </div>
                  </div>
                  
-                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                 {/* Right (Action) */}
+                 <div className="flex flex-col items-end justify-center shrink-0 relative z-10">
+                   <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
+                     <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-600 transition-colors" />
+                   </div>
+                 </div>
+                 
+                 <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
                </motion.a>
              ))}
           </div>
