@@ -14,7 +14,7 @@ export default function SubAdminDashboard() {
   const navigate = useNavigate();
 
   // Faculty Form
-  const [facultyForm, setFacultyForm] = useState({ name: '', subject: '', image_url: '' });
+  const [facultyForm, setFacultyForm] = useState({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
 
   // Batch Form - Advanced Builder
   const [showBatchForm, setShowBatchForm] = useState(false);
@@ -23,7 +23,8 @@ export default function SubAdminDashboard() {
     batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
     status: 'running', mode: 'Offline', total_seats: 50, available_seats: 50,
     syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
-    curriculum: [{ title: '', content: '' }]
+    curriculum: [{ title: '', content: '' }],
+    faculty_ids: [] as (number | string)[]
   });
 
   // Notice Form
@@ -84,7 +85,8 @@ export default function SubAdminDashboard() {
         batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
         status: 'running', total_seats: 50, available_seats: 50,
         syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
-        curriculum: [{ title: '', content: '' }] 
+        curriculum: [{ title: '', content: '' }],
+        faculty_ids: []
       });
       setShowBatchForm(false);
       fetchData(token!);
@@ -159,7 +161,7 @@ export default function SubAdminDashboard() {
       body: JSON.stringify(facultyForm)
     });
     if (res.ok) {
-      setFacultyForm({ name: '', subject: '', image_url: '' });
+      setFacultyForm({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
       fetchData(token!);
     }
   };
@@ -482,21 +484,41 @@ export default function SubAdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Instructor Profile */}
+                    {/* Faculty Team Selection */}
                     <div>
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 bg-slate-50 dark:bg-slate-800 inline-block px-3 py-1 rounded-full">Assign Teacher</h3>
-                      <div className="grid md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Instructor Name</label>
-                          <input required type="text" value={batchForm.teacher_name} onChange={e => setBatchForm({...batchForm, teacher_name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Avatar URL</label>
-                          <input type="text" value={batchForm.teacher_image} onChange={e => setBatchForm({...batchForm, teacher_image: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="https://..." />
-                        </div>
-                        <div className="md:col-span-2 space-y-1.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Teacher Bio / Qualifications</label>
-                          <textarea value={batchForm.teacher_bio} onChange={e => setBatchForm({...batchForm, teacher_bio: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" rows={2}></textarea>
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 bg-slate-50 dark:bg-slate-800 inline-block px-3 py-1 rounded-full">Assign Faculty Team</h3>
+                      <div className="bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 mb-4">Select the teachers who will be teaching this batch. You can add more teachers in the "Faculty" tab.</p>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          {faculty.map(f => (
+                            <label key={f.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${batchForm.faculty_ids.includes(f.id) ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-200'}`}>
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                checked={batchForm.faculty_ids.includes(f.id)}
+                                onChange={e => {
+                                  const ids = e.target.checked 
+                                    ? [...batchForm.faculty_ids, f.id]
+                                    : batchForm.faculty_ids.filter(id => id !== f.id);
+                                  setBatchForm({...batchForm, faculty_ids: ids});
+                                }}
+                              />
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0">
+                                  {f.image_url ? <img src={f.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-500">{f.name.charAt(0)}</div>}
+                                </div>
+                                <div className="truncate">
+                                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{f.name}</div>
+                                  <div className="text-[10px] text-slate-500 font-medium truncate">{f.subject}</div>
+                                </div>
+                              </div>
+                            </label>
+                          ))}
+                          {faculty.length === 0 && (
+                            <div className="col-span-2 text-center py-6 text-slate-500 text-xs italic">
+                              No faculty found. Add faculty members first to assign them to batches.
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -756,6 +778,20 @@ export default function SubAdminDashboard() {
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Image URL (Optional)</label>
                     <input type="text" value={facultyForm.image_url} onChange={e => setFacultyForm({...facultyForm, image_url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="https://..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Exp (e.g. 10+ Yrs)</label>
+                      <input type="text" value={facultyForm.experience} onChange={e => setFacultyForm({...facultyForm, experience: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="10+ Yrs" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Qualifications</label>
+                      <input type="text" value={facultyForm.qualifications} onChange={e => setFacultyForm({...facultyForm, qualifications: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="M.Tech, IIT" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Bio / Teacher Quote</label>
+                    <textarea value={facultyForm.bio} onChange={e => setFacultyForm({...facultyForm, bio: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={2} placeholder="Briefly describe teaching expertise..."></textarea>
                   </div>
                   <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">Save Teacher Profile</button>
                 </div>

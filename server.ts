@@ -151,7 +151,17 @@ if (isSupabaseEnabled) {
       name TEXT NOT NULL,
       subject TEXT NOT NULL,
       image_url TEXT,
+      qualifications TEXT,
+      bio TEXT,
+      experience TEXT,
       FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS batch_faculty (
+      batch_id INTEGER NOT NULL,
+      faculty_id INTEGER NOT NULL,
+      PRIMARY KEY (batch_id, faculty_id),
+      FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+      FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
     );
   `);
 
@@ -362,15 +372,22 @@ app.get('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum } = req.body;
+  const { teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum, faculty_ids } = req.body;
   
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    const { data, error } = await supabase.from('batches').insert({
+    const { data: batch, error } = await supabase.from('batches').insert({
       institute_id: inst.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum: typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum)
     }).select().single();
     if (error) return res.status(500).json({ error: error.message });
-    res.json({ success: true, id: data.id });
+
+    // Add faculty relationships
+    if (faculty_ids && faculty_ids.length > 0) {
+      const mappings = faculty_ids.map((fid: any) => ({ batch_id: batch.id, faculty_id: fid }));
+      await supabase.from('batch_faculty').insert(mappings);
+    }
+
+    res.json({ success: true, id: batch.id });
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     try {
@@ -378,7 +395,19 @@ app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), 
         INSERT INTO batches (institute_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(institute.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status || 'running', mode || 'Offline', medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum));
-      res.json({ success: true, id: result.lastInsertRowid });
+      
+      const batchId = result.lastInsertRowid;
+      
+      // Add faculty relationships
+      if (faculty_ids && faculty_ids.length > 0) {
+        const insertFaculty = db.prepare('INSERT INTO batch_faculty (batch_id, faculty_id) VALUES (?, ?)');
+        const insertMany = db.transaction((ids) => {
+          for (const fid of ids) insertFaculty.run(batchId, fid);
+        });
+        insertMany(faculty_ids);
+      }
+      
+      res.json({ success: true, id: batchId });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -529,15 +558,15 @@ app.get('/api/institute/faculty', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.post('/api/institute/faculty', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { name, subject, image_url } = req.body;
+  const { name, subject, image_url, qualifications, bio, experience } = req.body;
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    const { data, error } = await supabase.from('faculty').insert({ institute_id: inst.id, name, subject, image_url }).select().single();
+    const { data, error } = await supabase.from('faculty').insert({ institute_id: inst.id, name, subject, image_url, qualifications, bio, experience }).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true, id: data.id });
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
-    const result = db.prepare('INSERT INTO faculty (institute_id, name, subject, image_url) VALUES (?, ?, ?, ?)').run(institute.id, name, subject, image_url);
+    const result = db.prepare('INSERT INTO faculty (institute_id, name, subject, image_url, qualifications, bio, experience) VALUES (?, ?, ?, ?, ?, ?, ?)').run(institute.id, name, subject, image_url, qualifications, bio, experience);
     res.json({ success: true, id: result.lastInsertRowid });
   }
 });
@@ -605,12 +634,30 @@ app.get('/api/public/batches/:id', async (req, res) => {
   if (isSupabaseEnabled) {
     const { data: batch, error } = await supabase.from('batches').select('*, institutes(name, id)').eq('id', id).single();
     if (error || !batch) return res.status(404).json({ error: 'Not found' });
-    res.json({ ...batch, institute_name: (batch as any).institutes?.name });
+    
+    // Fetch related faculty via join
+    const { data: batchFaculty, error: facultyError } = await supabase
+      .from('batch_faculty')
+      .select('faculty(*)')
+      .eq('batch_id', id);
+
+    const teachers = (batchFaculty || []).map((bf: any) => bf.faculty);
+
+    res.json({ ...batch, institute_name: (batch as any).institutes?.name, teachers });
   } else {
     try {
       const batch = db.prepare('SELECT b.*, i.name as institute_name FROM batches b JOIN institutes i ON b.institute_id = i.id WHERE b.id = ?').get(id) as any;
       if (!batch) return res.status(404).json({ error: 'Not found' });
-      res.json(batch);
+      
+      // Fetch teachers via junction table
+      const teachers = db.prepare(`
+        SELECT f.* 
+        FROM faculty f 
+        JOIN batch_faculty bf ON f.id = bf.faculty_id 
+        WHERE bf.batch_id = ?
+      `).all(id);
+      
+      res.json({ ...batch, teachers: teachers || [] });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   }
 });
