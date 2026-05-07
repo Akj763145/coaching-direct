@@ -127,21 +127,6 @@ function Navigation() {
             </div>
 
             <nav className="flex items-center gap-1 md:gap-1.5 shrink-0">
-              {location.pathname === '/' && (
-                <button
-                  onClick={() => {
-                    setSearchParams(prev => {
-                      if (prev.get('filters') === 'open') prev.delete('filters');
-                      else prev.set('filters', 'open');
-                      return prev;
-                    }, { replace: true });
-                  }}
-                  className={`p-2 transition-all rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40' : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
-                  aria-label="Filter"
-                >
-                  <SlidersHorizontal className="w-5 h-5" />
-                </button>
-              )}
               <button
                 onClick={toggleTheme}
                 className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-all rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -58,6 +58,118 @@ const BOARDS = ['CBSE', 'State Board', 'ICSE', 'NEET', 'JEE'];
 
 // Simple in-memory cache to speed up navigation back to home
 let cachedInstitutes: Institute[] | null = null;
+
+interface FilterProps {
+  onClose?: () => void;
+  selectedMediums: string[];
+  setSelectedMediums: (val: string[]) => void;
+  selectedBoards: string[];
+  setSelectedBoards: (val: string[]) => void;
+  maxFee: number;
+  setMaxFee: (val: number) => void;
+}
+
+const FeeSlider = React.memo(({ value, onChange }: { value: number, onChange: (val: number) => void }) => {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setLocalValue(val);
+    
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      onChange(val);
+    }, 5);
+  };
+
+  return (
+    <div className="select-none">
+      <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-4 flex justify-between items-center text-left">
+        <span>Max Monthly Fee</span>
+        <span className="text-blue-600 dark:text-blue-400 font-bold tabular-nums bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg border border-blue-100 dark:border-blue-800/50">₹{localValue.toLocaleString()}</span>
+      </h4>
+      <div className="relative h-6 flex items-center group">
+        <input 
+          type="range" 
+          min="500" max="50000" step="500"
+          value={localValue}
+          onChange={handleChange}
+          className="w-full accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700/50 rounded-lg appearance-none cursor-pointer transition-all hover:bg-slate-300 dark:hover:bg-slate-700"
+        />
+      </div>
+      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-bold uppercase tracking-widest">
+        <span>₹500</span>
+        <span>₹50,000+</span>
+      </div>
+    </div>
+  );
+});
+
+const FilterContent = React.memo(({ 
+  onClose, 
+  selectedMediums, 
+  setSelectedMediums, 
+  selectedBoards, 
+  setSelectedBoards, 
+  maxFee, 
+  setMaxFee 
+}: FilterProps) => (
+  <div className="space-y-8 text-left">
+    {onClose && (
+      <div className="flex items-center justify-between md:hidden -mt-2 -mx-2 p-2">
+        <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Filters</h3>
+        <button onClick={onClose} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+      </div>
+    )}
+
+    <div>
+      <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-4">Medium of Instruction</h4>
+      <div className="space-y-3">
+        {MEDIUMS.map(m => (
+          <label key={m} className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4.5 h-4.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-500 transition-colors"
+              checked={selectedMediums.includes(m)}
+              onChange={(e) => {
+                if(e.target.checked) setSelectedMediums([...selectedMediums, m]);
+                else setSelectedMediums(selectedMediums.filter(x => x !== m));
+              }}
+            />
+            <span className="text-sm text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors font-medium">{m}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-4">Board / Examination</h4>
+      <div className="space-y-3">
+        {BOARDS.map(b => (
+          <label key={b} className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4.5 h-4.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-500 transition-colors"
+              checked={selectedBoards.includes(b)}
+              onChange={(e) => {
+                if(e.target.checked) setSelectedBoards([...selectedBoards, b]);
+                else setSelectedBoards(selectedBoards.filter(x => x !== b));
+              }}
+            />
+            <span className="text-sm text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors font-medium">{b}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    <FeeSlider value={maxFee} onChange={setMaxFee} />
+  </div>
+));
 
 export default function Home() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -293,40 +405,44 @@ export default function Home() {
     return 'Location not specified';
   };
 
-  const filtered = enrichedInstitutes.filter(inst => {
-    const searchLower = search.toLowerCase();
-    const instName = inst.name.toLowerCase();
-    const hasBatchMatch = inst.batches?.some((b: any) => b.subject?.toLowerCase().includes(searchLower) || b.batch_name?.toLowerCase().includes(searchLower));
-    const searchMatch = instName.includes(searchLower) || hasBatchMatch;
-    
-    if (!searchMatch) return false;
+  const deferredMaxFee = useDeferredValue(maxFee);
 
-    // Filters
-    if (selectedMediums.length > 0) {
-      const matchesMedium = inst.batches?.some((b: any) => selectedMediums.includes(b.medium));
-      if (!matchesMedium) return false;
-    }
+  const filtered = React.useMemo(() => {
+    return enrichedInstitutes.filter(inst => {
+      const searchLower = search.toLowerCase();
+      const instName = inst.name.toLowerCase();
+      const hasBatchMatch = inst.batches?.some((b: any) => b.subject?.toLowerCase().includes(searchLower) || b.batch_name?.toLowerCase().includes(searchLower));
+      const searchMatch = instName.includes(searchLower) || hasBatchMatch;
+      
+      if (!searchMatch) return false;
 
-    if (selectedBoards.length > 0) {
-      const matchesBoard = inst.batches?.some((b: any) => 
-        selectedBoards.some(board => b.batch_name?.toLowerCase().includes(board.toLowerCase()) || b.subject?.toLowerCase().includes(board.toLowerCase()))
-      ) || selectedBoards.some(board => instName.includes(board.toLowerCase()) || inst.description?.toLowerCase().includes(board.toLowerCase()));
-      if (!matchesBoard) return false;
-    }
+      // Filters
+      if (selectedMediums.length > 0) {
+        const matchesMedium = inst.batches?.some((b: any) => selectedMediums.includes(b.medium));
+        if (!matchesMedium) return false;
+      }
 
-    if (maxFee < 50000) {
-      const hasAffordableBatch = inst.batches?.some((b: any) => (b.fee_value || 5000) <= maxFee);
-      if (!hasAffordableBatch && inst.batches && inst.batches.length > 0) return false;
-    }
+      if (selectedBoards.length > 0) {
+        const matchesBoard = inst.batches?.some((b: any) => 
+          selectedBoards.some(board => b.batch_name?.toLowerCase().includes(board.toLowerCase()) || b.subject?.toLowerCase().includes(board.toLowerCase()))
+        ) || selectedBoards.some(board => instName.includes(board.toLowerCase()) || inst.description?.toLowerCase().includes(board.toLowerCase()));
+        if (!matchesBoard) return false;
+      }
 
-    return true;
-  }).sort((a, b) => {
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-    if (sortBy === 'distance') return (a.numericDistance || 0) - (b.numericDistance || 0);
-    if (sortBy === 'fee') return (a.minFee || 100000) - (b.minFee || 100000);
-    return 0; // relevance (default order)
-  });
+      if (deferredMaxFee < 50000) {
+        const hasAffordableBatch = inst.batches?.some((b: any) => (b.fee_value || 5000) <= deferredMaxFee);
+        if (!hasAffordableBatch && inst.batches && inst.batches.length > 0) return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === 'distance') return (a.numericDistance || 0) - (b.numericDistance || 0);
+      if (sortBy === 'fee') return (a.minFee || 100000) - (b.minFee || 100000);
+      return 0; // relevance (default order)
+    });
+  }, [enrichedInstitutes, search, selectedMediums, selectedBoards, deferredMaxFee, sortBy]);
 
   const handleToggleCompare = (e: React.MouseEvent, inst: any) => {
     e.preventDefault();
@@ -343,71 +459,7 @@ export default function Home() {
     });
   };
 
-  const FilterContent = ({ onClose }: { onClose?: () => void }) => (
-    <div className="space-y-8">
-      {onClose && (
-        <div className="flex items-center justify-between md:hidden -mt-2 -mx-2 p-2">
-          <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Filters</h3>
-          <button onClick={onClose} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-        </div>
-      )}
 
-      <div>
-        <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-3">Medium</h4>
-        <div className="space-y-2.5">
-          {MEDIUMS.map(m => (
-            <label key={m} className="flex items-center gap-3 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-500 transition-colors"
-                checked={selectedMediums.includes(m)}
-                onChange={(e) => {
-                  if(e.target.checked) setSelectedMediums([...selectedMediums, m]);
-                  else setSelectedMediums(selectedMediums.filter(x => x !== m));
-                }}
-              />
-              <span className="text-sm text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">{m}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-3">Board / Exam</h4>
-        <div className="space-y-2.5">
-          {BOARDS.map(b => (
-            <label key={b} className="flex items-center gap-3 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-500 transition-colors"
-                checked={selectedBoards.includes(b)}
-                onChange={(e) => {
-                  if(e.target.checked) setSelectedBoards([...selectedBoards, b]);
-                  else setSelectedBoards(selectedBoards.filter(x => x !== b));
-                }}
-              />
-              <span className="text-sm text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">{b}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-medium text-sm text-slate-900 dark:text-slate-200 mb-3">Max Fee (₹{maxFee.toLocaleString()})</h4>
-        <input 
-          type="range" 
-          min="500" max="50000" step="500"
-          value={maxFee}
-          onChange={e => setMaxFee(Number(e.target.value))}
-          className="w-full accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
-          <span>₹500</span>
-          <span>₹50,000+</span>
-        </div>
-      </div>
-    </div>
-  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -565,7 +617,14 @@ export default function Home() {
                <SlidersHorizontal className="w-5 h-5" />
                <h3 className="font-semibold text-lg">Filters</h3>
              </div>
-             <FilterContent />
+             <FilterContent 
+                selectedMediums={selectedMediums}
+                setSelectedMediums={setSelectedMediums}
+                selectedBoards={selectedBoards}
+                setSelectedBoards={setSelectedBoards}
+                maxFee={maxFee}
+                setMaxFee={setMaxFee}
+             />
           </div>
         </aside>
 
@@ -587,7 +646,15 @@ export default function Home() {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="fixed inset-y-0 right-0 w-[300px] max-w-[80vw] bg-white dark:bg-slate-900 z-50 p-6 md:hidden overflow-y-auto shadow-2xl"
               >
-                  <FilterContent onClose={closeFilters} />
+                  <FilterContent 
+                    onClose={closeFilters}
+                    selectedMediums={selectedMediums}
+                    setSelectedMediums={setSelectedMediums}
+                    selectedBoards={selectedBoards}
+                    setSelectedBoards={setSelectedBoards}
+                    maxFee={maxFee}
+                    setMaxFee={setMaxFee}
+                  />
               </motion.div>
             </>
           )}
@@ -604,19 +671,36 @@ export default function Home() {
             <span>{loading ? 'Discovering institutes...' : `Showing ${filtered.length} Institute${filtered.length === 1 ? '' : 's'}`}</span>
             
             {!loading && filtered.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline">Sort by:</span>
-                <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-transparent border-none text-[13px] font-semibold text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-0 pr-6"
+              <div className="flex items-center gap-2 md:gap-4">
+                <button
+                  onClick={() => {
+                    setSearchParams(prev => {
+                      if (prev.get('filters') === 'open') prev.delete('filters');
+                      else prev.set('filters', 'open');
+                      return prev;
+                    }, { replace: true });
+                  }}
+                  className={`flex md:hidden items-center gap-2 p-2 px-3 transition-all rounded-xl border ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800' : 'text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                  aria-label="Filter"
                 >
-                  <option value="relevance">Relevance</option>
-                  <option value="name">A to Z</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="distance">Nearest</option>
-                  <option value="fee">Lowest Fee</option>
-                </select>
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">Filters</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline">Sort by:</span>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent border-none text-[13px] font-semibold text-slate-900 dark:text-white focus:ring-0 cursor-pointer p-0 pr-6"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="name">A to Z</option>
+                    <option value="rating">Highest Rated</option>
+                    <option value="distance">Nearest</option>
+                    <option value="fee">Lowest Fee</option>
+                  </select>
+                </div>
               </div>
             )}
           </motion.div>
