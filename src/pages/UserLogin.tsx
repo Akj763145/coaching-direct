@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ArrowRight, User, Globe, Loader2, Check, AlertCircle } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { GraduationCap, ArrowRight, User, Globe, Loader2, Check, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function UserLogin() {
@@ -61,6 +61,20 @@ export default function UserLogin() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)] px-4 py-12 bg-apple-gray dark:bg-slate-950">
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="w-full max-w-[440px] mb-6"
+      >
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Home
+        </Link>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -176,7 +190,7 @@ export default function UserLogin() {
                     <User className="w-4 h-4 text-apple-blue dark:text-blue-400" />
                   </div>
                   <p className="text-[13px] text-apple-text dark:text-slate-300 leading-relaxed">
-                    By continuing, you agree to Coacher's <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Terms of Service</span> and <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Privacy Policy</span>.
+                    By continuing, you agree to Coaching Direct's <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Terms of Service</span> and <span className="font-semibold cursor-pointer hover:underline text-apple-blue dark:text-blue-400">Privacy Policy</span>.
                   </p>
                 </div>
               </div>

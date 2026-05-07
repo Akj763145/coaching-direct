@@ -135,7 +135,14 @@ export default function BatchDetail() {
         <motion.button 
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate(-1)} 
+          onClick={() => {
+            if (batch?.institute_id || batch?.id) {
+              const instId = batch.institute_id || id;
+              navigate(`/institute/${instId}?tab=batches`);
+            } else {
+              navigate(-1);
+            }
+          }} 
           className="p-2 -ml-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500 group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />

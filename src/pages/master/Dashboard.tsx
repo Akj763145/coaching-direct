@@ -1,11 +1,14 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { Trash2, Edit } from 'lucide-react';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
+  const [editingInstId, setEditingInstId] = useState<number | string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const [newCredentials, setNewCredentials] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,8 +44,11 @@ export default function MasterDashboard() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/master/institutes', {
-        method: 'POST',
+      const method = editingInstId ? 'PUT' : 'POST';
+      const url = editingInstId ? `/api/master/institutes/${editingInstId}` : '/api/master/institutes';
+
+      const res = await fetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -51,15 +57,41 @@ export default function MasterDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        setNewCredentials(data.credentials);
+        if (!editingInstId) {
+          setNewCredentials(data.credentials);
+        }
         setName('');
         setLogo('');
+        setEditingInstId(null);
         fetchInstitutes(token!);
       } else {
         alert(data.error);
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (inst: any) => {
+    setName(inst.name);
+    setLogo(inst.logo || '');
+    setEditingInstId(inst.id);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this institute? This will remove all its data.')) return;
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/master/institutes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchInstitutes(token!);
+      }
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -91,7 +123,10 @@ export default function MasterDashboard() {
             onSubmit={handleCreate} 
             className="bg-white p-6 md:p-8 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-apple-border/40"
           >
-            <h2 className="text-lg font-semibold text-apple-text mb-5">Onboard New Institute</h2>
+            <div className="flex items-center justify-between mb-5">
+               <h2 className="text-lg font-semibold text-apple-text">{editingInstId ? 'Edit Institute' : 'Onboard New Institute'}</h2>
+               {editingInstId && <button onClick={() => { setEditingInstId(null); setName(''); setLogo(''); }} className="text-[11px] font-bold text-apple-text-muted hover:text-apple-text uppercase tracking-wider">Cancel</button>}
+            </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Institute Name</label>
@@ -109,9 +144,9 @@ export default function MasterDashboard() {
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Onboarding...
+                    {editingInstId ? 'Saving...' : 'Onboarding...'}
                   </>
-                ) : 'Create Institute'}
+                ) : (editingInstId ? 'Save Changes' : 'Create Institute')}
               </button>
             </div>
           </motion.form>
@@ -164,18 +199,29 @@ export default function MasterDashboard() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 + 0.3 }}
                     key={inst.id} 
-                    className="bg-white p-5 rounded-[20px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center gap-4 hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)] transition-shadow"
+                    className="bg-white p-5 rounded-[20px] border border-apple-border/40 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between group hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)] transition-shadow"
                   >
-                    {inst.logo ? (
-                      <img src={inst.logo} alt="" className="w-14 h-14 rounded-xl object-contain bg-apple-gray p-1 border border-apple-border/30" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-apple-gray border border-apple-border/30 text-apple-blue flex items-center justify-center font-semibold text-2xl shrink-0">
-                        {inst.name.charAt(0)}
+                    <div className="flex items-center gap-4 min-w-0">
+                      {inst.logo ? (
+                        <img src={inst.logo} alt="" className="w-14 h-14 rounded-xl object-contain bg-apple-gray p-1 border border-apple-border/30" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-apple-gray border border-apple-border/30 text-apple-blue flex items-center justify-center font-semibold text-2xl shrink-0">
+                          {inst.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-apple-text leading-tight truncate">{inst.name}</h3>
+                        <p className="text-[13px] text-apple-text-muted mt-1 font-mono truncate">@{inst.username}</p>
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-apple-text leading-tight truncate">{inst.name}</h3>
-                      <p className="text-[13px] text-apple-text-muted mt-1 font-mono truncate">@{inst.username}</p>
+                    </div>
+                    
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEdit(inst)} className="p-2 text-apple-text-muted hover:text-apple-blue transition-colors">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button disabled={deletingId === inst.id} onClick={() => handleDelete(inst.id)} className="p-2 text-apple-text-muted hover:text-red-500 transition-colors">
+                        {deletingId === inst.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
                     </div>
                   </motion.div>
                 ))}

@@ -1,7 +1,17 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail } from 'lucide-react';
+
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    className={className} 
+    fill="currentColor"
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -10,13 +20,15 @@ export default function SubAdminDashboard() {
   const [faculty, setFaculty] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'faculty'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'faculty' | 'resources'>('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const navigate = useNavigate();
 
   // Faculty Form
   const [facultyForm, setFacultyForm] = useState({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
+  const [editingFacultyId, setEditingFacultyId] = useState<number | string | null>(null);
 
   // Batch Form - Advanced Builder
   const [showBatchForm, setShowBatchForm] = useState(false);
@@ -76,9 +88,11 @@ export default function SubAdminDashboard() {
 
   // Notice Form
   const [noticeForm, setNoticeForm] = useState({ title: '', date: '', description: '', type: 'announcement' });
+  const [editingNoticeId, setEditingNoticeId] = useState<number | string | null>(null);
 
   // Document Form
   const [docForm, setDocForm] = useState({ title: '', size: '', format: 'PDF', url: '' });
+  const [editingDocId, setEditingDocId] = useState<number | string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -153,9 +167,14 @@ export default function SubAdminDashboard() {
 
   const handleDeleteBatch = async (id: number) => {
     if(!window.confirm('Are you sure you want to delete this batch?')) return;
-    const token = localStorage.getItem('token');
-    await fetch(`/api/institute/batches/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
-    fetchData(token!);
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/institute/batches/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      fetchData(token!);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleUpdateBatch = async (id: number, updates: any) => {
@@ -175,25 +194,39 @@ export default function SubAdminDashboard() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/institute/notices', {
-        method: 'POST',
+      const method = editingNoticeId ? 'PUT' : 'POST';
+      const url = editingNoticeId ? `/api/institute/notices/${editingNoticeId}` : '/api/institute/notices';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(noticeForm)
       });
       if (res.ok) {
         setNoticeForm({ title: '', date: '', description: '', type: 'announcement' });
+        setEditingNoticeId(null);
         fetchData(token!);
-        alert('Notice published successfully!');
+        alert(editingNoticeId ? 'Notice updated!' : 'Notice published!');
       } else {
         const errData = await res.json();
-        alert(`Failed to publish notice: ${errData.error || 'Unknown error'}`);
+        alert(`Failed: ${errData.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error(err);
-      alert('Network error while publishing notice.');
+      alert('Network error.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditNotice = (notice: any) => {
+    setNoticeForm({
+      title: notice.title || '',
+      date: notice.date || '',
+      description: notice.description || '',
+      type: notice.type || 'announcement'
+    });
+    setEditingNoticeId(notice.id);
   };
 
   const handleAddDocument = async (e: FormEvent) => {
@@ -201,38 +234,58 @@ export default function SubAdminDashboard() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/institute/documents', {
-        method: 'POST',
+      const method = editingDocId ? 'PUT' : 'POST';
+      const url = editingDocId ? `/api/institute/documents/${editingDocId}` : '/api/institute/documents';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(docForm)
       });
       if (res.ok) {
         setDocForm({ title: '', size: '', format: 'PDF', url: '' });
+        setEditingDocId(null);
         fetchData(token!);
+        alert(editingDocId ? 'Resource updated!' : 'Resource added!');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEditDocument = (doc: any) => {
+    setDocForm({
+      title: doc.title || '',
+      size: doc.size || '',
+      format: doc.format || 'PDF',
+      url: doc.url || ''
+    });
+    setEditingDocId(doc.id);
+  };
+
   const handleDeleteDocument = async (id: number) => {
-    const token = localStorage.getItem('token');
-    await fetch(`/api/institute/documents/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
-    fetchData(token!);
+    if (!window.confirm('Delete this resource?')) return;
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/institute/documents/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      fetchData(token!);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleDeleteNotice = async (id: number) => {
     if (!window.confirm('Delete this notice?')) return;
-    const token = localStorage.getItem('token');
+    setDeletingId(id);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`/api/institute/notices/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
       if (res.ok) {
         fetchData(token!);
-      } else {
-        alert('Failed to delete notice.');
       }
-    } catch (err) {
-      alert('Network error.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -241,31 +294,53 @@ export default function SubAdminDashboard() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/institute/faculty', {
-        method: 'POST',
+      const method = editingFacultyId ? 'PUT' : 'POST';
+      const url = editingFacultyId ? `/api/institute/faculty/${editingFacultyId}` : '/api/institute/faculty';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(facultyForm)
       });
       if (res.ok) {
         setFacultyForm({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
+        setEditingFacultyId(null);
         fetchData(token!);
-        alert('Faculty profile saved successfully!');
+        alert(editingFacultyId ? 'Faculty updated!' : 'Faculty profile saved!');
       } else {
         const error = await res.json();
-        alert(`Error: ${error.error || 'Failed to save faculty profile'}`);
+        alert(`Error: ${error.error || 'Failed'}`);
       }
     } catch (err) {
       console.error(err);
-      alert('A network error occurred. Please try again.');
+      alert('Network error.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEditFaculty = (member: any) => {
+    setFacultyForm({
+      name: member.name || '',
+      subject: member.subject || '',
+      image_url: member.image_url || '',
+      qualifications: member.qualifications || '',
+      bio: member.bio || '',
+      experience: member.experience || ''
+    });
+    setEditingFacultyId(member.id);
+  };
+
   const handleDeleteFaculty = async (id: number) => {
-    const token = localStorage.getItem('token');
-    await fetch(`/api/institute/faculty/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
-    fetchData(token!);
+    if (!window.confirm('Delete this faculty member?')) return;
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/institute/faculty/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      fetchData(token!);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleLogout = () => {
@@ -314,7 +389,8 @@ export default function SubAdminDashboard() {
             { id: 'profile', label: 'Profile Settings', icon: Grid },
             { id: 'faculty', label: 'Faculty', icon: Users },
             { id: 'batches', label: 'Batch Builder', icon: FileText },
-            { id: 'notices', label: 'Board & Resources', icon: Bookmark }
+            { id: 'notices', label: 'Board', icon: Bell },
+            { id: 'resources', label: 'Resources', icon: BookOpen }
           ].map(tab => {
             const Icon = tab.icon;
             return (
@@ -362,11 +438,19 @@ export default function SubAdminDashboard() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Support Phone Number</label>
-                    <input type="text" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 98765 43210" />
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input type="text" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 98765 43210" />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Verified WhatsApp Number</label>
-                    <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({...profile, whatsapp_number: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 9876543210" />
+                    <div className="relative">
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500">
+                        <WhatsAppIcon className="w-4 h-4" />
+                      </div>
+                      <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({...profile, whatsapp_number: e.target.value})} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 9876543210" />
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -541,10 +625,10 @@ export default function SubAdminDashboard() {
                     <div key={batch.id} className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm relative group flex flex-col h-full">
                       <div className="absolute top-4 right-4 flex gap-1">
                         <button onClick={() => handleEditBatch(batch)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
-                          <Grid className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteBatch(batch.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
-                          <Trash2 className="w-4 h-4" />
+                        <button disabled={deletingId === batch.id} onClick={() => handleDeleteBatch(batch.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
+                          {deletingId === batch.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                       
@@ -575,14 +659,16 @@ export default function SubAdminDashboard() {
                             <span className="text-slate-800 dark:text-slate-200 font-medium">{batch.batch_timing} • {batch.available_seats}/{batch.total_seats} Left</span>
                             <div className="flex gap-1 ml-1">
                               <button 
+                                disabled={deletingId === batch.id}
                                 onClick={() => handleUpdateBatch(batch.id, { available_seats: Math.max(0, batch.available_seats - 1) })}
-                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-red-500 hover:text-white transition-colors"
+                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
                               >
                                 -
                               </button>
                               <button 
+                                disabled={deletingId === batch.id}
                                 onClick={() => handleUpdateBatch(batch.id, { available_seats: Math.min(batch.total_seats, batch.available_seats + 1) })}
-                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-emerald-500 hover:text-white transition-colors"
+                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-emerald-500 hover:text-white transition-colors disabled:opacity-50"
                               >
                                 +
                               </button>
@@ -788,16 +874,19 @@ export default function SubAdminDashboard() {
           </motion.div>
         )}
 
-        {/* Notices & Resources Tab */}
+        {/* Notices Tab */}
         {activeTab === 'notices' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
             {/* Notice Board Management */}
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1">
                 <form onSubmit={handleAddNotice} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 lg:sticky lg:top-24">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Bell className="w-5 h-5 text-blue-500" />
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Post Live Notice</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                       <Bell className="w-5 h-5 text-blue-500" />
+                       <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editingNoticeId ? 'Edit Notice' : 'Post Live Notice'}</h3>
+                    </div>
+                    {editingNoticeId && <button type="button" onClick={() => { setEditingNoticeId(null); setNoticeForm({ title: '', date: '', description: '', type: 'announcement' }); }} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">Cancel</button>}
                   </div>
                   <div className="space-y-4">
                     <div>
@@ -833,7 +922,7 @@ export default function SubAdminDashboard() {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           Publishing...
                         </>
-                      ) : 'Publish To Board'}
+                      ) : (editingNoticeId ? 'Save Changes' : 'Publish To Board')}
                     </button>
                   </div>
                 </form>
@@ -880,8 +969,11 @@ export default function SubAdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleDeleteNotice(n.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                          <Trash2 className="w-4 h-4" />
+                        <button onClick={() => handleEditNotice(n)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button disabled={deletingId === n.id} onClick={() => handleDeleteNotice(n.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50">
+                          {deletingId === n.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
@@ -890,14 +982,22 @@ export default function SubAdminDashboard() {
                 </div>
               </div>
             </div>
+          </motion.div>
+        )}
 
+        {/* Resources Tab */}
+        {activeTab === 'resources' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
             {/* Resource Center Management */}
             <div className="grid lg:grid-cols-3 gap-8 pb-10">
               <div className="lg:col-span-1">
                 <form onSubmit={handleAddDocument} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 lg:sticky lg:top-24">
-                  <div className="flex items-center gap-2 mb-4">
-                    <BookOpen className="w-5 h-5 text-indigo-500" />
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Study Material</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-indigo-500" />
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editingDocId ? 'Edit Material' : 'Add Study Material'}</h3>
+                    </div>
+                    {editingDocId && <button type="button" onClick={() => { setEditingDocId(null); setDocForm({ title: '', size: '', format: 'PDF', url: '' }); }} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">Cancel</button>}
                   </div>
                   <div className="space-y-4">
                     <div>
@@ -933,7 +1033,7 @@ export default function SubAdminDashboard() {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           Adding...
                         </>
-                      ) : 'Add Resource'}
+                      ) : (editingDocId ? 'Save Changes' : 'Add Resource')}
                     </button>
                   </div>
                 </form>
@@ -953,11 +1053,14 @@ export default function SubAdminDashboard() {
                          </div>
                        </div>
                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleEditDocument(doc)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                            <Edit className="w-4 h-4" />
+                          </button>
                           <a href={doc.url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
                             <Eye className="w-4 h-4" />
                           </a>
-                          <button onClick={() => handleDeleteDocument(doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                            <Trash2 className="w-4 h-4" />
+                          <button disabled={deletingId === doc.id} onClick={() => handleDeleteDocument(doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50">
+                            {deletingId === doc.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                           </button>
                        </div>
                      </div>
@@ -976,7 +1079,10 @@ export default function SubAdminDashboard() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
               <form onSubmit={handleAddFaculty} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 sticky top-24">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Faculty Member</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editingFacultyId ? 'Edit Faculty' : 'Add Faculty Member'}</h3>
+                  {editingFacultyId && <button type="button" onClick={() => { setEditingFacultyId(null); setFacultyForm({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' }); }} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">Cancel</button>}
+                </div>
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Full Name</label>
@@ -1014,7 +1120,7 @@ export default function SubAdminDashboard() {
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Saving Profile...
                       </>
-                    ) : 'Save Teacher Profile'}
+                    ) : (editingFacultyId ? 'Save Changes' : 'Save Teacher Profile')}
                   </button>
                 </div>
               </form>
@@ -1043,9 +1149,14 @@ export default function SubAdminDashboard() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">{member.subject}</p>
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteFaculty(member.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                     <div className="flex items-center gap-1">
+                      <button onClick={() => handleEditFaculty(member)} className="text-slate-400 hover:text-blue-500 p-2 transition-colors">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button disabled={deletingId === member.id} onClick={() => handleDeleteFaculty(member.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors disabled:opacity-50">
+                        {deletingId === member.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

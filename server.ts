@@ -319,6 +319,50 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
   }
 });
 
+app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  const instId = req.params.id;
+  const { name, logo } = req.body;
+  
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('institutes').update({ name, logo }).eq('id', instId);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    try {
+      db.prepare('UPDATE institutes SET name = ?, logo = ? WHERE id = ?').run(name, logo, instId);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+app.delete('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  const instId = req.params.id;
+  
+  if (isSupabaseEnabled) {
+    // Need to find the user_id first to delete from app_users as well
+    const { data: inst } = await supabase.from('institutes').select('user_id').eq('id', instId).single();
+    if (inst) {
+      // CASCADE should handle institutes deletion if app_users is deleted, but let's be explicit if needed
+      // Actually, standard setup usually cascades from user to institute
+      const { error } = await supabase.from('app_users').delete().eq('id', inst.user_id);
+      if (error) return res.status(500).json({ error: error.message });
+    }
+    res.json({ success: true });
+  } else {
+    try {
+      const inst = db.prepare('SELECT user_id FROM institutes WHERE id = ?').get(instId) as any;
+      if (inst) {
+        db.prepare('DELETE FROM users WHERE id = ?').run(inst.user_id);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
 app.get('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
   if (isSupabaseEnabled) {
@@ -552,6 +596,22 @@ app.post('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), 
   }
 });
 
+app.put('/api/institute/notices/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const noticeId = req.params.id;
+  const { title, date, description, type } = req.body;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { error } = await supabase.from('notices').update({ title, date, description, type }).eq('id', noticeId).eq('institute_id', inst.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('UPDATE notices SET title = ?, date = ?, description = ?, type = ? WHERE id = ? AND institute_id = ?').run(title, date, description, type, noticeId, institute.id);
+    res.json({ success: true });
+  }
+});
+
 app.delete('/api/institute/notices/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
   const noticeId = req.params.id;
@@ -590,6 +650,22 @@ app.post('/api/institute/documents', authenticateToken, requireRole('SUB_ADMIN')
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     const result = db.prepare('INSERT INTO documents (institute_id, title, size, format, url) VALUES (?, ?, ?, ?, ?)').run(institute.id, title, size, format || 'PDF', url);
     res.json({ success: true, id: result.lastInsertRowid });
+  }
+});
+
+app.put('/api/institute/documents/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const docId = req.params.id;
+  const { title, size, format, url } = req.body;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { error } = await supabase.from('documents').update({ title, size, format, url }).eq('id', docId).eq('institute_id', inst.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('UPDATE documents SET title = ?, size = ?, format = ?, url = ? WHERE id = ? AND institute_id = ?').run(title, size, format, url, docId, institute.id);
+    res.json({ success: true });
   }
 });
 
@@ -638,6 +714,22 @@ app.post('/api/institute/faculty', authenticateToken, requireRole('SUB_ADMIN'), 
       console.error('❌ Faculty creation error:', err.message);
       res.status(500).json({ error: err.message });
     }
+  }
+});
+
+app.put('/api/institute/faculty/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const facultyId = req.params.id;
+  const { name, subject, image_url, qualifications, bio, experience } = req.body;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { error } = await supabase.from('faculty').update({ name, subject, image_url, qualifications, bio, experience }).eq('id', facultyId).eq('institute_id', inst.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('UPDATE faculty SET name = ?, subject = ?, image_url = ?, qualifications = ?, bio = ?, experience = ? WHERE id = ? AND institute_id = ?').run(name, subject, image_url, qualifications, bio, experience, facultyId, institute.id);
+    res.json({ success: true });
   }
 });
 

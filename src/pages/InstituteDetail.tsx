@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText } from 'lucide-react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
 
@@ -76,9 +76,17 @@ const MOCK_REVIEWS = [
 
 export default function InstituteDetail() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [institute, setInstitute] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('profile');
+  const activeTab = searchParams.get('tab') || 'profile';
+
+  const setActiveTab = (tabId: string) => {
+    setSearchParams(prev => {
+      prev.set('tab', tabId);
+      return prev;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     fetchInstitute();
@@ -94,6 +102,12 @@ export default function InstituteDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFullUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `https://${url}`;
   };
 
   const isIframe = (str: string) => str?.startsWith('<iframe') || str?.includes('iframe');
@@ -123,12 +137,18 @@ export default function InstituteDetail() {
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
       className="max-w-4xl mx-auto flex flex-col min-h-screen pt-4 md:pt-6 pb-32"
     >
-      <div className="px-4 pb-4 flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0">
-        <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
-        <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-        <span className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer capitalize">Location</span>
-        <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-        <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
+      <div className="px-4 pb-4 flex items-center gap-3 shrink-0">
+        <Link 
+          to="/" 
+          className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
+        </div>
       </div>
 
       <div className="px-4 w-full">
@@ -169,7 +189,7 @@ export default function InstituteDetail() {
               )}
               {institute.website && (
                 <div className="flex flex-col items-center gap-1">
-                  <a href={institute.website} target="_blank" rel="noreferrer" className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <a href={getFullUrl(institute.website)} target="_blank" rel="noreferrer" className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <Globe className="w-5 h-5"/>
                   </a>
                   <span className="text-[10px] md:text-xs text-slate-500 font-medium">Website</span>
@@ -192,7 +212,7 @@ export default function InstituteDetail() {
               {institute.whatsapp_number && (
                 <div className="flex flex-col items-center gap-1">
                   <a
-                    href={`https://wa.me/${institute.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
+                    href={`https://wa.me/${String(institute.whatsapp_number).replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-green-600 dark:text-green-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -229,12 +249,69 @@ export default function InstituteDetail() {
 
       <div className="px-4 mt-4 flex-1 items-start flex flex-col gap-3">
         <section className={`${activeTab === 'profile' ? 'block' : 'hidden'} w-full space-y-3`}>
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 px-5 py-4 mb-3 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-900 px-5 py-4 mb-3 shadow-sm">
             <h3 className="font-semibold text-slate-900 dark:text-white mb-2 text-base">About Institute</h3>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               {institute.description || `Welcome to ${institute.name}. We provide high quality coaching for competitive exams and academic excellence. Join us to achieve your educational goals with expert guidance and proven methodologies.`}
             </p>
           </div>
+
+          {(institute.phone || institute.email || institute.whatsapp_number) && (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 px-5 py-4 mb-3 shadow-sm">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-base">Contact Information</h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {institute.phone && (
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-blue-500 shadow-sm shrink-0">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Phone</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{institute.phone}</p>
+                    </div>
+                  </div>
+                )}
+                {institute.whatsapp_number && (
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-green-500 shadow-sm shrink-0">
+                      <WhatsAppIcon className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">WhatsApp</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{institute.whatsapp_number}</p>
+                    </div>
+                  </div>
+                )}
+                {institute.email && (
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{institute.email}</p>
+                    </div>
+                  </div>
+                )}
+                {institute.website && (
+                  <a 
+                    href={getFullUrl(institute.website)} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30 transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-blue-500 shadow-sm shrink-0 transition-colors">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Website</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">{institute.website}</p>
+                    </div>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 px-5 py-4 mb-3 shadow-sm">
             <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-base">Meet Our Faculty</h3>
@@ -331,12 +408,12 @@ export default function InstituteDetail() {
                 </div>
 
                 <div className="mt-3">
-                  <a 
-                    href={`/batch/${batch.id}`}
+                  <Link 
+                    to={`/batch/${batch.id}`}
                     className="flex items-center justify-center w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md shadow-blue-500/20 transition-all active:scale-95"
                   >
                     Enroll Now
-                  </a>
+                  </Link>
                 </div>
               </motion.div>
             )) : (

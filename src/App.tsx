@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal } from 'lucide-react';
+import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Login from './pages/Login';
 import UserLogin from './pages/UserLogin';
@@ -62,43 +62,56 @@ function Navigation() {
   };
 
   return (
-    <div className="fixed top-4 left-0 right-0 z-50 px-4 md:px-8 pointer-events-none">
+    <div className="fixed top-2 md:top-4 left-0 right-0 z-50 px-3 md:px-8 pointer-events-none">
       <header className="max-w-7xl mx-auto pointer-events-auto">
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-2xl shadow-2xl shadow-blue-500/10 px-4 py-2.5 flex items-center justify-between gap-4">
+        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/40 rounded-2xl md:rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] px-3 md:px-5 py-2 md:py-2.5 flex items-center justify-between gap-3 md:gap-4 transition-all duration-300">
           <AnimatePresence mode="wait">
-            {!(isSearchOpen || searchQuery) && (
+            {!(isSearchOpen || searchQuery) ? (
               <motion.a 
-                initial={{ opacity: 0, width: 0, x: -10 }}
-                animate={{ opacity: 1, width: 'auto', x: 0 }}
-                exit={{ opacity: 0, width: 0, x: -10 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
                 href="/" 
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0 overflow-hidden whitespace-nowrap"
+                className="flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity shrink-0 group min-w-0"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
                   <GraduationCap className="w-5 h-5" />
                 </div>
-                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Coacher</span>
+                <span className="text-base md:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">Coaching Direct</span>
               </motion.a>
+            ) : (
+              <motion.button
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchParams(prev => { prev.delete('search'); return prev; });
+                }}
+                className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </motion.button>
             )}
           </AnimatePresence>
 
-          <div className="flex-1 flex items-center justify-end gap-2 md:gap-4 overflow-hidden">
+          <div className="flex-1 flex items-center justify-end gap-1.5 md:gap-3 overflow-hidden">
             {/* Search Bar */}
-            <div className={`flex items-center transition-all duration-300 ease-in-out bg-slate-100 dark:bg-slate-800/50 rounded-xl px-3 py-1.5 ${isSearchOpen || searchQuery ? 'flex-1 max-w-md' : 'w-10 overflow-hidden'}`}>
+            <div className={`flex items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) bg-slate-100/50 dark:bg-slate-800/40 rounded-xl md:rounded-2xl px-2.5 md:px-4 py-1.5 md:py-2 ${isSearchOpen || searchQuery ? 'flex-1 max-w-xl ring-2 ring-blue-500/10' : 'w-10 overflow-hidden'}`}>
               <button 
                 onClick={toggleSearch}
-                className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 aria-label="Search"
               >
-                <Search className="w-5 h-5" />
+                <Search className={`w-5 h-5 transition-transform duration-300 ${isSearchOpen ? 'scale-90' : 'scale-100'}`} />
               </button>
               <input 
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search..."
+                placeholder="Find your future academy..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className={`bg-transparent border-none focus:ring-0 text-sm dark:text-white placeholder-slate-400 w-full ml-2 transition-opacity duration-300 ${isSearchOpen || searchQuery ? 'opacity-100' : 'opacity-0'}`}
+                className={`bg-transparent border-none focus:ring-0 text-[15px] dark:text-white placeholder-slate-400 w-full ml-2 transition-opacity duration-300 ${isSearchOpen || searchQuery ? 'opacity-100' : 'opacity-0'}`}
               />
               {(isSearchOpen || searchQuery) && (
                 <button 
@@ -106,14 +119,14 @@ function Navigation() {
                     setSearchParams(prev => { prev.delete('search'); return prev; });
                     if (!searchQuery) setIsSearchOpen(false);
                   }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded-full transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-full transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            <nav className="flex items-center gap-1 md:gap-2 shrink-0">
+            <nav className="flex items-center gap-1 md:gap-1.5 shrink-0">
               {location.pathname === '/' && (
                 <button
                   onClick={() => {
@@ -123,7 +136,7 @@ function Navigation() {
                       return prev;
                     }, { replace: true });
                   }}
-                  className={`p-2 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40' : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                  className={`p-2 transition-all rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40' : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
                   aria-label="Filter"
                 >
                   <SlidersHorizontal className="w-5 h-5" />
@@ -131,21 +144,23 @@ function Navigation() {
               )}
               <button
                 onClick={toggleTheme}
-                className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-all rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
                 aria-label="Toggle dark mode"
               >
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
               
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
+              
               {user ? (
-                <a href="/dashboard" className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 transition-all shadow-sm">
+                <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2 bg-slate-100/50 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[14px] font-semibold border border-slate-200 dark:border-slate-700 transition-all shadow-sm active:scale-95">
                   <User className="w-4 h-4" />
                   <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
                 </a>
               ) : (
                 <a 
                   href="/user/login" 
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 rounded-xl transition-all border border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-900 shadow-sm"
+                  className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl md:rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                   title="Sign In / Guest"
                 >
                   <User className="w-5 h-5" />
@@ -181,7 +196,7 @@ function GlobalFooter() {
         </div>
         
         <div className="text-center md:text-left text-xs text-slate-400 dark:text-slate-500">
-          &copy; {new Date().getFullYear()} Coacher Inc. All rights reserved.
+          &copy; {new Date().getFullYear()} Coaching Direct. All rights reserved.
         </div>
       </div>
     </footer>
@@ -217,7 +232,7 @@ export default function App() {
         <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
           <Navigation />
           
-          <main className="flex-1 mt-1 md:mt-4 w-full">
+          <main className="flex-1 pt-20 md:pt-24 w-full">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/institute/:id" element={<InstituteDetail />} />
