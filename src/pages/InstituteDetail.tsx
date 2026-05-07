@@ -79,6 +79,7 @@ export default function InstituteDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [institute, setInstitute] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const activeTab = searchParams.get('tab') || 'profile';
 
   const setActiveTab = (tabId: string) => {
@@ -348,8 +349,39 @@ export default function InstituteDetail() {
         </section>
 
         <section className={`${activeTab === 'batches' ? 'block' : 'hidden'} w-full`}>
+          {institute.categories && institute.categories.length > 0 && (
+            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 scrollbar-hide">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-2 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap border ${
+                  selectedCategory === 'all'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                    : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                }`}
+              >
+                All Batches
+              </button>
+              {institute.categories.map((cat: any) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-4 py-2 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap border ${
+                    selectedCategory === cat.id
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                      : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="space-y-4">
-            {institute.batches && institute.batches.length > 0 ? institute.batches.map((batch: any, i: number) => (
+            {institute.batches && institute.batches.length > 0 ? (
+              institute.batches
+                .filter((batch: any) => selectedCategory === 'all' || String(batch.category_id) === String(selectedCategory))
+                .map((batch: any, i: number) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -358,13 +390,25 @@ export default function InstituteDetail() {
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 p-3.5 shadow-sm"
               >
                 <div className="flex items-center justify-between mb-2.5 px-0.5">
-                  <h3 className="text-[15px] font-bold text-slate-900 dark:text-white capitalize truncate max-w-[70%]">
-                    {formatAcronyms(batch.batch_name)}
-                  </h3>
-                  {batch.status === 'running' 
-                    ? <span className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Running</span>
-                    : <span className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Inactive</span>
-                  }
+                  <div className="flex flex-col gap-1 max-w-[70%]">
+                    <h3 className="text-[15px] font-bold text-slate-900 dark:text-white capitalize truncate">
+                      {formatAcronyms(batch.batch_name)}
+                    </h3>
+                    {batch.category_id && institute.categories && (
+                      <span 
+                        className="px-2 py-0.5 rounded-md text-white text-[9px] font-bold uppercase tracking-wider w-fit"
+                        style={{ backgroundColor: institute.categories.find((c: any) => c.id === batch.category_id)?.color || '#3b82f6' }}
+                      >
+                        {institute.categories.find((c: any) => c.id === batch.category_id)?.name}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {batch.status === 'running' 
+                      ? <span className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Running</span>
+                      : <span className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Inactive</span>
+                    }
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
@@ -416,9 +460,14 @@ export default function InstituteDetail() {
                   </Link>
                 </div>
               </motion.div>
-            )) : (
+            ))) : (
               <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-white/5 text-center text-slate-500 shadow-sm">
                 No active batches right now.
+              </div>
+            )}
+            {institute.batches && institute.batches.length > 0 && institute.batches.filter((batch: any) => selectedCategory === 'all' || String(batch.category_id) === String(selectedCategory)).length === 0 && (
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-white/5 text-center text-slate-500 shadow-sm">
+                No batches found in this category.
               </div>
             )}
           </div>

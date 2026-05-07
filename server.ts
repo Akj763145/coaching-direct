@@ -824,7 +824,7 @@ app.get('/api/public/institutes', async (req, res) => {
   const { subject } = req.query;
   
   if (isSupabaseEnabled) {
-    const { data: institutes } = await supabase.from('institutes').select('*, batches(*)');
+    const { data: institutes } = await supabase.from('institutes').select('*, batches(*), categories(*)');
     let results = institutes || [];
     if (subject) {
       const s = String(subject).toLowerCase();
@@ -834,8 +834,10 @@ app.get('/api/public/institutes', async (req, res) => {
   } else {
     let institutes = db.prepare('SELECT * FROM institutes').all() as any[];
     const allBatches = db.prepare('SELECT * FROM batches').all() as any[];
+    const allCategories = db.prepare('SELECT * FROM categories').all() as any[];
     institutes = institutes.map(inst => {
       inst.batches = allBatches.filter(b => b.institute_id === inst.id);
+      inst.categories = allCategories.filter(c => c.institute_id === inst.id);
       return inst;
     });
     if (subject) {
@@ -850,13 +852,14 @@ app.get('/api/public/institutes/:id', async (req, res) => {
   const id = req.params.id;
   
   if (isSupabaseEnabled) {
-    const { data: institute, error } = await supabase.from('institutes').select('*, batches(*), faculty(*), notices(*), documents(*)').eq('id', id).single();
+    const { data: institute, error } = await supabase.from('institutes').select('*, batches(*), faculty(*), notices(*), documents(*), categories(*)').eq('id', id).single();
     if (error || !institute) return res.status(404).json({ error: 'Institute not found' });
     res.json(institute);
   } else {
     const institute = db.prepare('SELECT * FROM institutes WHERE id = ?').get(id) as any;
     if (!institute) return res.status(404).json({ error: 'Institute not found' });
     institute.batches = db.prepare('SELECT * FROM batches WHERE institute_id = ?').all(id);
+    institute.categories = db.prepare('SELECT * FROM categories WHERE institute_id = ?').all(id);
     institute.faculty = db.prepare('SELECT * FROM faculty WHERE institute_id = ?').all(id);
     institute.notices = db.prepare('SELECT * FROM notices WHERE institute_id = ? ORDER BY id DESC').all(id);
     institute.documents = db.prepare('SELECT * FROM documents WHERE institute_id = ?').all(id);
@@ -867,7 +870,7 @@ app.get('/api/public/institutes/:id', async (req, res) => {
 app.get('/api/public/batches/:id', async (req, res) => {
   const id = req.params.id;
   if (isSupabaseEnabled) {
-    const { data: batch, error } = await supabase.from('batches').select('*, institutes(name, id)').eq('id', id).single();
+    const { data: batch, error } = await supabase.from('batches').select('*, institutes(name, id), categories(*)').eq('id', id).single();
     if (error || !batch) return res.status(404).json({ error: 'Not found' });
     
     // Fetch related faculty via join
@@ -878,13 +881,21 @@ app.get('/api/public/batches/:id', async (req, res) => {
 
     const teachers = (batchFaculty || []).map((bf: any) => bf.faculty);
     const syllabus = typeof batch.curriculum === 'string' ? JSON.parse(batch.curriculum) : batch.curriculum;
-    res.json({ ...batch, institute_name: (batch as any).institutes?.name, teachers, syllabus });
+    const category = batch.categories; // This will be the joined category object
+    res.json({ ...batch, institute_name: (batch as any).institutes?.name, teachers, syllabus, category });
   } else {
     try {
-      const batch = db.prepare('SELECT b.*, i.name as institute_name FROM batches b JOIN institutes i ON b.institute_id = i.id WHERE b.id = ?').get(id) as any;
+      const batch = db.prepare(`
+        SELECT b.*, i.name as institute_name, c.name as category_name, c.color as category_color 
+        FROM batches b 
+        JOIN institutes i ON b.institute_id = i.id 
+        LEFT JOIN categories c ON b.category_id = c.id
+        WHERE b.id = ?
+      `).get(id) as any;
       if (!batch) return res.status(404).json({ error: 'Not found' });
       
       const syllabus = typeof batch.curriculum === 'string' ? JSON.parse(batch.curriculum) : batch.curriculum;
+      const category = batch.category_name ? { name: batch.category_name, color: batch.category_color } : null;
       
       // Fetch teachers via junction table
       const teachers = db.prepare(`
@@ -894,7 +905,7 @@ app.get('/api/public/batches/:id', async (req, res) => {
         WHERE bf.batch_id = ?
       `).all(id);
       
-      res.json({ ...batch, teachers: teachers || [], syllabus });
+      res.json({ ...batch, teachers: teachers || [], syllabus, category });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   }
 });

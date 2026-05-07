@@ -253,7 +253,8 @@ export default function Home() {
         .from('institutes')
         .select(`
           id, name, logo, latitude, longitude, address, location,
-          batches:batches(id, batch_name, subject, fee_structure, medium, status)
+          batches:batches(*),
+          categories:categories(*)
         `)
         .order('name', { ascending: true });
 
@@ -701,14 +702,7 @@ export default function Home() {
                   </div>
                   
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {Array.from(new Set(inst.batches?.flatMap((b:any) => b.subject?.split(',').map((s:string) => s.trim()).filter(Boolean)) || [])).slice(0, 3).map((sub: any) => (
-                      <span key={sub} className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50 text-[10px] font-medium inline-block capitalize truncate max-w-[80px]">
-                        {formatAcronyms(sub)}
-                      </span>
-                    ))}
-                    {(!inst.batches || inst.batches.length === 0) && (
-                      <span className="text-slate-400 dark:text-slate-500 text-[10px]">No active batches</span>
-                    )}
+                    {/* Category and subjects removed per user request */}
                   </div>
                 </div>
 

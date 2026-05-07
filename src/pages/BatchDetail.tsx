@@ -136,6 +136,14 @@ export default function BatchDetail() {
           className="mb-8"
         >
           <div className="flex flex-wrap items-center gap-2 mb-4">
+            {batch.category && (
+              <span 
+                className="px-3 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-widest shadow-sm"
+                style={{ backgroundColor: batch.category.color || '#3b82f6' }}
+              >
+                {batch.category.name}
+              </span>
+            )}
             {batch.subject.split(',').map((s: string) => (
               <span key={s} className="px-2.5 py-0.5 rounded-md bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                 {formatAcronyms(s.trim())}
