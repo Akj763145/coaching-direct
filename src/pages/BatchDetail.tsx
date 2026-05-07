@@ -129,258 +129,220 @@ export default function BatchDetail() {
   );
 
   return (
-    <div className="relative min-h-screen pb-32 bg-[#F5F5F7] dark:bg-[#000000]">
-      <div className="max-w-5xl mx-auto p-4 md:p-8">
-        
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
+      {/* Navigation */}
+      <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
         <motion.button 
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate(-1)} 
-          className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-8 group"
+          className="p-2 -ml-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500 group"
         >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
-          Back to Listings
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </motion.button>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Updates</span>
+        </div>
+      </div>
 
-        {/* Header Section */}
+      <div className="max-w-4xl mx-auto px-6">
+        {/* 1. Hero Header (No Cards) */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
+          className="mb-8"
         >
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             {batch.subject.split(',').map((s: string) => (
-              <span key={s} className="px-3 py-1 rounded-full bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider border border-slate-200 dark:border-slate-800">
+              <span key={s} className="px-2.5 py-0.5 rounded-md bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                 {formatAcronyms(s.trim())}
               </span>
             ))}
             {batch.status === 'running' && (
-              <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest">
+              <span className="px-3 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-200 dark:border-emerald-500/30">
                 Running
               </span>
             )}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight mb-3">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight capitalize leading-tight">
             {formatAcronyms(batch.batch_name)}
           </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-medium tracking-tight">
-            by <span className="text-blue-600 dark:text-blue-400">{batch.institute_name}</span>
-          </p>
+          <button className="mt-3 text-blue-600 dark:text-blue-400 font-semibold text-base hover:underline transition-all">
+            by {batch.institute_name}
+          </button>
         </motion.div>
 
-        {/* Bento Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 mb-16">
-          {/* Section A: Fee (Primary) */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="md:col-span-2 md:row-span-2 bg-white dark:bg-slate-900 rounded-[32px] p-8 border border-slate-100 dark:border-white/5 shadow-sm flex flex-col justify-between relative overflow-hidden group"
-          >
-            <div className="absolute top-6 right-6">
-              <span className="bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-orange-500/20">
-                Special Discount
-              </span>
-            </div>
-            <div>
-              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6 group-hover:scale-110 transition-transform">
-                <IndianRupee className="w-6 h-6" />
-              </div>
-              <h3 className="text-slate-400 dark:text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Total Course Fee</h3>
-              <div className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter">
-                {formatFee(batch.fee_structure)}
-              </div>
-            </div>
-            <p className="text-slate-400 dark:text-slate-600 text-xs font-semibold mt-8">Inclusive of all taxes & study material</p>
-          </motion.div>
-
-          {/* Section B: Timing & Mode */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-          >
-            <Clock className="w-5 h-5 text-orange-500 mb-4" />
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Timing</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{batch.batch_timing}</div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-          >
-            <Monitor className="w-5 h-5 text-blue-500 mb-4" />
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mode</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white">{batch.mode || 'Offline'}</div>
-          </motion.div>
-
-          {/* Section C: Medium & Board */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-          >
-            <BookOpen className="w-5 h-5 text-indigo-500 mb-4" />
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Medium</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white">{batch.medium || 'English'}</div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-          >
-            <CheckSquare className="w-5 h-5 text-emerald-500 mb-4" />
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Board</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{batch.board || 'CBSE / State'}</div>
-          </motion.div>
+        {/* 2. Bento Box Logistics Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Timing', value: batch.batch_timing, icon: Clock, color: 'text-orange-500' },
+            { label: 'Mode', value: batch.mode || 'Offline', icon: Monitor, color: 'text-blue-500' },
+            { label: 'Board', value: batch.board || 'CBSE', icon: CheckSquare, color: 'text-emerald-500' },
+            { label: 'Duration', value: batch.batch_duration || '12 Months', icon: Calendar, color: 'text-indigo-500' }
+          ].map((item, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-white dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
+            >
+              <item.icon className={`w-4 h-4 ${item.color} mb-3`} />
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">{item.label}</div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{item.value}</div>
+            </motion.div>
+          ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-12">
-          {/* Left: Journey & Details */}
-          <div className="lg:col-span-2 space-y-12">
-            
-            {/* Dynamic Syllabus Timeline */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Learning Journey</h2>
-                <div className="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 rounded-full text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">
-                  {batch.batch_duration}
-                </div>
+        {/* 3. Premium Price Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-blue-50 dark:border-blue-900/30 shadow-xl shadow-blue-500/5 relative overflow-hidden mb-8"
+        >
+          <div className="absolute top-0 right-0">
+             <div className="bg-blue-600 text-white text-[9px] font-black px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest shadow-lg">
+               Special Discount Included
+             </div>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Course Fee</div>
+              <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
+                {formatFee(batch.fee_structure)}
               </div>
-              
-              <div className="relative space-y-12 pl-6">
-                <div className="absolute left-[11px] top-2 bottom-2 w-px bg-slate-200 dark:bg-slate-800"></div>
-                
-                {batch.syllabus?.map((module: any, i: number) => (
-                  <motion.div 
-                    key={module.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="relative flex gap-8"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 shrink-0">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                    </div>
-                    
-                    <div className="flex-1 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow group">
-                      <div className="flex items-center gap-3 mb-2">
-                        <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                        <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-                          {module.title}
-                        </h4>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {module.content}
-                      </p>
-                    </div>
-                  </motion.div>
+              <p className="text-xs text-slate-400 mt-3 font-medium flex items-center gap-1.5">
+                <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                Inclusive of all taxes & study material
+              </p>
+            </div>
+            <div className="hidden md:block text-right">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Payment Options</div>
+              <div className="flex gap-2 justify-end">
+                {['EMI', 'UPI', 'CARD'].map(opt => (
+                  <span key={opt} className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 text-[8px] font-black text-slate-500">{opt}</span>
                 ))}
               </div>
-            </motion.section>
+            </div>
           </div>
+        </motion.div>
 
-          {/* Specialist / Team Profile */}
-          <div className="lg:col-span-1">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="sticky top-12 space-y-6"
-            >
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white px-2 flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                Faculty Team
-              </h3>
-
-              {(batch.teachers || [{
-                id: 1,
-                name: batch.teacher_name,
-                image: batch.teacher_image,
-                specialization: batch.specialization,
-                qualifications: batch.teacher_qualifications,
-                bio: batch.teacher_bio,
-                experience: batch.experience
-              }]).map((teacher: any, idx: number) => (
-                <motion.div 
-                  key={teacher.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-white dark:bg-slate-900 rounded-[40px] p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-                >
-                  <div className="flex flex-col items-center">
-                    <TeacherAvatar src={teacher.image || teacher.image_url} name={teacher.name} />
-                    
-                    <div className="mt-4 text-center">
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-0.5">
-                        {teacher.name}
-                      </h3>
-                      <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">
-                        {teacher.specialization || teacher.subject}
-                      </p>
-                      <div className="flex items-center justify-center gap-1.5 mb-4">
-                         <span className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 rounded-md text-[8px] font-black text-slate-500 uppercase tracking-wider border border-slate-100 dark:border-slate-700">
-                           {teacher.experience || '10+ Yrs'}
-                         </span>
-                         <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-md text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border border-emerald-100 dark:border-emerald-500/20">
-                           Verified
-                         </span>
-                      </div>
-                    </div>
-                    
-                    <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-4"></div>
-                    
-                    <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center italic mb-4 line-clamp-3">
-                      "{teacher.bio}"
-                    </div>
-                    
-                    <div className="w-full bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl">
-                      <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Background</div>
-                      <p className="text-[10px] font-bold text-slate-900 dark:text-white leading-tight">{teacher.qualifications}</p>
-                    </div>
+        {/* 4. Compact Faculty Section */}
+        <div className="mb-10">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">Expert Faculty</h3>
+          <div className="grid gap-3">
+            {(batch.teachers || [{
+              id: 1,
+              name: batch.teacher_name,
+              image: batch.teacher_image,
+              specialization: batch.specialization,
+              experience: batch.experience || '10+ Yrs'
+            }]).map((teacher: any, idx: number) => (
+              <motion.div 
+                key={teacher.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + (idx * 0.1) }}
+                className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 rounded-2xl p-3 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all group"
+              >
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700 shadow-sm">
+                  {teacher.image || teacher.image_url ? (
+                    <img src={teacher.image || teacher.image_url} alt={teacher.name} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-bold text-lg text-slate-400">{teacher.name.charAt(0)}</div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h4 className="font-bold text-slate-900 dark:text-white capitalize truncate">{teacher.name}</h4>
+                    <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
                   </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-semibold text-slate-500 truncate">{teacher.specialization || teacher.subject}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                    <span className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800 rounded text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase border border-slate-100 dark:border-slate-700">{teacher.experience || '10+ Yrs'}</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-0.5">
+                      <CheckSquare className="w-2.5 h-2.5" /> Verified
+                    </span>
+                  </div>
+                </div>
+                {teacher.bio && (
+                  <p className="hidden md:block text-[10px] text-slate-400 italic max-w-[200px] line-clamp-2 px-4 border-l border-slate-100 dark:border-slate-800">
+                    "{teacher.bio}"
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. Learning Journey (Full Modules) */}
+        <div className="mb-20">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 px-1 flex items-center gap-2">
+            Learning Journey
+            <span className="h-px flex-1 bg-slate-100 dark:bg-slate-800/50"></span>
+          </h3>
+          <div className="relative space-y-4">
+            {/* The Vertical Thread */}
+            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>
+            
+            {batch.syllabus?.map((item: any, idx: number) => (
+              <motion.div 
+                key={item.id}
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.05 }}
+                className="relative flex gap-6 group"
+              >
+                {/* Node */}
+                <div className="relative z-10 w-10 h-10 flex items-center justify-center shrink-0">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-950 group-hover:scale-125 transition-transform"></div>
+                </div>
+
+                {/* Content Card */}
+                <div className="flex-1 bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800/50 rounded-2xl p-5 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all">
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">{item.title}</h4>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">Phase {idx + 1}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed pl-11">
+                    {item.content}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Floating Interactive CTA */}
+      {/* 6. Sticky Action Bar */}
       <motion.div 
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-50"
+        className="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800/50 px-6 py-4 pb-safe flex gap-3 z-50"
       >
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/5 p-3 rounded-[32px] shadow-2xl flex items-center gap-3">
-          <a
-            href={`https://wa.me/919876543210?text=${encodeURIComponent(`Hi, I want to know more about the ${batch.batch_name} batch at ${batch.institute_name}.`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <MessageCircle className="w-5 h-5" />
-            WhatsApp
-          </a>
-          <button 
-            className="flex-[1.5] bg-blue-600 text-white py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
-          >
-            Enroll Now
-          </button>
-        </div>
+        <a
+          href={`https://wa.me/919876543210?text=${encodeURIComponent(`Hi, I'm interested in the ${batch.batch_name} batch.`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 border border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-2xl font-bold text-sm h-12 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-500/5"
+        >
+          <MessageCircle className="w-5 h-5" />
+          WhatsApp
+        </a>
+        <button 
+          className="flex-[2] bg-blue-600 text-white rounded-2xl font-bold text-sm h-12 shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-[0.98] transition-all"
+        >
+          Enroll Now
+        </button>
       </motion.div>
     </div>
   );
