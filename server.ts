@@ -93,13 +93,13 @@ if (isSupabaseEnabled) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL UNIQUE,
       name TEXT NOT NULL,
+      description TEXT,
       logo TEXT,
       address TEXT,
       location TEXT,
       phone TEXT,
       email TEXT,
       website TEXT,
-      demo_video_url TEXT,
       whatsapp_number TEXT,
       latitude REAL,
       longitude REAL,
@@ -117,6 +117,7 @@ if (isSupabaseEnabled) {
       start_date TEXT,
       fee_structure TEXT,
       status TEXT DEFAULT 'running',
+      mode TEXT DEFAULT 'Offline',
       medium TEXT,
       board_target TEXT,
       total_seats INTEGER,
@@ -131,16 +132,25 @@ if (isSupabaseEnabled) {
       institute_id INTEGER NOT NULL,
       title TEXT NOT NULL,
       date TEXT NOT NULL,
-      message TEXT NOT NULL,
+      description TEXT NOT NULL,
+      type TEXT DEFAULT 'announcement',
       FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
     );
-    CREATE TABLE IF NOT EXISTS leads (
+    CREATE TABLE IF NOT EXISTS documents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       institute_id INTEGER NOT NULL,
-      student_name TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      target_batch TEXT NOT NULL,
-      status TEXT DEFAULT 'New',
+      title TEXT NOT NULL,
+      size TEXT,
+      format TEXT DEFAULT 'PDF',
+      url TEXT,
+      FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS faculty (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      institute_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      image_url TEXT,
       FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
     );
   `);
@@ -309,11 +319,11 @@ app.get('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude } = req.body;
+  const { name, description, logo, address, location, phone, email, website, whatsapp_number, latitude, longitude } = req.body;
   
   if (isSupabaseEnabled) {
     // Only update allowed fields to avoid metadata conflicts
-    const updateData: any = { name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude };
+    const updateData: any = { name, description, logo, address, location, phone, email, website, whatsapp_number, latitude, longitude };
     
     const { error } = await supabase.from('institutes')
       .update(updateData)
@@ -325,9 +335,9 @@ app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
     try {
       db.prepare(`
         UPDATE institutes SET 
-          name = ?, logo = ?, address = ?, location = ?, phone = ?, email = ?, website = ?, demo_video_url = ?, whatsapp_number = ?, latitude = ?, longitude = ?
+          name = ?, description = ?, logo = ?, address = ?, location = ?, phone = ?, email = ?, website = ?, whatsapp_number = ?, latitude = ?, longitude = ?
         WHERE user_id = ?
-      `).run(name, logo, address, location, phone, email, website, demo_video_url, whatsapp_number, latitude, longitude, userId);
+      `).run(name, description, logo, address, location, phone, email, website, whatsapp_number, latitude, longitude, userId);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -352,12 +362,12 @@ app.get('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum } = req.body;
+  const { teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum } = req.body;
   
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
     const { data, error } = await supabase.from('batches').insert({
-      institute_id: inst.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum: typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum)
+      institute_id: inst.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum: typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum)
     }).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true, id: data.id });
@@ -365,9 +375,9 @@ app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), 
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     try {
       const result = db.prepare(`
-        INSERT INTO batches (institute_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(institute.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status || 'running', medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum));
+        INSERT INTO batches (institute_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(institute.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status || 'running', mode || 'Offline', medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum));
       res.json({ success: true, id: result.lastInsertRowid });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -390,6 +400,34 @@ app.delete('/api/institute/batches/:id', authenticateToken, requireRole('SUB_ADM
   }
 });
 
+app.put('/api/institute/batches/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const batchId = req.params.id;
+  const updates = req.body;
+  
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { error } = await supabase.from('batches')
+      .update(updates)
+      .eq('id', batchId)
+      .eq('institute_id', inst.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    const keys = Object.keys(updates);
+    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    const values = keys.map(k => updates[k]);
+    try {
+      db.prepare(`UPDATE batches SET ${setClause} WHERE id = ? AND institute_id = ?`)
+        .run(...values, batchId, institute.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
 app.get('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
   if (isSupabaseEnabled) {
@@ -406,17 +444,17 @@ app.get('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.post('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { title, date, message } = req.body;
+  const { title, date, description, type } = req.body;
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    const { data, error } = await supabase.from('notices').insert({ institute_id: inst.id, title, date, message }).select().single();
+    const { data, error } = await supabase.from('notices').insert({ institute_id: inst.id, title, date, description, type }).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true, id: data.id });
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     try {
-      const result = db.prepare('INSERT INTO notices (institute_id, title, date, message) VALUES (?, ?, ?, ?)')
-        .run(institute.id, title, date, message);
+      const result = db.prepare('INSERT INTO notices (institute_id, title, date, description, type) VALUES (?, ?, ?, ?, ?)')
+        .run(institute.id, title, date, description, type || 'announcement');
       res.json({ success: true, id: result.lastInsertRowid });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   }
@@ -436,77 +474,85 @@ app.delete('/api/institute/notices/:id', authenticateToken, requireRole('SUB_ADM
   }
 });
 
-app.get('/api/institute/leads', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+app.get('/api/institute/documents', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    if (!inst) return res.status(404).json({ error: 'Institute not found' });
-    
-    // Simpler query for direct leads data
-    const { data: leads, error } = await supabase.from('demo_requests').select(`
-      *,
-      batches (
-        batch_name
-      )
-    `).eq('institute_id', inst.id).order('created_at', { ascending: false });
-    
-    if (error) return res.status(500).json({ error: error.message });
-
-    const formattedLeads = leads?.map((l: any) => ({
-      ...l,
-      target_batch: l.batches?.batch_name || l.target_batch || 'General Demo'
-    })) || [];
-    
-    res.json(formattedLeads);
+    const { data: docs } = await supabase.from('documents').select('*').eq('institute_id', inst.id);
+    res.json(docs || []);
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
-    if (!institute) return res.status(404).json({ error: 'Institute not found' });
-    res.json(db.prepare('SELECT * FROM leads WHERE institute_id = ?').all(institute.id));
+    res.json(db.prepare('SELECT * FROM documents WHERE institute_id = ?').all(institute.id));
   }
 });
 
-app.put('/api/institute/leads/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+app.post('/api/institute/documents', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const leadId = req.params.id;
-  const { status } = req.body;
-  
+  const { title, size, format, url } = req.body;
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    if (!inst) return res.status(404).json({ error: 'Institute not found' });
-    const { error } = await supabase.from('demo_requests').update({ status }).eq('id', leadId).eq('institute_id', inst.id);
-    if(error) return res.status(500).json({ error: error.message });
+    const { data, error } = await supabase.from('documents').insert({ institute_id: inst.id, title, size, format, url }).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, id: data.id });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    const result = db.prepare('INSERT INTO documents (institute_id, title, size, format, url) VALUES (?, ?, ?, ?, ?)').run(institute.id, title, size, format || 'PDF', url);
+    res.json({ success: true, id: result.lastInsertRowid });
+  }
+});
+
+app.delete('/api/institute/documents/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const docId = req.params.id;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    await supabase.from('documents').delete().eq('id', docId).eq('institute_id', inst.id);
     res.json({ success: true });
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
-    db.prepare('UPDATE leads SET status = ? WHERE id = ? AND institute_id = ?').run(status, leadId, institute.id);
+    db.prepare('DELETE FROM documents WHERE id = ? AND institute_id = ?').run(docId, institute.id);
     res.json({ success: true });
   }
 });
 
-app.post('/api/public/leads', async (req, res) => {
-  const { institute_id, student_name, phone, target_batch, batch_id } = req.body;
-  if (!institute_id || !student_name || !phone) return res.status(400).json({ error: 'Missing required fields' });
-
+app.get('/api/institute/faculty', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
   if (isSupabaseEnabled) {
-    const { error } = await supabase.from('demo_requests').insert({
-      institute_id, 
-      student_name, 
-      phone, 
-      batch_id, 
-      status: 'Pending',
-      request_date: new Date().toISOString().split('T')[0],
-      request_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-    });
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { data: faculty } = await supabase.from('faculty').select('*').eq('institute_id', inst.id);
+    res.json(faculty || []);
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    res.json(db.prepare('SELECT * FROM faculty WHERE institute_id = ?').all(institute.id));
+  }
+});
+
+app.post('/api/institute/faculty', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const { name, subject, image_url } = req.body;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { data, error } = await supabase.from('faculty').insert({ institute_id: inst.id, name, subject, image_url }).select().single();
     if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, id: data.id });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    const result = db.prepare('INSERT INTO faculty (institute_id, name, subject, image_url) VALUES (?, ?, ?, ?)').run(institute.id, name, subject, image_url);
+    res.json({ success: true, id: result.lastInsertRowid });
+  }
+});
+
+app.delete('/api/institute/faculty/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const facultyId = req.params.id;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    await supabase.from('faculty').delete().eq('id', facultyId).eq('institute_id', inst.id);
     res.json({ success: true });
   } else {
-    try {
-      db.prepare('INSERT INTO leads (institute_id, student_name, phone, target_batch, status) VALUES (?, ?, ?, ?, ?)')
-        .run(institute_id, student_name, phone, target_batch, 'New');
-      res.json({ success: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('DELETE FROM faculty WHERE id = ? AND institute_id = ?').run(facultyId, institute.id);
+    res.json({ success: true });
   }
 });
 
@@ -540,13 +586,16 @@ app.get('/api/public/institutes/:id', async (req, res) => {
   const id = req.params.id;
   
   if (isSupabaseEnabled) {
-    const { data: institute, error } = await supabase.from('institutes').select('*, batches(*)').eq('id', id).single();
+    const { data: institute, error } = await supabase.from('institutes').select('*, batches(*), faculty(*), notices(*), documents(*)').eq('id', id).single();
     if (error || !institute) return res.status(404).json({ error: 'Institute not found' });
     res.json(institute);
   } else {
     const institute = db.prepare('SELECT * FROM institutes WHERE id = ?').get(id) as any;
     if (!institute) return res.status(404).json({ error: 'Institute not found' });
     institute.batches = db.prepare('SELECT * FROM batches WHERE institute_id = ?').all(id);
+    institute.faculty = db.prepare('SELECT * FROM faculty WHERE institute_id = ?').all(id);
+    institute.notices = db.prepare('SELECT * FROM notices WHERE institute_id = ? ORDER BY id DESC').all(id);
+    institute.documents = db.prepare('SELECT * FROM documents WHERE institute_id = ?').all(id);
     res.json(institute);
   }
 });

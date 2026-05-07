@@ -1,29 +1,36 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MessageCircle, MapPin, Download, Save, Grid, FileText, Users, Eye, CheckSquare, Bookmark, Check, X } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen } from 'lucide-react';
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
+  const [faculty, setFaculty] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'leads'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'faculty'>('profile');
   const navigate = useNavigate();
+
+  // Faculty Form
+  const [facultyForm, setFacultyForm] = useState({ name: '', subject: '', image_url: '' });
 
   // Batch Form - Advanced Builder
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [batchForm, setBatchForm] = useState({
     batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
     batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
-    status: 'running', total_seats: 50, available_seats: 50,
+    status: 'running', mode: 'Offline', total_seats: 50, available_seats: 50,
     syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
     curriculum: [{ title: '', content: '' }]
   });
 
   // Notice Form
-  const [noticeForm, setNoticeForm] = useState({ title: '', date: '', message: '' });
+  const [noticeForm, setNoticeForm] = useState({ title: '', date: '', description: '', type: 'announcement' });
+
+  // Document Form
+  const [docForm, setDocForm] = useState({ title: '', size: '', format: 'PDF', url: '' });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,8 +52,11 @@ export default function SubAdminDashboard() {
     const nRes = await fetch('/api/institute/notices', { headers: { 'Authorization': `Bearer ${token}` }});
     if (nRes.ok) setNotices(await nRes.json());
 
-    const lRes = await fetch('/api/institute/leads', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (lRes.ok) setLeads(await lRes.json());
+    const dRes = await fetch('/api/institute/documents', { headers: { 'Authorization': `Bearer ${token}` }});
+    if (dRes.ok) setDocuments(await dRes.json());
+
+    const fRes = await fetch('/api/institute/faculty', { headers: { 'Authorization': `Bearer ${token}` }});
+    if (fRes.ok) setFaculty(await fRes.json());
   };
 
   const handleProfileUpdate = async (e: FormEvent) => {
@@ -88,6 +98,18 @@ export default function SubAdminDashboard() {
     fetchData(token!);
   };
 
+  const handleUpdateBatch = async (id: number, updates: any) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/institute/batches/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(updates)
+    });
+    if (res.ok) {
+      fetchData(token!);
+    }
+  };
+
   const handleAddNotice = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -97,9 +119,29 @@ export default function SubAdminDashboard() {
       body: JSON.stringify(noticeForm)
     });
     if (res.ok) {
-      setNoticeForm({ title: '', date: '', message: '' });
+      setNoticeForm({ title: '', date: '', description: '', type: 'announcement' });
       fetchData(token!);
     }
+  };
+
+  const handleAddDocument = async (e: FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/institute/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(docForm)
+    });
+    if (res.ok) {
+      setDocForm({ title: '', size: '', format: 'PDF', url: '' });
+      fetchData(token!);
+    }
+  };
+
+  const handleDeleteDocument = async (id: number) => {
+    const token = localStorage.getItem('token');
+    await fetch(`/api/institute/documents/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+    fetchData(token!);
   };
 
   const handleDeleteNotice = async (id: number) => {
@@ -108,14 +150,24 @@ export default function SubAdminDashboard() {
     fetchData(token!);
   };
 
-  const handleStatusChange = async (id: string, status: string) => {
-    setLeads(leads.map(lead => lead.id === id ? { ...lead, status } : lead));
+  const handleAddFaculty = async (e: FormEvent) => {
+    e.preventDefault();
     const token = localStorage.getItem('token');
-    await fetch(`/api/institute/leads/${id}`, {
-      method: 'PUT',
+    const res = await fetch('/api/institute/faculty', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ status })
+      body: JSON.stringify(facultyForm)
     });
+    if (res.ok) {
+      setFacultyForm({ name: '', subject: '', image_url: '' });
+      fetchData(token!);
+    }
+  };
+
+  const handleDeleteFaculty = async (id: number) => {
+    const token = localStorage.getItem('token');
+    await fetch(`/api/institute/faculty/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+    fetchData(token!);
   };
 
   const handleLogout = () => {
@@ -148,9 +200,9 @@ export default function SubAdminDashboard() {
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto no-scrollbar gap-2 pb-0">
           {[
             { id: 'profile', label: 'Profile Settings', icon: Grid },
-            { id: 'batches', label: 'Advanced Batch Builder', icon: FileText },
-            { id: 'notices', label: 'Notice Board', icon: Bookmark },
-            { id: 'leads', label: 'Demo Requests', icon: Users }
+            { id: 'faculty', label: 'Faculty', icon: Users },
+            { id: 'batches', label: 'Batch Builder', icon: FileText },
+            { id: 'notices', label: 'Board & Resources', icon: Bookmark }
           ].map(tab => {
             const Icon = tab.icon;
             return (
@@ -305,8 +357,13 @@ export default function SubAdminDashboard() {
                   <input type="text" value={profile.website || ''} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" />
                 </div>
                 <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Feature Video (YouTube URL)</label>
-                  <input type="text" value={profile.demo_video_url || ''} onChange={e => setProfile({...profile, demo_video_url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="https://youtube.com/watch?v=..." />
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">About / Description</label>
+                  <textarea 
+                    value={profile.description || ''} 
+                    onChange={e => setProfile({...profile, description: e.target.value})} 
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white min-h-[100px]" 
+                    placeholder="Tell us about your institute..."
+                  />
                 </div>
               </div>
               
@@ -345,7 +402,12 @@ export default function SubAdminDashboard() {
                         <div>
                           <h3 className="font-bold text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-2 flex-wrap">
                             {batch.batch_name}
-                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${batch.status === 'running' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>{batch.status}</span>
+                            <button 
+                              onClick={() => handleUpdateBatch(batch.id, { status: batch.status === 'running' ? 'not_running' : 'running' })}
+                              className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full transition-transform active:scale-95 ${batch.status === 'running' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}
+                            >
+                              {batch.status}
+                            </button>
                           </h3>
                           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">By {batch.teacher_name}</p>
                         </div>
@@ -354,7 +416,26 @@ export default function SubAdminDashboard() {
                       <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm mb-6 flex-grow">
                         <div className="flex flex-col"><span className="text-slate-400 text-xs uppercase font-semibold">Subject / Target</span><span className="text-slate-800 dark:text-slate-200 font-medium">{batch.subject} • {batch.board_target}</span></div>
                         <div className="flex flex-col"><span className="text-slate-400 text-xs uppercase font-semibold">Medium</span><span className="text-slate-800 dark:text-slate-200 font-medium">{batch.medium}</span></div>
-                        <div className="flex flex-col"><span className="text-slate-400 text-xs uppercase font-semibold">Timing / Seats</span><span className="text-slate-800 dark:text-slate-200 font-medium">{batch.batch_timing} • {batch.available_seats}/{batch.total_seats} Left</span></div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 text-xs uppercase font-semibold">Timing / Seats</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-800 dark:text-slate-200 font-medium">{batch.batch_timing} • {batch.available_seats}/{batch.total_seats} Left</span>
+                            <div className="flex gap-1 ml-1">
+                              <button 
+                                onClick={() => handleUpdateBatch(batch.id, { available_seats: Math.max(0, batch.available_seats - 1) })}
+                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-red-500 hover:text-white transition-colors"
+                              >
+                                -
+                              </button>
+                              <button 
+                                onClick={() => handleUpdateBatch(batch.id, { available_seats: Math.min(batch.total_seats, batch.available_seats + 1) })}
+                                className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400 hover:bg-emerald-500 hover:text-white transition-colors"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex flex-col"><span className="text-slate-400 text-xs uppercase font-semibold">Total Fee</span><span className="text-slate-800 dark:text-slate-200 font-medium font-mono">₹{batch.fee_structure}</span></div>
                       </div>
 
@@ -480,6 +561,23 @@ export default function SubAdminDashboard() {
                         <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Timing</label>
                         <input type="text" value={batchForm.batch_timing} onChange={e => setBatchForm({...batchForm, batch_timing: e.target.value})} className="w-full px-4 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none dark:text-white" placeholder="4 PM - 6 PM (MWF)" />
                       </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Batch Mode</label>
+                        <select value={batchForm.mode} onChange={e => setBatchForm({...batchForm, mode: e.target.value})} className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none cursor-pointer dark:text-white">
+                          <option value="Offline">Offline</option>
+                          <option value="Online">Online</option>
+                          <option value="Hybrid">Hybrid</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Current Status</label>
+                        <select value={batchForm.status} onChange={e => setBatchForm({...batchForm, status: e.target.value})} className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none cursor-pointer dark:text-white font-bold">
+                          <option value="running">Running (Active Admissions)</option>
+                          <option value="not_running">Inactive (No Admissions)</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="bg-orange-50 dark:bg-orange-900/10 p-5 rounded-2xl border border-orange-100 dark:border-orange-900/30 space-y-5">
@@ -506,134 +604,184 @@ export default function SubAdminDashboard() {
           </motion.div>
         )}
 
-        {/* Notices Tab */}
+        {/* Notices & Resources Tab */}
         {activeTab === 'notices' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid md:grid-cols-3 gap-8">
-            <div className="md:col-span-1">
-              <form onSubmit={handleAddNotice} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 sticky top-24">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Post Live Notice</h3>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+            {/* Notice Board Management */}
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <form onSubmit={handleAddNotice} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 lg:sticky lg:top-24">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Bell className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Post Live Notice</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Notice Title</label>
+                      <input required type="text" value={noticeForm.title} onChange={e => setNoticeForm({...noticeForm, title: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="e.g. New Batch Starting" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Date Label</label>
+                        <input required type="text" value={noticeForm.date} onChange={e => setNoticeForm({...noticeForm, date: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="May 10" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Type</label>
+                        <select value={noticeForm.type} onChange={e => setNoticeForm({...noticeForm, type: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white">
+                          <option value="announcement">Announcement</option>
+                          <option value="alert">Alert / Warning</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Detailed Description</label>
+                      <textarea required value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={3} placeholder="Provide details about the notice..."></textarea>
+                    </div>
+                    <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition active:scale-[0.98]">Publish Notice</button>
+                  </div>
+                </form>
+              </div>
+              <div className="lg:col-span-2 space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 ml-1">Live Notices ({notices.length})</h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Notice Title</label>
-                    <input required type="text" value={noticeForm.title} onChange={e => setNoticeForm({...noticeForm, title: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Holiday Announcement" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Date / Scope</label>
-                    <input required type="text" value={noticeForm.date} onChange={e => setNoticeForm({...noticeForm, date: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Today • Important" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Message Content</label>
-                    <textarea required value={noticeForm.message} onChange={e => setNoticeForm({...noticeForm, message: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={3} placeholder="Write message here..."></textarea>
-                  </div>
-                  <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">Publish Notice</button>
+                  {notices.map((n) => (
+                    <div key={n.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-start group shadow-sm">
+                      <div className="flex gap-4">
+                        <div className={`w-2 h-10 rounded-full shrink-0 ${n.type === 'alert' ? 'bg-amber-400' : 'bg-blue-400'}`}></div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 dark:text-white">{n.title}</h4>
+                          <div className="flex items-center gap-2 mt-1 mb-2">
+                             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{n.date}</span>
+                             <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${n.type === 'alert' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20'}`}>
+                               {n.type}
+                             </span>
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">{n.description}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteNotice(n.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                  {notices.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center rounded-[24px]">No active notices found.</p>}
                 </div>
-              </form>
+              </div>
             </div>
-            <div className="md:col-span-2 space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 ml-1">Active Updates ({notices.length})</h3>
-              {notices.map((n) => (
-                <div key={n.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-start group shadow-sm">
-                  <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">{n.title}</h4>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1 mb-2 bg-blue-50 dark:bg-blue-900/30 inline-block px-2 py-0.5 rounded-full">{n.date}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{n.message}</p>
+
+            {/* Resource Center Management */}
+            <div className="grid lg:grid-cols-3 gap-8 pb-10">
+              <div className="lg:col-span-1">
+                <form onSubmit={handleAddDocument} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 lg:sticky lg:top-24">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BookOpen className="w-5 h-5 text-indigo-500" />
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Study Material</h3>
                   </div>
-                  <button onClick={() => handleDeleteNotice(n.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-2">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Document Title</label>
+                      <input required type="text" value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Physics Notes - Ch 1" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Size (e.g. 1.2 MB)</label>
+                        <input type="text" value={docForm.size} onChange={e => setDocForm({...docForm, size: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="2.5 MB" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Format</label>
+                        <select value={docForm.format} onChange={e => setDocForm({...docForm, format: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white">
+                          <option value="PDF">PDF Document</option>
+                          <option value="DOCX">Word Doc</option>
+                          <option value="ZIP">ZIP Archive</option>
+                          <option value="Video">Video Link</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Resource URL / Link</label>
+                      <input required type="text" value={docForm.url} onChange={e => setDocForm({...docForm, url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="https://drive.google.com/..." />
+                    </div>
+                    <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-sm hover:bg-indigo-700 transition active:scale-[0.98]">Add Resource</button>
+                  </div>
+                </form>
+              </div>
+              <div className="lg:col-span-2">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 ml-1">Study Materials ({documents.length})</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                   {documents.map((doc) => (
+                     <div key={doc.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group shadow-sm transition-all hover:border-indigo-200 dark:hover:border-indigo-900/50">
+                       <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                           <FileText className="w-5 h-5" />
+                         </div>
+                         <div>
+                           <h4 className="font-bold text-slate-900 dark:text-white text-sm">{doc.title}</h4>
+                           <p className="text-[10px] text-slate-500 uppercase font-bold">{doc.format} • {doc.size}</p>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-1">
+                          <a href={doc.url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                            <Eye className="w-4 h-4" />
+                          </a>
+                          <button onClick={() => handleDeleteDocument(doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                       </div>
+                     </div>
+                   ))}
+                   {documents.length === 0 && <div className="sm:col-span-2 py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[24px]">
+                      <h3 className="text-slate-500 text-sm">No resources added yet.</h3>
+                   </div>}
                 </div>
-              ))}
-              {notices.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center rounded-[24px]">No active notices. Post something to inform your students via the live noticeboard.</p>}
+              </div>
             </div>
           </motion.div>
         )}
 
-        {/* Leads & Demo Requests Tab */}
-        {activeTab === 'leads' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-slate-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
-               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Demo Leads Manager</h2>
-               <p className="text-sm text-slate-500">Student requests who clicked "Book Free Demo" on your pages.</p>
+        {/* Faculty Tab */}
+        {activeTab === 'faculty' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+              <form onSubmit={handleAddFaculty} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 sticky top-24">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Faculty Member</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Full Name</label>
+                    <input required type="text" value={facultyForm.name} onChange={e => setFacultyForm({...facultyForm, name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Prof. John Doe" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Subject / Department</label>
+                    <input required type="text" value={facultyForm.subject} onChange={e => setFacultyForm({...facultyForm, subject: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Physics HOD" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Image URL (Optional)</label>
+                    <input type="text" value={facultyForm.image_url} onChange={e => setFacultyForm({...facultyForm, image_url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="https://..." />
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">Save Teacher Profile</button>
+                </div>
+              </form>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-semibold hidden md:table-header-group border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th className="px-6 py-4">Student Info</th>
-                    <th className="px-6 py-4">Target Batch & Time</th>
-                    <th className="px-6 py-4">Status & Action</th>
-                    <th className="px-6 py-4 text-right">Quick Connect</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {leads.map(lead => {
-                    const message = encodeURIComponent(`Hi ${lead.student_name}, this is a confirmation for your demo class for the ${lead.target_batch} batch on ${lead.request_date} at ${lead.request_time}. Please confirm if you will be able to join!`);
-                    const waUrl = `https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${message}`;
-
-                    return (
-                      <tr key={lead.id} className="flex flex-col md:table-row py-4 md:py-0 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white flex flex-col justify-center">
-                           <span className="text-base font-bold">{lead.student_name}</span>
-                           <span className="text-slate-500 font-mono text-xs mt-1 bg-slate-100 dark:bg-slate-800 py-0.5 px-2 rounded w-max">{lead.phone}</span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                           <div className="flex flex-col">
-                             <span className="font-semibold text-slate-800 dark:text-slate-200 mb-1">{lead.target_batch}</span>
-                             <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                               <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded uppercase font-bold tracking-wider">{lead.request_date}</span>
-                               <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono">{lead.request_time}</span>
-                             </span>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {lead.status === 'Pending' ? (
-                            <div className="flex items-center gap-2">
-                              <span className="bg-amber-100 text-amber-700 border-amber-200 border px-3 py-1 rounded-full text-xs font-bold mr-2">
-                                🟡 Pending
-                              </span>
-                              <button 
-                                onClick={() => handleStatusChange(lead.id, 'Scheduled')}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors shadow-sm"
-                                title="Approve & Schedule"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleStatusChange(lead.id, 'Rejected')}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-colors shadow-sm"
-                                title="Reject Request"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1.5 ${
-                              lead.status === 'Scheduled' 
-                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-                                : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                            }`}>
-                              {lead.status === 'Scheduled' ? '🟢 Scheduled' : '⚫ Rejected'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 md:text-right align-middle">
-                           <a href={waUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white px-4 py-2 rounded-xl transition-all font-semibold text-xs border border-[#25D366]/20 shadow-sm">
-                              <MessageCircle className="w-4 h-4" /> Chat
-                           </a>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {leads.length === 0 && (
-                     <tr>
-                       <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                          No demo requests yet. Keep marketing!
-                       </td>
-                     </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="md:col-span-2 space-y-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 ml-1">Current Faculty ({faculty.length})</h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {faculty.map((member) => (
+                  <div key={member.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-center group shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {member.image_url ? <img src={member.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{member.name.charAt(0)}</div>}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{member.name}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{member.subject}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDeleteFaculty(member.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {faculty.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center rounded-[24px]">No faculty members added. Add your top educators to build trust with students.</p>}
             </div>
           </motion.div>
         )}

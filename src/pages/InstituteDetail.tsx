@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, MessageCircle, X, Star, Bell, Download, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText } from 'lucide-react';
+import { motion } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
-import BookingModal from '../components/BookingModal';
+
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    className={className} 
+    fill="currentColor"
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 const formatAcronyms = (text: string) => {
   if (!text) return '';
@@ -37,12 +46,12 @@ const formatFee = (val: string) => {
   if (!val || val.toLowerCase().includes('contact')) return 'Contact for fee';
   let formatted = val.replace(/Rs\.?|rs\.?|RS\.?|\$|INR/gi, '₹').trim();
   if (!formatted.includes('₹') && formatted.match(/\d/)) {
-    formatted = '₹ ' + formatted; // Add Rupee if missing
+    formatted = '₹ ' + formatted;
   }
-  formatted = formatted.replace(/₹\s*(\d)/g, '₹$1'); // e.g. ₹500
+  formatted = formatted.replace(/₹\s*(\d)/g, '₹$1');
   formatted = formatted.replace(/\/?\s*(month|year|hr|hour|day|class)/gi, ' / $1');
-  formatted = formatted.replace(/\/ \//g, '/'); // cleanup
-  return formatAcronyms(formatted.replace(/\b\w/g, c => c.toUpperCase())); // capitalize words
+  formatted = formatted.replace(/\/ \//g, '/');
+  return formatAcronyms(formatted.replace(/\b\w/g, c => c.toUpperCase()));
 };
 
 const TeacherAvatar = ({ src, name }: { src?: string, name?: string }) => {
@@ -65,20 +74,11 @@ const MOCK_REVIEWS = [
   { id: 3, name: "Aman Gupta", rating: 5, text: "The doubt clearing sessions are amazing. Teachers are very supportive." }
 ];
 
-const MOCK_NOTICES = [
-  { id: 1, date: "May 5, 2026", title: "New Crash Course", message: "New NEET Crash Course starting next Monday!" },
-  { id: 2, date: "May 2, 2026", title: "Mock Test Results", message: "Results for the weekend mock test are now available." }
-];
-
 export default function InstituteDetail() {
   const { id } = useParams();
   const [institute, setInstitute] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<any>(null);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
     fetchInstitute();
@@ -96,60 +96,34 @@ export default function InstituteDetail() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/public/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          institute_id: institute.id,
-          student_name: name,
-          phone: phone,
-          batch_id: selectedBatch?.id,
-          target_batch: selectedBatch?.batch_name || 'General Inquiry'
-        })
-      });
-      
-      if (res.ok) {
-        window.alert('Request sent successfully! The institute will contact you soon.');
-        setModalOpen(false);
-        setName('');
-        setPhone('');
-      } else {
-        alert('Failed to send request. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error submitting lead:', error);
-      alert('Network error. Please check your connection.');
+  const isIframe = (str: string) => str?.startsWith('<iframe') || str?.includes('iframe');
+  
+  const getMapUrl = (location: string) => {
+    if (!location) return null;
+    const trimmed = location.trim();
+    if (isIframe(trimmed)) {
+      const srcMatch = trimmed.match(/src="([^"]+)"/);
+      return srcMatch ? srcMatch[1] : null;
     }
+    if (trimmed.startsWith('http')) return trimmed;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`;
   };
 
   if (loading) return (
-    <div className="p-6 md:p-10">
+    <div className="p-6 md:p-10 max-w-4xl mx-auto">
       <DetailSkeleton />
     </div>
   );
-  if (!institute) return <div className="p-12 text-center text-apple-text-muted font-medium">Institute not found</div>;
-
-  // Convert youtube watch URL to embed URL for iframe
-  const getEmbedUrl = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
-  };
-
-  const embedUrl = getEmbedUrl(institute.demo_video_url);
+  if (!institute) return <div className="p-12 text-center text-slate-500 font-medium">Institute not found</div>;
 
   return (
     <motion.main 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-      className="max-w-7xl mx-auto flex flex-col min-h-screen pt-4 md:pt-6 pb-32"
+      className="max-w-4xl mx-auto flex flex-col min-h-screen pt-4 md:pt-6 pb-32"
     >
-      <div className="px-4 md:px-8 pb-4 flex items-center gap-1.5 text-slate-500 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0">
+      <div className="px-4 pb-4 flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0">
         <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
         <ChevronRight className="w-3.5 h-3.5 shrink-0" />
         <span className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer capitalize">Location</span>
@@ -157,344 +131,348 @@ export default function InstituteDetail() {
         <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
       </div>
 
-      <div className="px-4 md:px-8 w-full">
-        {/* Header Profile */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 relative overflow-hidden transition-all duration-300 text-left">
-        <div className="h-32 md:h-48 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative">
-          <div className="absolute inset-0 bg-white/10 dark:bg-black/20 backdrop-blur-sm mix-blend-overlay"></div>
-        </div>
-
-        <div className="px-6 md:px-10 pb-6 md:pb-10 pt-4 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative text-left">
-          <div className="ml-4 md:ml-8 -mt-16 sm:-mt-20 md:-mt-24 relative z-10 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] md:rounded-[30px] shadow-md lg:shadow-lg flex-shrink-0 border border-slate-300 dark:border-slate-500">
-             {institute.logo ? (
-              <motion.img layoutId={`logo-${institute.id}`} src={institute.logo} alt={institute.name} className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-[16px] md:rounded-[24px] object-contain bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 z-10 mix-blend-darken dark:mix-blend-screen" />
+      <div className="px-4 w-full">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden text-center pb-8 transition-all">
+          <div className="h-28 sm:h-32 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/80"></div>
+          
+          <div className="flex justify-center -mt-10 sm:-mt-12 relative z-10">
+            {institute.logo ? (
+              <motion.img src={institute.logo} alt={institute.name} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white dark:border-slate-900 object-cover bg-white dark:bg-slate-800" />
             ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-[16px] md:rounded-[24px] bg-indigo-100 dark:bg-indigo-900/40 border border-slate-100 dark:border-slate-700 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-3xl sm:text-5xl z-10 capitalize">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-3xl capitalize z-10">
                 {institute.name.charAt(0)}
               </div>
             )}
           </div>
           
-          <div className="flex-1 z-10 pt-2 min-w-0 w-full">
-            <h1 className="text-2xl sm:text-3xl md:text-[40px] font-bold text-slate-900 dark:text-white tracking-tight leading-tight break-words capitalize">{formatAcronyms(institute.name)}</h1>
-            <div className="flex items-center gap-1.5 mt-2">
-              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">4.8 (120 Reviews)</span>
+          <div className="px-6 relative z-10 mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight capitalize">{formatAcronyms(institute.name)}</h1>
+            <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-0.5 capitalize max-w-md mx-auto line-clamp-1">
+              {formatAcronyms(institute.address || institute.location || '')}
+            </p>
+            <div className="flex justify-center gap-3 sm:gap-4 mt-6">
+              {institute.phone && (
+                <div className="flex flex-col items-center gap-1">
+                  <a href={`tel:${institute.phone}`} className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <Phone className="w-5 h-5"/>
+                  </a>
+                  <span className="text-[10px] md:text-xs text-slate-500 font-medium">Call</span>
+                </div>
+              )}
+              {institute.email && (
+                <div className="flex flex-col items-center gap-1">
+                  <a href={`mailto:${institute.email}`} className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <Mail className="w-5 h-5"/>
+                  </a>
+                  <span className="text-[10px] md:text-xs text-slate-500 font-medium">Email</span>
+                </div>
+              )}
+              {institute.website && (
+                <div className="flex flex-col items-center gap-1">
+                  <a href={institute.website} target="_blank" rel="noreferrer" className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <Globe className="w-5 h-5"/>
+                  </a>
+                  <span className="text-[10px] md:text-xs text-slate-500 font-medium">Website</span>
+                </div>
+              )}
+              {(institute.address || institute.location) && (
+                <div className="flex flex-col items-center gap-1">
+                  <a 
+                    href={getMapUrl(institute.location || institute.address) || '#'} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    title={institute.address || institute.location} 
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <MapPin className="w-5 h-5"/>
+                  </a>
+                  <span className="text-[10px] md:text-xs text-slate-500 font-medium">Location</span>
+                </div>
+              )}
+              {institute.phone && (
+                <div className="flex flex-col items-center gap-1">
+                  <a
+                    href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-green-600 dark:text-green-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <WhatsAppIcon className="w-5 h-5" />
+                  </a>
+                  <span className="text-[10px] md:text-xs text-slate-500 font-medium">Chat</span>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6 mt-3 md:mt-4 text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 w-full">
-              {institute.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"/> <span className="truncate capitalize">{formatAcronyms(institute.address)}</span></div>}
-              {institute.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"/> <span className="truncate">{institute.phone}</span></div>}
-              {institute.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"/> <span className="truncate">{institute.email}</span></div>}
-              {institute.website && <div className="flex items-center gap-2"><Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"/> <a href={institute.website} target="_blank" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors truncate">Website</a></div>}
-            </div>
-            
-            {institute.phone && (
-              <div className="mt-6 md:mt-8 flex items-center gap-3 lg:hidden">
-                <a
-                  href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct and would like to know more about your classes.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors cursor-pointer shadow-sm min-h-[44px]"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Chat on WhatsApp
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </div>
-      </div>
 
-      <div className="sticky top-[60px] z-40 bg-white/80 dark:bg-[#0b1120]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 lg:hidden px-4 mt-6 pb-2 pt-2">
-        <div className="flex overflow-x-auto snap-x scrollbar-hide gap-6">
-          {['overview', 'batches', 'reviews', 'updates'].map(tab => (
+      <div className="sticky top-[60px] z-40 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md px-4 mt-4 py-2 border-b border-slate-100 dark:border-white/5">
+        <div className="flex overflow-x-auto scrollbar-hide gap-6 justify-start md:justify-center items-center">
+          {[
+            { id: 'profile', label: 'Profile' },
+            { id: 'batches', label: 'Batches' },
+            { id: 'docs', label: 'Notice Board' },
+            { id: 'reviews', label: 'Reviews' }
+          ].map(tab => (
             <button 
-              key={tab} 
-              onClick={() => setActiveTab(tab)}
-              className={`snap-start whitespace-nowrap text-sm font-semibold transition-colors pb-1 border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id)}
+              className={`whitespace-nowrap text-sm font-semibold transition-colors pb-1.5 border-b-2 ${activeTab === tab.id ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="px-4 md:px-8 mt-6 lg:mt-10 lg:grid lg:grid-cols-12 lg:gap-8 flex-1 items-start">
-        
-        {/* Main Content Column */}
-        <div className="lg:col-span-8 flex flex-col gap-10">
-          <section className={`lg:block ${activeTab === 'overview' ? 'block' : 'hidden'} space-y-6 lg:hidden`}>
-             {/* Mobile Overview handled via sticky elements usually, but we keep an overview section if needed */}
-             <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500">
-               <h3 className="font-semibold text-slate-900 dark:text-white mb-2">About Institute</h3>
-               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                 Welcome to {institute.name}. We provide high quality coaching...
-               </p>
-             </div>
-          </section>
+      <div className="px-4 mt-4 flex-1 items-start flex flex-col gap-3">
+        <section className={`${activeTab === 'profile' ? 'block' : 'hidden'} w-full space-y-3`}>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 px-5 py-4 mb-3 shadow-sm">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-2 text-base">About Institute</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {institute.description || `Welcome to ${institute.name}. We provide high quality coaching for competitive exams and academic excellence. Join us to achieve your educational goals with expert guidance and proven methodologies.`}
+            </p>
+          </div>
 
-          <section className={`lg:block ${activeTab === 'batches' || activeTab === 'overview' ? 'block' : 'hidden'} lg:!block`}>
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2 tracking-tight">
-              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              Available Batches
-            </h2>
-            <div className="space-y-4">
-              {institute.batches && institute.batches.length > 0 ? institute.batches.map((batch: any, i: number) => (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                  key={batch.id} 
-                  className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500 transition-all duration-300 overflow-hidden"
-                >
-                  <div className="flex flex-col mb-3 relative">
-                    {(() => {
-                        const seatsLeft = (batch.id.toString().length % 15) || 5;
-                        if (seatsLeft < 10) {
-                          return (
-                            <div className="absolute top-0 right-0 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20 px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider animate-[pulse_2s_ease-in-out_infinite] flex items-center gap-1 shadow-sm">
-                              🔥 Only {seatsLeft} Seats Left
-                            </div>
-                          );
-                        }
-                        return null;
-                    })()}
-                    <div className="min-w-0 flex-1 w-full text-left pr-32 md:pr-40">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <a href={`/batch/${batch.id}`} className="hover:underline block">
-                          <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 tracking-tight break-words capitalize">{formatAcronyms(batch.batch_name)}</h3>
-                        </a>
-                        {batch.status === 'running' 
-                          ? <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full inline-block">Running</span>
-                          : batch.status === 'not_running' 
-                          ? <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-full inline-block">Not Running</span>
-                          : null
-                        }
-                      </div>
-                      <div className="mt-2">
-                        {batch.subject?.split(',').map((s:string) => s.trim()).filter(Boolean).map((sub: string) => (
-                           <span key={sub} className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 dark:border dark:border-blue-500/30 text-[10px] md:text-xs font-medium inline-block mt-1 mr-1 capitalize">
-                             {formatAcronyms(sub)}
-                           </span>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center gap-3 mt-2">
-                        <TeacherAvatar src={batch.teacher_image} name={batch.teacher_name} />
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 break-words line-clamp-1 capitalize">{batch.teacher_name}</span>
-                      </div>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 px-5 py-4 mb-3 shadow-sm">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-base">Meet Our Faculty</h3>
+            <div className="flex overflow-x-auto gap-6 pb-2 scrollbar-hide">
+              {institute.faculty && institute.faculty.length > 0 ? (
+                institute.faculty.map((teacher: any) => (
+                  <div key={teacher.id} className="flex flex-col items-center min-w-[100px] group">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 transition-transform group-hover:scale-105">
+                      {teacher.image_url ? (
+                        <img 
+                          src={teacher.image_url} 
+                          alt={teacher.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xl text-slate-400">
+                          {teacher.name.charAt(0)}
+                        </div>
+                      )}
                     </div>
+                    <span className="text-sm font-bold mt-2 text-center text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                      {teacher.name}
+                    </span>
+                    <span className="text-[10px] md:text-xs text-slate-500 text-center whitespace-nowrap mt-0.5 font-medium">
+                      {teacher.subject}
+                    </span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px]">
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-medium"><Calendar className="w-3.5 h-3.5" /> Start</div> 
-                      <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatDate(batch.start_date)}</span>
-                    </div>
-                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px]">
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-medium"><Clock className="w-3.5 h-3.5" /> Timing</div> 
-                      <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{batch.batch_timing || 'TBA'}</span>
-                    </div>
-                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px]">
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-medium">Duration</div> 
-                      <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatDuration(batch.batch_duration)}</span>
-                    </div>
-                    <div className="flex flex-col gap-1 text-[13px] md:text-[14px]">
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-medium"><IndianRupee className="w-3.5 h-3.5" /> Fee</div> 
-                      <span className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{formatFee(batch.fee_structure)}</span>
-                    </div>
-                  </div>
-                  <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col">
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <a
-                        href={`/batch/${batch.id}`}
-                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full"
-                      >
-                        View Details
-                      </a>
-                      <a
-                        href="/bbb.pdf"
-                        download="bbb.pdf"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full"
-                      >
-                        <Download className="w-4 h-4" />
-                        Syllabus
-                      </a>
-                    </div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedBatch(batch);
-                        setModalOpen(true);
-                      }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[36px] px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer shadow-sm shadow-blue-600/20"
-                    >
-                      Book Free Demo
-                    </button>
-                  </div>
-                </motion.div>
-              )) : (
-                <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 shadow-sm">
-                  No active batches listed right now.
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className={`lg:block ${activeTab === 'reviews' ? 'block' : 'hidden'} lg:!block pt-8 lg:pt-10 border-t border-slate-100 dark:border-slate-800`}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-                <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                Student Reviews
-              </h2>
-              <button 
-                onClick={() => console.log("Open review modal")}
-                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/40 px-4 py-2 rounded-lg transition-colors cursor-pointer min-h-[44px] flex items-center"
-              >
-                Write a Review
-              </button>
-            </div>
-            
-            <div className="grid sm:grid-cols-2 gap-4">
-              {MOCK_REVIEWS.map((review, i) => (
-                <motion.div 
-                  key={review.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                  className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-500"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                        {review.name.charAt(0)}
-                      </div>
-                      <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{review.name}</span>
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'fill-slate-100 text-slate-200 dark:fill-slate-700 dark:text-slate-600'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">"{review.text}"</p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Sticky Conversion Sidebar (Desktop & 'updates'/'overview' on Mobile) */}
-        <div className={`lg:col-span-4 lg:sticky lg:top-28 lg:block flex-col gap-6 lg:h-fit ${activeTab === 'overview' || activeTab === 'updates' ? 'flex' : 'hidden'}`}>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 px-4 py-3 hidden lg:block overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Connect with Us</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Have questions or want to try our classes? Get in touch instantly.</p>
-            
-            <div className="space-y-3 mb-6 font-medium text-sm text-slate-600 dark:text-slate-300">
-              {institute.phone && <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-slate-400 shrink-0"/> <span>{institute.phone}</span></div>}
-              {institute.email && <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-slate-400 shrink-0"/> <span>{institute.email}</span></div>}
-              {institute.website && <div className="flex items-center gap-3"><Globe className="w-4 h-4 text-slate-400 shrink-0"/> <a href={institute.website} target="_blank" className="hover:text-blue-600 dark:hover:text-blue-400 underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4 transition-colors">Visit Website</a></div>}
-            </div>
-
-            <div className="space-y-3">
-               {/* Root level Book Demo removed at user request. Users should book through specific batches. */}
-              {institute.phone && (
-                <a
-                  href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-green-50/50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 px-6 py-2 rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
-                >
-                  <MessageCircle className="w-4 h-4" /> 
-                  Chat on WhatsApp
-                </a>
+                ))
+              ) : (
+                <div className="py-4 text-sm text-slate-500 italic">No faculty details provided yet.</div>
               )}
             </div>
           </div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl border border-slate-300 dark:border-slate-500 border-l-4 border-l-indigo-500 px-4 py-3"
-          >
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              Latest Updates
-            </h3>
-            <div className="space-y-4">
-              {MOCK_NOTICES.map(notice => (
-                <div key={notice.id} className="relative pl-4 border-l border-indigo-200/60 dark:border-indigo-800/60 pb-4 last:pb-0">
-                  <div className="absolute w-2 h-2 bg-indigo-500 rounded-full -left-1 top-1.5 outline outline-4 outline-indigo-50/50 dark:outline-indigo-900/50"></div>
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-500 dark:text-indigo-400 mb-1">{notice.date}</div>
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">{notice.title}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{notice.message}</div>
+        </section>
+
+        <section className={`${activeTab === 'batches' ? 'block' : 'hidden'} w-full`}>
+          <div className="space-y-4">
+            {institute.batches && institute.batches.length > 0 ? institute.batches.map((batch: any, i: number) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
+                key={batch.id} 
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 p-3.5 shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2.5 px-0.5">
+                  <h3 className="text-[15px] font-bold text-slate-900 dark:text-white capitalize truncate max-w-[70%]">
+                    {formatAcronyms(batch.batch_name)}
+                  </h3>
+                  {batch.status === 'running' 
+                    ? <span className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Running</span>
+                    : <span className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-400 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider">Inactive</span>
+                  }
                 </div>
-              ))}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100/50 dark:border-white/5">
+                    <div className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow-sm shrink-0">
+                      <Clock className="w-2.5 h-2.5 text-blue-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-slate-400 font-medium leading-none mb-0.5">Time</p>
+                      <p className="text-[10px] text-slate-700 dark:text-slate-300 font-bold truncate">{batch.batch_timing || 'TBA'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100/50 dark:border-white/5">
+                    <div className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow-sm shrink-0">
+                      <Monitor className="w-2.5 h-2.5 text-indigo-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-slate-400 font-medium leading-none mb-0.5">Mode</p>
+                      <p className="text-[10px] text-slate-700 dark:text-slate-300 font-bold">{batch.mode || 'Offline'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-center p-2 bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100/50 dark:border-white/5 col-span-1">
+                    <div className="flex items-center justify-between mb-1 px-0.5">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-2 h-2 text-slate-400" />
+                        <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">{batch.available_seats || 0} Slots</span>
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                        {Math.round(((batch.total_seats - (batch.available_seats || 0)) / (batch.total_seats || 1)) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)] transition-all duration-500" 
+                        style={{ width: `${Math.min(100, Math.round(((batch.total_seats - (batch.available_seats || 0)) / (batch.total_seats || 1)) * 100))}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <a 
+                    href={`/batch/${batch.id}`}
+                    className="flex items-center justify-center w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md shadow-blue-500/20 transition-all active:scale-95"
+                  >
+                    Enroll Now
+                  </a>
+                </div>
+              </motion.div>
+            )) : (
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-white/5 text-center text-slate-500 shadow-sm">
+                No active batches right now.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className={`${activeTab === 'reviews' ? 'block' : 'hidden'} w-full`}>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 px-5 py-4 mb-3 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+             <div>
+               <h3 className="font-semibold text-slate-900 dark:text-white text-base">Student Reviews</h3>
+               <p className="text-xs text-slate-500">Read what others have to say about {institute.name}.</p>
+             </div>
+             <button className="text-xs font-medium border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 px-3 py-1.5 rounded-xl transition-colors">
+               Write a Review
+             </button>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            {MOCK_REVIEWS.map((review, i) => (
+              <motion.div 
+                key={review.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
+                className="bg-white dark:bg-slate-900 px-4 py-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 flex items-center justify-center font-bold text-[10px]">
+                      {review.name.charAt(0)}
+                    </div>
+                    <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">{review.name}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-slate-900 text-slate-900 dark:fill-white dark:text-white' : 'fill-slate-100 text-slate-200 dark:fill-white/5 dark:text-white/5'}`} />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">"{review.text}"</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`${activeTab === 'docs' ? 'block' : 'hidden'} w-full space-y-6`}>
+          {/* Notice Board - Timeline View */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-6 shadow-sm">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-500" />
+              Notice Board
+            </h3>
+            
+            <div className="relative space-y-8 pl-4">
+              {/* Vertical Timeline Line */}
+              <div className="absolute left-[11px] top-2 bottom-2 w-px bg-slate-200 dark:bg-slate-800"></div>
+              
+              {institute.notices && institute.notices.length > 0 ? institute.notices.map((update: any, i: number) => (
+                <motion.div 
+                  key={update.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative flex gap-6"
+                >
+                  {/* Timeline Node */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 shrink-0 border-2 ${
+                    update.type === 'alert' 
+                    ? 'bg-amber-50 border-amber-100 text-amber-500 dark:bg-amber-500/10 dark:border-amber-500/20' 
+                    : 'bg-blue-50 border-blue-100 text-blue-500 dark:bg-blue-500/10 dark:border-blue-500/20'
+                  }`}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-current"></div>
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1 block">
+                      {update.date}
+                    </span>
+                    <h4 className="text-[15px] font-bold text-slate-900 dark:text-white mb-1">
+                      {update.title}
+                    </h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {update.description}
+                    </p>
+                  </div>
+                </motion.div>
+              )) : (
+                <div className="py-10 text-center text-slate-400 text-sm">No recent updates on the notice board.</div>
+              )}
             </div>
-          </motion.div>
+          </div>
 
-          {embedUrl && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 overflow-hidden hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="p-5 border-b border-gray-100 dark:border-slate-800 font-semibold text-slate-900 dark:text-white flex items-center gap-2.5">
-                <svg className="w-5 h-5 text-red-500 drop-shadow-sm shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                Demo Class
-              </div>
-              <div className="aspect-video w-full object-cover bg-slate-900">
-                <iframe 
-                  width="100%" 
-                  height="100%" 
-                  src={embedUrl} 
-                  title="Demo Video" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </motion.div>
-          )}
-
-          {institute.location && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-500 px-4 py-3 hover:-translate-y-1 transition-all duration-300"
-            >
-               <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2"><Map className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0"/> Location</h3>
-               <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-5 leading-relaxed capitalize">
-                 {institute.address || (institute.location && !institute.location.includes('<iframe') ? institute.location : '')}
-               </p>
-               {institute.location && (institute.location.includes('http') || institute.location.includes('iframe')) ? (
-                 <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative object-cover">
-                   <div 
-                     className="absolute inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:object-cover" 
-                     dangerouslySetInnerHTML={{
-                       __html: institute.location.startsWith('<iframe') 
-                         ? institute.location.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"') 
-                         : `<iframe width="100%" height="100%" src="${institute.location}" frameborder="0"></iframe>`
-                     }}
-                   />
-                 </div>
-               ) : null}
-            </motion.div>
-          )}
-        </div>
+          {/* Resource Center - Grid View */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-6 shadow-sm">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-indigo-500" />
+              Resource Center
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {institute.documents && institute.documents.length > 0 ? institute.documents.map((doc: any, i: number) => (
+                <motion.div 
+                  key={doc.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + (i * 0.1) }}
+                  className="flex items-center p-3 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-all group cursor-pointer"
+                  onClick={() => window.open(doc.url, '_blank')}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center shrink-0 border border-slate-100 dark:border-white/10 group-hover:bg-white dark:group-hover:bg-slate-800 transition-colors">
+                    <FileText className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  </div>
+                  
+                  <div className="ml-3 flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {doc.title}
+                    </h4>
+                    <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                      {doc.format} • {doc.size}
+                    </span>
+                  </div>
+                  
+                  <div className="p-2 text-slate-300 dark:text-slate-700 group-hover:text-blue-500 transition-all opacity-0 group-hover:opacity-100">
+                    <Download className="w-4 h-4" />
+                  </div>
+                </motion.div>
+              )) : (
+                <div className="md:col-span-2 py-10 text-center text-slate-400 text-sm">No study materials available yet.</div>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
-
-      <BookingModal 
-        isOpen={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        instituteName={institute?.name || "Institute"} 
-        batchName={selectedBatch?.batch_name || "General Inquiry"} 
-      />
     </motion.main>
   );
 }

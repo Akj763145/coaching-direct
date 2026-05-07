@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
-import BookingModal from '../components/BookingModal';
 
 const formatAcronyms = (text: string) => {
   if (!text) return '';
@@ -73,11 +72,6 @@ export default function BatchDetail() {
   const [batch, setBatch] = useState<any>(null);
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
   
-  // Demo Booking State
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [demoForm, setDemoForm] = useState({ name: '', phone: '' });
-  const [demoStatus, setDemoStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
-
   useEffect(() => {
     // Actually fetch the real batch instead of mock if we have a database setup,
     // but for now we'll simulate or use the fetched data if provided by parent/api.
@@ -106,42 +100,6 @@ export default function BatchDetail() {
       ...prev,
       [moduleId]: !prev[moduleId]
     }));
-  };
-
-  const handleBookDemo = () => {
-    setIsDemoModalOpen(true);
-  };
-
-  const submitDemoForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDemoStatus('submitting');
-    try {
-      const res = await fetch('/api/public/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          institute_id: batch.institute_id,
-          student_name: demoForm.name,
-          phone: demoForm.phone,
-          batch_id: batch.id,
-          target_batch: batch.batch_name
-        })
-      });
-      if (res.ok) {
-        setDemoStatus('success');
-        setTimeout(() => {
-          setIsDemoModalOpen(false);
-          setDemoStatus('idle');
-          setDemoForm({ name: '', phone: '' });
-        }, 2500);
-      } else {
-        setDemoStatus('idle');
-        alert('Something went wrong. Please try again.');
-      }
-    } catch (err) {
-      setDemoStatus('idle');
-      alert('Error submitting request.');
-    }
   };
 
   if (loading) return (
@@ -319,13 +277,6 @@ export default function BatchDetail() {
                 Enroll in {formatAcronyms(batch.batch_name)}
               </h3>
               
-              <button 
-                onClick={handleBookDemo}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white min-h-[48px] rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
-              >
-                Book Free Demo
-              </button>
-              
               <a
                 href={`https://wa.me/919876543210?text=${encodeURIComponent(`Hi, I want to know more about the ${batch.batch_name} batch at ${batch.institute_name}.`)}`}
                 target="_blank"
@@ -351,25 +302,13 @@ export default function BatchDetail() {
           href={`https://wa.me/${batch.whatsapp_number || '919876543210'}?text=${encodeURIComponent(`Hi, I want to know more about the ${batch.batch_name} batch at ${batch.institute_name}.`)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors border border-slate-200 dark:border-slate-700"
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white min-h-[48px] rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
           aria-label="Chat on WhatsApp"
         >
-          <MessageCircle className="w-5 h-5 text-[#25D366]" />
+          <MessageCircle className="w-5 h-5" />
+          Chat on WhatsApp
         </a>
-        <button 
-          onClick={handleBookDemo}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white min-h-[48px] rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center"
-        >
-          Book Free Demo
-        </button>
       </div>
-
-      <BookingModal 
-        isOpen={isDemoModalOpen} 
-        onClose={() => setIsDemoModalOpen(false)} 
-        instituteName={batch.institute_name || "Institute"} 
-        batchName={batch.batch_name || "Batch details"} 
-      />
     </div>
   );
 }
