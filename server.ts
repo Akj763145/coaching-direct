@@ -496,33 +496,59 @@ app.put('/api/institute/batches/:id', authenticateToken, requireRole('SUB_ADMIN'
 
 app.get('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  if (isSupabaseEnabled) {
-    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    if (!inst) return res.status(404).json({ error: 'Institute not found' });
-    const { data: notices } = await supabase.from('notices').select('*').eq('institute_id', inst.id);
-    res.json(notices || []);
-  } else {
-    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
-    if (!institute) return res.status(404).json({ error: 'Institute not found' });
-    res.json(db.prepare('SELECT * FROM notices WHERE institute_id = ?').all(institute.id));
+  try {
+    if (isSupabaseEnabled) {
+      const { data: inst, error: instError } = await supabase.from('institutes').select('id').eq('user_id', userId).maybeSingle();
+      if (instError || !inst) return res.status(404).json({ error: 'Institute not found' });
+      
+      const { data: notices, error: noticeError } = await supabase.from('notices').select('*').eq('institute_id', inst.id).order('created_at', { ascending: false });
+      if (noticeError) return res.status(500).json({ error: noticeError.message });
+      res.json(notices || []);
+    } else {
+      const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+      if (!institute) return res.status(404).json({ error: 'Institute not found' });
+      res.json(db.prepare('SELECT * FROM notices WHERE institute_id = ? ORDER BY id DESC').all(institute.id));
+    }
+  } catch (err: any) {
+    console.error('❌ Notice fetch error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.post('/api/institute/notices', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
   const { title, date, description, type } = req.body;
-  if (isSupabaseEnabled) {
-    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
-    const { data, error } = await supabase.from('notices').insert({ institute_id: inst.id, title, date, description, type }).select().single();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ success: true, id: data.id });
-  } else {
-    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
-    try {
+  
+  if (!title || !date || !description) {
+    return res.status(400).json({ error: 'Title, date, and description are required' });
+  }
+
+  try {
+    if (isSupabaseEnabled) {
+      const { data: inst, error: instError } = await supabase.from('institutes').select('id').eq('user_id', userId).maybeSingle();
+      if (instError || !inst) return res.status(404).json({ error: 'Institute not found' });
+      
+      const { data, error } = await supabase.from('notices').insert({ 
+        institute_id: inst.id, 
+        title, 
+        date, 
+        description, 
+        type: type || 'announcement' 
+      }).select().maybeSingle();
+      
+      if (error) return res.status(500).json({ error: error.message });
+      res.json({ success: true, id: data?.id });
+    } else {
+      const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+      if (!institute) return res.status(404).json({ error: 'Institute not found' });
+      
       const result = db.prepare('INSERT INTO notices (institute_id, title, date, description, type) VALUES (?, ?, ?, ?, ?)')
         .run(institute.id, title, date, description, type || 'announcement');
       res.json({ success: true, id: result.lastInsertRowid });
-    } catch (err: any) { res.status(500).json({ error: err.message }); }
+    }
+  } catch (err: any) {
+    console.error('❌ Notice creation error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar } from 'lucide-react';
 
 export default function SubAdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -156,14 +156,23 @@ export default function SubAdminDashboard() {
   const handleAddNotice = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/institute/notices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(noticeForm)
-    });
-    if (res.ok) {
-      setNoticeForm({ title: '', date: '', description: '', type: 'announcement' });
-      fetchData(token!);
+    try {
+      const res = await fetch('/api/institute/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(noticeForm)
+      });
+      if (res.ok) {
+        setNoticeForm({ title: '', date: '', description: '', type: 'announcement' });
+        fetchData(token!);
+        alert('Notice published successfully!');
+      } else {
+        const errData = await res.json();
+        alert(`Failed to publish notice: ${errData.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while publishing notice.');
     }
   };
 
@@ -188,9 +197,18 @@ export default function SubAdminDashboard() {
   };
 
   const handleDeleteNotice = async (id: number) => {
+    if (!window.confirm('Delete this notice?')) return;
     const token = localStorage.getItem('token');
-    await fetch(`/api/institute/notices/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
-    fetchData(token!);
+    try {
+      const res = await fetch(`/api/institute/notices/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      if (res.ok) {
+        fetchData(token!);
+      } else {
+        alert('Failed to delete notice.');
+      }
+    } catch (err) {
+      alert('Network error.');
+    }
   };
 
   const handleAddFaculty = async (e: FormEvent) => {
@@ -701,49 +719,66 @@ export default function SubAdminDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Date Label</label>
-                        <input required type="text" value={noticeForm.date} onChange={e => setNoticeForm({...noticeForm, date: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="May 10" />
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Display Date</label>
+                        <input required type="text" value={noticeForm.date} onChange={e => setNoticeForm({...noticeForm, date: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Oct 24 or 24-10-24" />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Type</label>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Notice Type</label>
                         <select value={noticeForm.type} onChange={e => setNoticeForm({...noticeForm, type: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white">
                           <option value="announcement">Announcement</option>
-                          <option value="alert">Alert / Warning</option>
+                          <option value="holiday">Holiday Notice</option>
+                          <option value="event">Upcoming Event</option>
+                          <option value="alert">Critical Alert</option>
                         </select>
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Detailed Description</label>
-                      <textarea required value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={3} placeholder="Provide details about the notice..."></textarea>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Detailed Context</label>
+                      <textarea required value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={3} placeholder="Tell students more details..."></textarea>
                     </div>
-                    <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition active:scale-[0.98]">Publish Notice</button>
+                    <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition active:scale-[0.98]">Publish To Board</button>
                   </div>
                 </form>
               </div>
               <div className="lg:col-span-2 space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 ml-1">Live Notices ({notices.length})</h3>
-                <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2 ml-1">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Notices ({notices.length})</h3>
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">Sub-Admin Only View</p>
+                </div>
+                <div className="space-y-3">
                   {notices.map((n) => (
-                    <div key={n.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-start group shadow-sm">
-                      <div className="flex gap-4">
-                        <div className={`w-2 h-10 rounded-full shrink-0 ${n.type === 'alert' ? 'bg-amber-400' : 'bg-blue-400'}`}></div>
+                    <div key={n.id} className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex justify-between items-center group shadow-sm hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
+                      <div className="flex gap-4 items-center">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                          n.type === 'holiday' ? 'bg-orange-50 text-orange-500' :
+                          n.type === 'event' ? 'bg-purple-50 text-purple-500' :
+                          n.type === 'alert' ? 'bg-red-50 text-red-500' :
+                          'bg-blue-50 text-blue-500'
+                        }`}>
+                          {n.type === 'holiday' ? <Calendar className="w-5 h-5" /> : 
+                           n.type === 'event' ? <Star className="w-5 h-5" /> : 
+                           n.type === 'alert' ? <AlertCircle className="w-5 h-5" /> :
+                           <Bell className="w-5 h-5" />}
+                        </div>
                         <div>
-                          <h4 className="font-bold text-slate-900 dark:text-white">{n.title}</h4>
-                          <div className="flex items-center gap-2 mt-1 mb-2">
-                             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{n.date}</span>
-                             <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${n.type === 'alert' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20'}`}>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{n.title}</h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-tight">{n.date}</span>
+                             <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                             <span className="text-[9px] uppercase font-black text-blue-500 opacity-60 tracking-wider">
                                {n.type}
                              </span>
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">{n.description}</p>
                         </div>
                       </div>
-                      <button onClick={() => handleDeleteNotice(n.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleDeleteNotice(n.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
-                  {notices.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center rounded-[24px]">No active notices found.</p>}
+                  {notices.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-16 text-center rounded-[40px]">No active notices found. Keep students updated about new batches or holidays.</p>}
                 </div>
               </div>
             </div>
