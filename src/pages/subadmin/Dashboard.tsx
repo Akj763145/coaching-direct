@@ -18,6 +18,7 @@ export default function SubAdminDashboard() {
 
   // Batch Form - Advanced Builder
   const [showBatchForm, setShowBatchForm] = useState(false);
+  const [editingBatchId, setEditingBatchId] = useState<number | string | null>(null);
   const [batchForm, setBatchForm] = useState({
     batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
     batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
@@ -26,6 +27,50 @@ export default function SubAdminDashboard() {
     curriculum: [{ title: '', content: '' }],
     faculty_ids: [] as (number | string)[]
   });
+
+  const resetBatchForm = () => {
+    setBatchForm({ 
+      batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
+      batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
+      status: 'running', mode: 'Offline', total_seats: 50, available_seats: 50,
+      syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
+      curriculum: [{ title: '', content: '' }],
+      faculty_ids: []
+    });
+    setEditingBatchId(null);
+  };
+
+  const handleEditBatch = async (batch: any) => {
+    // We need to fetch the full batch details (including faculty_ids and parsed curriculum)
+    // to ensure the form is correctly populated
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/public/batches/${batch.id}`);
+    if (res.ok) {
+      const fullBatch = await res.json();
+      setBatchForm({
+        batch_name: fullBatch.batch_name || '',
+        subject: fullBatch.subject || '',
+        medium: fullBatch.medium || 'English',
+        board_target: fullBatch.board_target || 'CBSE',
+        batch_timing: fullBatch.batch_timing || '',
+        batch_duration: fullBatch.batch_duration || '',
+        start_date: fullBatch.start_date || '',
+        fee_structure: fullBatch.fee_structure || '',
+        status: fullBatch.status || 'running',
+        mode: fullBatch.mode || 'Offline',
+        total_seats: fullBatch.total_seats || 50,
+        available_seats: fullBatch.available_seats || 50,
+        syllabus_pdf: fullBatch.syllabus_pdf || '',
+        teacher_name: fullBatch.teacher_name || '',
+        teacher_image: fullBatch.teacher_image || '',
+        teacher_bio: fullBatch.teacher_bio || '',
+        curriculum: fullBatch.syllabus || [{ title: '', content: '' }],
+        faculty_ids: (fullBatch.teachers || []).map((t: any) => t.id)
+      });
+      setEditingBatchId(batch.id);
+      setShowBatchForm(true);
+    }
+  };
 
   // Notice Form
   const [noticeForm, setNoticeForm] = useState({ title: '', date: '', description: '', type: 'announcement' });
@@ -74,20 +119,16 @@ export default function SubAdminDashboard() {
   const handleAddBatch = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/institute/batches', {
-      method: 'POST',
+    const method = editingBatchId ? 'PUT' : 'POST';
+    const url = editingBatchId ? `/api/institute/batches/${editingBatchId}` : '/api/institute/batches';
+
+    const res = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(batchForm)
     });
     if (res.ok) {
-      setBatchForm({ 
-        batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
-        batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
-        status: 'running', total_seats: 50, available_seats: 50,
-        syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
-        curriculum: [{ title: '', content: '' }],
-        faculty_ids: []
-      });
+      resetBatchForm();
       setShowBatchForm(false);
       fetchData(token!);
     }
@@ -155,14 +196,23 @@ export default function SubAdminDashboard() {
   const handleAddFaculty = async (e: FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/institute/faculty', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(facultyForm)
-    });
-    if (res.ok) {
-      setFacultyForm({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
-      fetchData(token!);
+    try {
+      const res = await fetch('/api/institute/faculty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(facultyForm)
+      });
+      if (res.ok) {
+        setFacultyForm({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
+        fetchData(token!);
+        alert('Faculty profile saved successfully!');
+      } else {
+        const error = await res.json();
+        alert(`Error: ${error.error || 'Failed to save faculty profile'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('A network error occurred. Please try again.');
     }
   };
 
@@ -385,7 +435,7 @@ export default function SubAdminDashboard() {
               <div>
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Active Batches</h2>
-                  <button onClick={() => setShowBatchForm(true)} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-sm">
+                  <button onClick={() => { resetBatchForm(); setShowBatchForm(true); }} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-sm">
                     <Plus className="w-4 h-4" /> Create Advanced Batch
                   </button>
                 </div>
@@ -393,9 +443,14 @@ export default function SubAdminDashboard() {
                 <div className="grid lg:grid-cols-2 gap-6">
                   {batches.map(batch => (
                     <div key={batch.id} className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm relative group flex flex-col h-full">
-                      <button onClick={() => handleDeleteBatch(batch.id)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="absolute top-4 right-4 flex gap-1">
+                        <button onClick={() => handleEditBatch(batch)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
+                          <Grid className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteBatch(batch.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       
                       <div className="flex gap-4 items-start mb-6 pr-8">
                         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border flex-shrink-0">
@@ -458,7 +513,9 @@ export default function SubAdminDashboard() {
             ) : (
               <form onSubmit={handleAddBatch} className="bg-white dark:bg-slate-900 rounded-[20px] p-6 md:p-8 shadow-xl shadow-slate-200/20 dark:shadow-none border border-slate-200 dark:border-slate-800 mb-20 max-w-5xl mx-auto">
                 <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Add New Batch</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {editingBatchId ? 'Edit Batch Configuration' : 'Add New Batch'}
+                  </h2>
                   <button type="button" onClick={() => setShowBatchForm(false)} className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white">Cancel</button>
                 </div>
 
@@ -617,7 +674,7 @@ export default function SubAdminDashboard() {
                     </div>
 
                     <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2">
-                       Publish To Live Website
+                       {editingBatchId ? 'Save Changes' : 'Publish To Live Website'}
                     </button>
                   </div>
                 </div>
