@@ -189,10 +189,10 @@ export default function InstituteDetail() {
                   <span className="text-[10px] md:text-xs text-slate-500 font-medium">Location</span>
                 </div>
               )}
-              {institute.phone && (
+              {institute.whatsapp_number && (
                 <div className="flex flex-col items-center gap-1">
                   <a
-                    href={`https://wa.me/${institute.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
+                    href={`https://wa.me/${institute.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${institute.name}, I found your profile on Coaching Direct.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-slate-100 dark:border-white/5 flex items-center justify-center text-green-600 dark:text-green-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"

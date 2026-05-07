@@ -6,10 +6,13 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -27,6 +30,8 @@ export default function Login() {
       }
     } catch (err) {
       setError('Network error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,8 +79,17 @@ export default function Login() {
               placeholder="Enter your password"
             />
           </div>
-          <button type="submit" className="w-full bg-apple-blue dark:bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-apple-blue-hover dark:hover:bg-blue-700 transition-colors duration-300 shadow-sm mt-2">
-            Sign In
+          <button 
+            disabled={isLoading}
+            type="submit" 
+            className={`w-full text-white font-medium py-3 rounded-xl transition-colors duration-300 shadow-sm mt-2 flex items-center justify-center gap-2 ${isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-apple-blue dark:bg-blue-600 hover:bg-apple-blue-hover dark:hover:bg-blue-700'}`}
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Signing in...
+              </>
+            ) : 'Sign In'}
           </button>
         </form>
         

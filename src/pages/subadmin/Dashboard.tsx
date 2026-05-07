@@ -11,6 +11,8 @@ export default function SubAdminDashboard() {
   const [documents, setDocuments] = useState<any[]>([]);
   
   const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'faculty'>('profile');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   // Faculty Form
@@ -88,49 +90,64 @@ export default function SubAdminDashboard() {
   }, [navigate]);
 
   const fetchData = async (token: string) => {
-    const pRes = await fetch('/api/institute/profile', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (pRes.ok) setProfile(await pRes.json());
-    else { navigate('/login'); return; }
+    setIsLoading(true);
+    try {
+      const pRes = await fetch('/api/institute/profile', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (pRes.ok) setProfile(await pRes.json());
+      else { navigate('/login'); return; }
 
-    const bRes = await fetch('/api/institute/batches', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (bRes.ok) setBatches(await bRes.json());
+      const bRes = await fetch('/api/institute/batches', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (bRes.ok) setBatches(await bRes.json());
 
-    const nRes = await fetch('/api/institute/notices', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (nRes.ok) setNotices(await nRes.json());
+      const nRes = await fetch('/api/institute/notices', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (nRes.ok) setNotices(await nRes.json());
 
-    const dRes = await fetch('/api/institute/documents', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (dRes.ok) setDocuments(await dRes.json());
+      const dRes = await fetch('/api/institute/documents', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (dRes.ok) setDocuments(await dRes.json());
 
-    const fRes = await fetch('/api/institute/faculty', { headers: { 'Authorization': `Bearer ${token}` }});
-    if (fRes.ok) setFaculty(await fRes.json());
+      const fRes = await fetch('/api/institute/faculty', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (fRes.ok) setFaculty(await fRes.json());
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleProfileUpdate = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    await fetch('/api/institute/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(profile)
-    });
-    alert('Profile updated successfully');
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('/api/institute/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(profile)
+      });
+      alert('Profile updated successfully');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAddBatch = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    const method = editingBatchId ? 'PUT' : 'POST';
-    const url = editingBatchId ? `/api/institute/batches/${editingBatchId}` : '/api/institute/batches';
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const method = editingBatchId ? 'PUT' : 'POST';
+      const url = editingBatchId ? `/api/institute/batches/${editingBatchId}` : '/api/institute/batches';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(batchForm)
-    });
-    if (res.ok) {
-      resetBatchForm();
-      setShowBatchForm(false);
-      fetchData(token!);
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(batchForm)
+      });
+      if (res.ok) {
+        resetBatchForm();
+        setShowBatchForm(false);
+        fetchData(token!);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,8 +172,9 @@ export default function SubAdminDashboard() {
 
   const handleAddNotice = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    setIsSubmitting(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/institute/notices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -173,20 +191,27 @@ export default function SubAdminDashboard() {
     } catch (err) {
       console.error(err);
       alert('Network error while publishing notice.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAddDocument = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/institute/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(docForm)
-    });
-    if (res.ok) {
-      setDocForm({ title: '', size: '', format: 'PDF', url: '' });
-      fetchData(token!);
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/institute/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(docForm)
+      });
+      if (res.ok) {
+        setDocForm({ title: '', size: '', format: 'PDF', url: '' });
+        fetchData(token!);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -213,8 +238,9 @@ export default function SubAdminDashboard() {
 
   const handleAddFaculty = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    setIsSubmitting(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/institute/faculty', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -231,6 +257,8 @@ export default function SubAdminDashboard() {
     } catch (err) {
       console.error(err);
       alert('A network error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -244,6 +272,20 @@ export default function SubAdminDashboard() {
     localStorage.removeItem('token');
     navigate('/login');
   };
+
+  if (isLoading && !profile) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <motion.div
+           animate={{ rotate: 360 }}
+           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+           className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mb-4"
+        />
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Waking up workspace...</h2>
+        <p className="text-slate-500 mt-1">Please wait while we sync your institute data.</p>
+      </div>
+    );
+  }
 
   if (!profile) return null;
 
@@ -317,9 +359,15 @@ export default function SubAdminDashboard() {
                   <textarea value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" rows={2}></textarea>
                 </div>
                 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Verified WhatsApp Number</label>
-                  <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({...profile, whatsapp_number: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 9876543210" />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Support Phone Number</label>
+                    <input type="text" value={profile.phone || ''} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 98765 43210" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Verified WhatsApp Number</label>
+                    <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({...profile, whatsapp_number: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="+91 9876543210" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -438,8 +486,21 @@ export default function SubAdminDashboard() {
               </div>
               
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button type="submit" className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-sm ml-auto">
-                  <Save className="w-4 h-4" /> Save Configuration
+                <button 
+                  disabled={isSubmitting}
+                  type="submit" 
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-medium transition-colors shadow-sm ml-auto ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" /> Save Configuration
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -459,7 +520,24 @@ export default function SubAdminDashboard() {
                 </div>
                 
                 <div className="grid lg:grid-cols-2 gap-6">
-                  {batches.map(batch => (
+                  {isLoading && batches.length === 0 ? (
+                    [1,2,3,4].map(i => (
+                      <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse flex flex-col gap-4">
+                        <div className="flex gap-4 items-start">
+                          <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                          <div className="flex-1 space-y-2">
+                             <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                             <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="h-8 bg-slate-50 dark:bg-slate-800 rounded-lg" />
+                           <div className="h-8 bg-slate-50 dark:bg-slate-800 rounded-lg" />
+                        </div>
+                        <div className="h-10 bg-slate-50 dark:bg-slate-800 rounded-xl" />
+                      </div>
+                    ))
+                  ) : batches.map(batch => (
                     <div key={batch.id} className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm relative group flex flex-col h-full">
                       <div className="absolute top-4 right-4 flex gap-1">
                         <button onClick={() => handleEditBatch(batch)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
@@ -691,8 +769,17 @@ export default function SubAdminDashboard() {
                       </div>
                     </div>
 
-                    <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2">
-                       {editingBatchId ? 'Save Changes' : 'Publish To Live Website'}
+                    <button 
+                      disabled={isSubmitting}
+                      type="submit" 
+                      className={`w-full py-4 text-white rounded-2xl font-bold transition-all shadow-md flex justify-center items-center gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'}`}
+                    >
+                       {isSubmitting ? (
+                         <>
+                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Processing...
+                         </>
+                       ) : (editingBatchId ? 'Save Changes' : 'Publish To Live Website')}
                     </button>
                   </div>
                 </div>
@@ -736,7 +823,18 @@ export default function SubAdminDashboard() {
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Detailed Context</label>
                       <textarea required value={noticeForm.description} onChange={e => setNoticeForm({...noticeForm, description: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={3} placeholder="Tell students more details..."></textarea>
                     </div>
-                    <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition active:scale-[0.98]">Publish To Board</button>
+                    <button 
+                      disabled={isSubmitting}
+                      type="submit" 
+                      className={`w-full py-3 text-white rounded-xl font-semibold shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Publishing...
+                        </>
+                      ) : 'Publish To Board'}
+                    </button>
                   </div>
                 </form>
               </div>
@@ -746,7 +844,17 @@ export default function SubAdminDashboard() {
                   <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">Sub-Admin Only View</p>
                 </div>
                 <div className="space-y-3">
-                  {notices.map((n) => (
+                  {isLoading && notices.length === 0 ? (
+                     [1,2,3].map(i => (
+                       <div key={i} className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 animate-pulse">
+                         <div className="w-10 h-10 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                         <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                            <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
+                         </div>
+                       </div>
+                     ))
+                  ) : notices.map((n) => (
                     <div key={n.id} className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex justify-between items-center group shadow-sm hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
                       <div className="flex gap-4 items-center">
                         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
@@ -815,7 +923,18 @@ export default function SubAdminDashboard() {
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Resource URL / Link</label>
                       <input required type="text" value={docForm.url} onChange={e => setDocForm({...docForm, url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="https://drive.google.com/..." />
                     </div>
-                    <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-sm hover:bg-indigo-700 transition active:scale-[0.98]">Add Resource</button>
+                    <button 
+                      disabled={isSubmitting}
+                      type="submit" 
+                      className={`w-full py-3 text-white rounded-xl font-semibold shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Adding...
+                        </>
+                      ) : 'Add Resource'}
+                    </button>
                   </div>
                 </form>
               </div>
@@ -885,14 +1004,35 @@ export default function SubAdminDashboard() {
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Bio / Teacher Quote</label>
                     <textarea value={facultyForm.bio} onChange={e => setFacultyForm({...facultyForm, bio: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" rows={2} placeholder="Briefly describe teaching expertise..."></textarea>
                   </div>
-                  <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">Save Teacher Profile</button>
+                  <button 
+                    disabled={isSubmitting}
+                    type="submit" 
+                    className={`w-full py-3 text-white rounded-xl font-semibold shadow-sm transition flex items-center justify-center gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving Profile...
+                      </>
+                    ) : 'Save Teacher Profile'}
+                  </button>
                 </div>
               </form>
             </div>
             <div className="md:col-span-2 space-y-4">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 ml-1">Current Faculty ({faculty.length})</h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                {faculty.map((member) => (
+                {isLoading && faculty.length === 0 ? (
+                   [1,2,3,4].map(i => (
+                     <div key={i} className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 animate-pulse">
+                       <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+                       <div className="flex-1 space-y-2">
+                         <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                         <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                       </div>
+                     </div>
+                   ))
+                ) : faculty.map((member) => (
                   <div key={member.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-center group shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">

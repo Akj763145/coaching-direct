@@ -7,6 +7,8 @@ export default function MasterDashboard() {
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
   const [newCredentials, setNewCredentials] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,35 +21,45 @@ export default function MasterDashboard() {
   }, [navigate]);
 
   const fetchInstitutes = async (token: string) => {
-    const res = await fetch('/api/master/institutes', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      setInstitutes(await res.json());
-    } else {
-      navigate('/login');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/master/institutes', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setInstitutes(await res.json());
+      } else {
+        navigate('/login');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/master/institutes', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ name, logo })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setNewCredentials(data.credentials);
-      setName('');
-      setLogo('');
-      fetchInstitutes(token!);
-    } else {
-      alert(data.error);
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/master/institutes', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, logo })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNewCredentials(data.credentials);
+        setName('');
+        setLogo('');
+        fetchInstitutes(token!);
+      } else {
+        alert(data.error);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,7 +101,18 @@ export default function MasterDashboard() {
                 <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Logo URL (optional)</label>
                 <input type="text" className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" value={logo} onChange={e => setLogo(e.target.value)} placeholder="https://..." />
               </div>
-              <button type="submit" className="w-full bg-apple-text text-white font-medium py-3 rounded-xl hover:bg-black transition-colors mt-2">Create Institute</button>
+              <button 
+                disabled={isSubmitting}
+                type="submit" 
+                className={`w-full text-white font-medium py-3 rounded-xl transition-all mt-2 flex items-center justify-center gap-2 ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-apple-text hover:bg-black'}`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Onboarding...
+                  </>
+                ) : 'Create Institute'}
+              </button>
             </div>
           </motion.form>
 
@@ -119,7 +142,19 @@ export default function MasterDashboard() {
              transition={{ delay: 0.2 }}
           >
             <h2 className="text-xl font-semibold text-apple-text mb-4 px-1">Registered Institutes</h2>
-            {institutes.length === 0 ? (
+            {isLoading ? (
+               <div className="grid sm:grid-cols-2 gap-4">
+                 {[1,2,3,4].map(i => (
+                   <div key={i} className="bg-white p-5 rounded-[20px] border border-apple-border/40 flex items-center gap-4 animate-pulse">
+                     <div className="w-14 h-14 rounded-xl bg-slate-200 shrink-0" />
+                     <div className="flex-1 space-y-2">
+                       <div className="h-4 bg-slate-200 rounded w-3/4" />
+                       <div className="h-3 bg-slate-100 rounded w-1/2" />
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            ) : institutes.length === 0 ? (
               <div className="bg-apple-gray rounded-[24px] border border-apple-border/30 p-10 text-center text-apple-text-muted">No institutes added yet.</div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
