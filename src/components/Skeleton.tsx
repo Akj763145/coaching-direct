@@ -25,23 +25,22 @@ export default function Skeleton({ className = '', variant = 'rectangular' }: Sk
 
 export function HomeSkeleton() {
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid lg:grid-cols-2 gap-4">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 p-0 shadow-sm">
-          <Skeleton className="h-32 w-full rounded-none" />
-          <div className="p-6 space-y-4">
-            <Skeleton className="h-7 w-3/4" />
-            <div className="flex gap-2">
-              <Skeleton className="w-4 h-4" variant="circular" />
-              <Skeleton className="h-4 w-1/2" />
+        <div key={i} className="flex flex-row items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <Skeleton className="w-14 h-14 min-w-[56px] rounded-full" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+            <div className="flex gap-1.5 mt-2">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-12" />
             </div>
-            <div className="space-y-2 pt-4">
-              <Skeleton className="h-3 w-1/4" />
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-            </div>
+          </div>
+          <div className="flex flex-col items-end gap-3 shrink-0">
+             <Skeleton className="h-7 w-20 rounded-lg" />
+             <Skeleton className="w-6 h-6 rounded-full" />
           </div>
         </div>
       ))}

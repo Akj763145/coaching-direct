@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 import { HomeSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
+import { instituteStore } from '../lib/store';
 
 interface Batch {
   id: string;
@@ -54,6 +55,9 @@ const formatAcronyms = (text: string) => {
 
 const MEDIUMS = ['English', 'Hindi', 'Bilingual'];
 const BOARDS = ['CBSE', 'State Board', 'ICSE', 'NEET', 'JEE'];
+
+// Simple in-memory cache to speed up navigation back to home
+let cachedInstitutes: Institute[] | null = null;
 
 export default function Home() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -201,6 +205,14 @@ export default function Home() {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
   useEffect(() => {
+    // Listen to store updates
+    const unsubscribe = instituteStore.subscribe((data) => {
+      if (data) {
+        setInstitutes(data);
+        setLoading(false);
+      }
+    });
+
     fetchInstitutes();
     
     // Auto-locate user on mount
@@ -222,16 +234,28 @@ export default function Home() {
   }, []);
 
   const fetchInstitutes = async () => {
+    if (cachedInstitutes) {
+      setInstitutes(cachedInstitutes);
+      setLoading(false);
+      // Still fetch in background to refresh if needed
+      refreshInstitutes();
+      return;
+    }
+    
     setLoading(true);
     setError(null);
+    await refreshInstitutes();
+  };
+
+  const refreshInstitutes = async () => {
     try {
       const { data, error: supaError } = await supabase
         .from('institutes')
         .select(`
-          *,
-          batches:batches(*)
+          id, name, logo, latitude, longitude, address, location,
+          batches:batches(id, batch_name, subject, fee_structure, medium, status)
         `)
-        .order('rating', { ascending: false });
+        .order('name', { ascending: true });
 
       if (supaError) {
         throw new Error(supaError.message);
@@ -249,10 +273,14 @@ export default function Home() {
           })) || []
         }));
         setInstitutes(enriched as Institute[]);
+        cachedInstitutes = enriched as Institute[];
+        instituteStore.setData(enriched as Institute[]);
       }
     } catch (err: any) {
       console.error(err);
-      setError("Unable to load institutes right now. Please try again.");
+      if (!cachedInstitutes) {
+        setError("Unable to load institutes right now. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

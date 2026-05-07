@@ -28,54 +28,7 @@ const formatDate = (dateString: string) => {
   }
 };
 
-const MOCK_BATCH = {
-  id: "b1",
-  batch_name: "Target NEET 2026",
-  subject: "Physics, Chemistry, Biology",
-  start_date: "2026-06-01",
-  batch_timing: "04:00 PM - 06:00 PM",
-  batch_duration: "12 months",
-  fee_structure: "85000",
-  institute_name: "Future Will Academy",
-  institute_id: "inst-1",
-  teacher_name: "Avnish Sir",
-  teacher_image: "https://i.pravatar.cc/150?u=avnish",
-  status: "running",
-  mode: "Offline",
-  medium: "English",
-  board: "CBSE / State",
-  specialization: "Physics Mastery",
-  experience: "12+ Years",
-  teacher_qualifications: "M.Tech, IIT Roorkee",
-  teacher_bio: "Avnish Sir is a technical specialist in competitive Physics.",
-  teachers: [
-    {
-      id: 1,
-      name: "Avnish Sir",
-      image: "https://i.pravatar.cc/150?u=avnish",
-      specialization: "Physics Specialist",
-      qualifications: "M.Tech, IIT Roorkee",
-      bio: "12+ years experience in JEE/NEET Physics.",
-      experience: "12+ Years"
-    },
-    {
-      id: 2,
-      name: "Dr. Smita",
-      image: "https://i.pravatar.cc/150?u=smita",
-      specialization: "Biology Expert",
-      qualifications: "Ph.D. in Botany",
-      bio: "Expert in Plant Physiology and Genetics.",
-      experience: "8+ Years"
-    }
-  ],
-  syllabus: [
-    { id: 1, title: "Module 1: Mechanics & Heat", content: "Mastering Kinematics, Dynamics, and Thermal Physics through high-yield problem solving." },
-    { id: 2, title: "Module 2: Electromagnetism", content: "Deep dive into Electrostatics, Magnetic effects of current, and Electromagnetic Induction." },
-    { id: 3, title: "Module 3: Optics & Modern Physics", content: "Understanding Wave Optics, Dual nature of matter, and Atomic structure." },
-    { id: 4, title: "Module 4: Revision & Testing", content: "Intensive 3-month mock test series and previous year paper analysis." }
-  ]
-};
-
+// Removed MOCK_BATCH fallback to ensure real data is always shown.
 const TeacherAvatar = ({ src, name }: { src?: string; name: string }) => {
   const [error, setError] = useState(false);
   const initials = (name || '?').substring(0, 2).toUpperCase();
@@ -104,13 +57,21 @@ export default function BatchDetail() {
         const res = await fetch(`/api/public/batches/${id}`);
         if(res.ok) {
           const data = await res.json();
-          if(typeof data.curriculum === 'string') data.curriculum = JSON.parse(data.curriculum);
+          if(data.curriculum && typeof data.curriculum === 'string') {
+            try {
+              data.curriculum = JSON.parse(data.curriculum);
+            } catch (e) {
+              console.error("Failed to parse curriculum", e);
+              data.curriculum = [];
+            }
+          }
           setBatch(data);
         } else {
-          setBatch(MOCK_BATCH);
+          setBatch(null);
         }
-      } catch {
-        setBatch(MOCK_BATCH);
+      } catch (err) {
+        console.error("Fetch batch error:", err);
+        setBatch(null);
       } finally {
         setLoading(false);
       }
@@ -125,7 +86,21 @@ export default function BatchDetail() {
   );
 
   if (!batch) return (
-    <div className="p-10 text-center text-slate-500 dark:text-slate-400">Batch not found</div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-10 bg-slate-50 dark:bg-slate-950">
+      <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-6">
+        <FileText className="w-10 h-10 text-slate-400" />
+      </div>
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Batch Not Found</h2>
+      <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm text-center">
+        The batch you're looking for might have been moved, deleted, or you might have a broken link.
+      </p>
+      <button 
+        onClick={() => navigate('/')} 
+        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all active:scale-95"
+      >
+        Back to Home
+      </button>
+    </div>
   );
 
   return (

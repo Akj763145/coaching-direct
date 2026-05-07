@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'markdown-to-jsx';
+import { instituteStore } from '../lib/store';
 
 interface Message {
   role: 'user' | 'model';
@@ -26,10 +27,19 @@ export default function Chatbot() {
     if (isOpen) {
       scrollToBottom();
       if (!institutes) {
-        fetch('/api/public/institutes')
-          .then(res => res.ok ? res.json() : null)
-          .then(data => data && setInstitutes(data))
-          .catch(console.error);
+        // Try getting from store first
+        const unsubscribe = instituteStore.subscribe((data) => {
+          if (data) {
+            setInstitutes(data);
+          } else {
+            // Load if not in store
+            fetch('/api/public/institutes')
+              .then(res => res.ok ? res.json() : null)
+              .then(data => data && setInstitutes(data))
+              .catch(console.error);
+          }
+        });
+        return () => unsubscribe();
       }
     }
   }, [messages, isOpen, institutes]);
