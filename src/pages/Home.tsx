@@ -555,25 +555,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-20 space-y-6">
         <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Available Institutes</h3>
-        {/* Quick Categories */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex overflow-x-auto scrollbar-hide gap-3 py-2 w-full"
-        >
-          {['NEET', 'JEE', 'Physics', 'Mathematics', 'Biology', 'Foundation', 'UPSC', 'CBSE'].map(cat => (
-             <button
-                key={cat}
-                onClick={() => setSearch(cat)}
-                className="rounded-full px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-all cursor-pointer whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm"
-             >
-                {cat}
-             </button>
-          ))}
-        </motion.div>
-
-
+      
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-64 shrink-0 sticky top-24">

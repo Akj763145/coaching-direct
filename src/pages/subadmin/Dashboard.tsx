@@ -19,12 +19,17 @@ export default function SubAdminDashboard() {
   const [notices, setNotices] = useState<any[]>([]);
   const [faculty, setFaculty] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'batches' | 'notices' | 'faculty' | 'resources'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'categories' | 'batches' | 'notices' | 'faculty' | 'resources'>('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const navigate = useNavigate();
+
+  // Category Form
+  const [categoryForm, setCategoryForm] = useState({ name: '', color: '#3b82f6' });
+  const [editingCategoryId, setEditingCategoryId] = useState<number | string | null>(null);
 
   // Faculty Form
   const [facultyForm, setFacultyForm] = useState({ name: '', subject: '', image_url: '', qualifications: '', bio: '', experience: '' });
@@ -34,7 +39,7 @@ export default function SubAdminDashboard() {
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [editingBatchId, setEditingBatchId] = useState<number | string | null>(null);
   const [batchForm, setBatchForm] = useState({
-    batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
+    batch_name: '', subject: '', category_id: '' as string | number, medium: 'English', board_target: 'CBSE',
     batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
     status: 'running', mode: 'Offline', total_seats: 50, available_seats: 50,
     syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
@@ -44,7 +49,7 @@ export default function SubAdminDashboard() {
 
   const resetBatchForm = () => {
     setBatchForm({ 
-      batch_name: '', subject: '', medium: 'English', board_target: 'CBSE',
+      batch_name: '', subject: '', category_id: '', medium: 'English', board_target: 'CBSE',
       batch_timing: '', batch_duration: '', start_date: '', fee_structure: '', 
       status: 'running', mode: 'Offline', total_seats: 50, available_seats: 50,
       syllabus_pdf: '', teacher_name: '', teacher_image: '', teacher_bio: '', 
@@ -64,6 +69,7 @@ export default function SubAdminDashboard() {
       setBatchForm({
         batch_name: fullBatch.batch_name || '',
         subject: fullBatch.subject || '',
+        category_id: fullBatch.category_id || '',
         medium: fullBatch.medium || 'English',
         board_target: fullBatch.board_target || 'CBSE',
         batch_timing: fullBatch.batch_timing || '',
@@ -121,6 +127,9 @@ export default function SubAdminDashboard() {
 
       const fRes = await fetch('/api/institute/faculty', { headers: { 'Authorization': `Bearer ${token}` }});
       if (fRes.ok) setFaculty(await fRes.json());
+
+      const cRes = await fetch('/api/institute/categories', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (cRes.ok) setCategories(await cRes.json());
     } finally {
       setIsLoading(false);
     }
@@ -343,6 +352,46 @@ export default function SubAdminDashboard() {
     }
   };
 
+  const handleAddCategory = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const method = editingCategoryId ? 'PUT' : 'POST';
+      const url = editingCategoryId ? `/api/institute/categories/${editingCategoryId}` : '/api/institute/categories';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(categoryForm)
+      });
+      if (res.ok) {
+        setCategoryForm({ name: '', color: '#3b82f6' });
+        setEditingCategoryId(null);
+        fetchData(token!);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditCategory = (cat: any) => {
+    setCategoryForm({ name: cat.name, color: cat.color || '#3b82f6' });
+    setEditingCategoryId(cat.id);
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    if (!window.confirm('Delete this category?')) return;
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/institute/categories/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      fetchData(token!);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -387,6 +436,7 @@ export default function SubAdminDashboard() {
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto no-scrollbar gap-2 pb-0">
           {[
             { id: 'profile', label: 'Profile Settings', icon: Grid },
+            { id: 'categories', label: 'Categories', icon: CheckSquare },
             { id: 'faculty', label: 'Faculty', icon: Users },
             { id: 'batches', label: 'Batch Builder', icon: FileText },
             { id: 'notices', label: 'Board', icon: Bell },
@@ -591,6 +641,83 @@ export default function SubAdminDashboard() {
           </motion.div>
         )}
 
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-1">
+                <form onSubmit={handleAddCategory} className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 space-y-4 sticky top-24">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{editingCategoryId ? 'Edit Category' : 'Add New Category'}</h3>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Category Name</label>
+                    <input required type="text" value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="e.g. Medical" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Color Theme</label>
+                    <div className="flex gap-2">
+                       <input type="color" value={categoryForm.color} onChange={e => setCategoryForm({...categoryForm, color: e.target.value})} className="w-10 h-10 border-none bg-transparent cursor-pointer" />
+                       <input type="text" value={categoryForm.color} onChange={e => setCategoryForm({...categoryForm, color: e.target.value})} className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono outline-none dark:text-white" />
+                    </div>
+                  </div>
+                  <button 
+                    disabled={isSubmitting}
+                    type="submit" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingCategoryId ? 'Update Category' : 'Create Category'}
+                  </button>
+                  {editingCategoryId && (
+                    <button type="button" onClick={() => { setEditingCategoryId(null); setCategoryForm({ name: '', color: '#3b82f6' }); }} className="w-full text-xs font-bold text-slate-500 hover:text-slate-800 uppercase py-1">Cancel</button>
+                  )}
+                </form>
+              </div>
+
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Categories</h2>
+                    <p className="text-xs text-slate-500">Manage your coaching streams and subjects.</p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{categories.length} Total</span>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {categories.map(cat => (
+                    <div key={cat.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold" style={{ backgroundColor: cat.color || '#3b82f6' }}>
+                          {cat.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{cat.name}</h4>
+                          <span className="text-[10px] font-mono text-slate-400">{cat.color || '#3b82f6'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleEditCategory(cat)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button disabled={deletingId === cat.id} onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-800">
+                          {deletingId === cat.id ? <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {categories.length === 0 && (
+                    <div className="sm:col-span-2 py-12 text-center bg-slate-50 dark:bg-slate-800/30 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                       <CheckSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                       <p className="text-slate-500 font-medium">No categories started yet.</p>
+                       <p className="text-[11px] text-slate-400">Define categories like JEE, NEET, or UPSC to organize batches.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Batches Tab */}
         {activeTab === 'batches' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -641,7 +768,7 @@ export default function SubAdminDashboard() {
                         </button>
                       </div>
                       
-                      <div className="flex gap-4 items-start mb-6 pr-8">
+                      <div className="flex gap-4 items-start mb-6 pr-24">
                         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border flex-shrink-0">
                           {batch.teacher_image ? <img src={batch.teacher_image} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-slate-500">{batch.teacher_name?.charAt(0)}</div>}
                         </div>
@@ -654,6 +781,14 @@ export default function SubAdminDashboard() {
                             >
                               {batch.status}
                             </button>
+                            {batch.category_id && (
+                              <span 
+                                className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full text-white"
+                                style={{ backgroundColor: categories.find(c => String(c.id) === String(batch.category_id))?.color || '#3b82f6' }}
+                              >
+                                {categories.find(c => String(c.id) === String(batch.category_id))?.name || 'Category'}
+                              </span>
+                            )}
                           </h3>
                           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">By {batch.teacher_name}</p>
                         </div>
@@ -722,8 +857,17 @@ export default function SubAdminDashboard() {
                           <input required type="text" value={batchForm.batch_name} onChange={e => setBatchForm({...batchForm, batch_name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="e.g. Target NEET 2026 - Alpha Batch" />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Subject Focus</label>
-                          <input required type="text" value={batchForm.subject} onChange={e => setBatchForm({...batchForm, subject: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="Physics, Chemistry" />
+                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Subject</label>
+                          <input required type="text" value={batchForm.subject} onChange={e => setBatchForm({...batchForm, subject: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white" placeholder="e.g. Physics" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Stream Category</label>
+                          <select value={batchForm.category_id} onChange={e => setBatchForm({...batchForm, category_id: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white">
+                            <option value="">No Category</option>
+                            {categories.map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Total Fee Structure</label>
@@ -966,8 +1110,8 @@ export default function SubAdminDashboard() {
                            n.type === 'alert' ? <AlertCircle className="w-5 h-5" /> :
                            <Bell className="w-5 h-5" />}
                         </div>
-                        <div>
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{n.title}</h4>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{n.title}</h4>
                           <div className="flex items-center gap-2 mt-0.5">
                              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-tight">{n.date}</span>
                              <span className="w-1 h-1 rounded-full bg-slate-200"></span>
@@ -977,7 +1121,7 @@ export default function SubAdminDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
                         <button 
                           onClick={() => handleEditNotice(n)} 
                           className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"
@@ -1061,16 +1205,16 @@ export default function SubAdminDashboard() {
                 <div className="grid sm:grid-cols-2 gap-4">
                    {documents.map((doc) => (
                      <div key={doc.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group shadow-sm transition-all hover:border-indigo-200 dark:hover:border-indigo-900/50">
-                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                       <div className="flex items-center gap-3 min-w-0">
+                         <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
                            <FileText className="w-5 h-5" />
                          </div>
-                         <div>
-                           <h4 className="font-bold text-slate-900 dark:text-white text-sm">{doc.title}</h4>
-                           <p className="text-[10px] text-slate-500 uppercase font-bold">{doc.format} • {doc.size}</p>
+                         <div className="min-w-0">
+                           <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{doc.title}</h4>
+                           <p className="text-[10px] text-slate-500 uppercase font-bold truncate">{doc.format} • {doc.size}</p>
                          </div>
                        </div>
-                       <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-2 shrink-0 ml-2">
                           <button 
                             onClick={() => handleEditDocument(doc)} 
                             className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"
@@ -1173,16 +1317,16 @@ export default function SubAdminDashboard() {
                    ))
                 ) : faculty.map((member) => (
                   <div key={member.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-center group shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
                         {member.image_url ? <img src={member.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{member.name.charAt(0)}</div>}
                       </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{member.name}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{member.subject}</p>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{member.name}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{member.subject}</p>
                       </div>
                     </div>
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <button 
                         onClick={() => handleEditFaculty(member)} 
                         className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"

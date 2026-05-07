@@ -215,7 +215,7 @@ export default function MasterDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <button 
                         onClick={() => handleEdit(inst)} 
                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all active:scale-95 flex items-center justify-center border border-transparent hover:border-blue-200 dark:hover:border-blue-800"

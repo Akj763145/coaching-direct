@@ -108,6 +108,7 @@ if (isSupabaseEnabled) {
     CREATE TABLE IF NOT EXISTS batches (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       institute_id INTEGER NOT NULL,
+      category_id INTEGER,
       teacher_name TEXT NOT NULL,
       teacher_image TEXT,
       subject TEXT NOT NULL,
@@ -125,7 +126,8 @@ if (isSupabaseEnabled) {
       syllabus_pdf TEXT,
       teacher_bio TEXT,
       curriculum TEXT,
-      FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
+      FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS notices (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,6 +158,13 @@ if (isSupabaseEnabled) {
       experience TEXT,
       FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      institute_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      color TEXT,
+      FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS batch_faculty (
       batch_id INTEGER NOT NULL,
       faculty_id INTEGER NOT NULL,
@@ -175,6 +184,7 @@ if (isSupabaseEnabled) {
   try { db.exec('ALTER TABLE batches ADD COLUMN syllabus_pdf TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE batches ADD COLUMN teacher_bio TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE batches ADD COLUMN curriculum TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE batches ADD COLUMN category_id INTEGER'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN latitude REAL'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN longitude REAL'); } catch(e) {}
   try { db.exec('ALTER TABLE faculty ADD COLUMN qualifications TEXT'); } catch(e) {}
@@ -419,12 +429,12 @@ app.get('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), a
 
 app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
   const userId = (req as any).user.id;
-  const { teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum, faculty_ids } = req.body;
+  const { category_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum, faculty_ids } = req.body;
   
   if (isSupabaseEnabled) {
     const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
     const { data: batch, error } = await supabase.from('batches').insert({
-      institute_id: inst.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum: typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum)
+      institute_id: inst.id, category_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum: typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum)
     }).select().single();
     if (error) return res.status(500).json({ error: error.message });
 
@@ -439,9 +449,9 @@ app.post('/api/institute/batches', authenticateToken, requireRole('SUB_ADMIN'), 
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     try {
       const result = db.prepare(`
-        INSERT INTO batches (institute_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(institute.id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status || 'running', mode || 'Offline', medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum));
+        INSERT INTO batches (institute_id, category_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status, mode, medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, curriculum)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(institute.id, category_id, teacher_name, teacher_image, subject, batch_name, batch_timing, batch_duration, start_date, fee_structure, status || 'running', mode || 'Offline', medium, board_target, total_seats, available_seats, syllabus_pdf, teacher_bio, typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum));
       
       const batchId = result.lastInsertRowid;
       
@@ -679,6 +689,69 @@ app.delete('/api/institute/documents/:id', authenticateToken, requireRole('SUB_A
   } else {
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     db.prepare('DELETE FROM documents WHERE id = ? AND institute_id = ?').run(docId, institute.id);
+    res.json({ success: true });
+  }
+});
+
+app.get('/api/institute/categories', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    if (!inst) return res.status(404).json({ error: 'Institute not found' });
+    const { data: categories } = await supabase.from('categories').select('*').eq('institute_id', inst.id);
+    res.json(categories || []);
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    if (!institute) return res.status(404).json({ error: 'Institute not found' });
+    res.json(db.prepare('SELECT * FROM categories WHERE institute_id = ?').all(institute.id));
+  }
+});
+
+app.post('/api/institute/categories', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const { name, color } = req.body;
+  if (!name) return res.status(400).json({ error: 'Category name is required' });
+
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { data, error } = await supabase.from('categories').insert({ institute_id: inst.id, name, color }).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, id: data.id });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    const result = db.prepare('INSERT INTO categories (institute_id, name, color) VALUES (?, ?, ?)').run(institute.id, name, color);
+    res.json({ success: true, id: result.lastInsertRowid });
+  }
+});
+
+app.put('/api/institute/categories/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const catId = req.params.id;
+  const { name, color } = req.body;
+  
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    const { error } = await supabase.from('categories').update({ name, color }).eq('id', catId).eq('institute_id', inst.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('UPDATE categories SET name = ?, color = ? WHERE id = ? AND institute_id = ?').run(name, color, catId, institute.id);
+    res.json({ success: true });
+  }
+});
+
+app.delete('/api/institute/categories/:id', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  const catId = req.params.id;
+  
+  if (isSupabaseEnabled) {
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    await supabase.from('categories').delete().eq('id', catId).eq('institute_id', inst.id);
+    res.json({ success: true });
+  } else {
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    db.prepare('DELETE FROM categories WHERE id = ? AND institute_id = ?').run(catId, institute.id);
     res.json({ success: true });
   }
 });
