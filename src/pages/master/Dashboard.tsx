@@ -111,7 +111,7 @@ export default function MasterDashboard() {
           <h1 className="text-3xl font-semibold text-apple-text tracking-tight">Master Admin Dashboard</h1>
           <p className="text-apple-text-muted mt-1 text-[15px]">Manage platform tenants (Institutes)</p>
         </div>
-        <button onClick={handleLogout} className="text-[13px] font-medium text-apple-text-muted hover:text-apple-text transition-colors">Log out</button>
+        <button onClick={handleLogout} className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-apple-gray dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-apple-border/50">Log out</button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
@@ -215,12 +215,21 @@ export default function MasterDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleEdit(inst)} className="p-2 text-apple-text-muted hover:text-apple-blue transition-colors">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleEdit(inst)} 
+                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all active:scale-95 flex items-center justify-center border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                        title="Edit Institute"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button disabled={deletingId === inst.id} onClick={() => handleDelete(inst.id)} className="p-2 text-apple-text-muted hover:text-red-500 transition-colors">
-                        {deletingId === inst.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      <button 
+                        disabled={deletingId === inst.id} 
+                        onClick={() => handleDelete(inst.id)} 
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all active:scale-95 flex items-center justify-center border border-transparent hover:border-red-200 dark:hover:border-red-800 disabled:opacity-50"
+                        title="Delete Institute"
+                      >
+                        {deletingId === inst.id ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </div>
                   </motion.div>

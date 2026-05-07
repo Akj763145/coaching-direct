@@ -623,12 +623,21 @@ export default function SubAdminDashboard() {
                     ))
                   ) : batches.map(batch => (
                     <div key={batch.id} className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm relative group flex flex-col h-full">
-                      <div className="absolute top-4 right-4 flex gap-1">
-                        <button onClick={() => handleEditBatch(batch)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
+                      <div className="absolute top-4 right-4 flex gap-2">
+                        <button 
+                          onClick={() => handleEditBatch(batch)} 
+                          className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 shadow-sm border border-blue-100 dark:border-blue-800"
+                          title="Edit Batch"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button disabled={deletingId === batch.id} onClick={() => handleDeleteBatch(batch.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
-                          {deletingId === batch.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        <button 
+                          disabled={deletingId === batch.id} 
+                          onClick={() => handleDeleteBatch(batch.id)} 
+                          className="p-2 text-red-600 bg-red-50/50 dark:bg-red-900/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-xl transition-all active:scale-95 shadow-sm border border-red-100 dark:border-red-800 disabled:opacity-50"
+                          title="Delete Batch"
+                        >
+                          {deletingId === batch.id ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                       
@@ -969,11 +978,20 @@ export default function SubAdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleEditNotice(n)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all">
+                        <button 
+                          onClick={() => handleEditNotice(n)} 
+                          className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"
+                          title="Edit Notice"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button disabled={deletingId === n.id} onClick={() => handleDeleteNotice(n.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50">
-                          {deletingId === n.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        <button 
+                          disabled={deletingId === n.id} 
+                          onClick={() => handleDeleteNotice(n.id)} 
+                          className="p-2 text-red-600 bg-red-50/50 dark:bg-red-900/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-xl transition-all active:scale-95 border border-red-100 dark:border-red-800 disabled:opacity-50"
+                          title="Delete Notice"
+                        >
+                          {deletingId === n.id ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
@@ -1052,15 +1070,30 @@ export default function SubAdminDashboard() {
                            <p className="text-[10px] text-slate-500 uppercase font-bold">{doc.format} • {doc.size}</p>
                          </div>
                        </div>
-                       <div className="flex items-center gap-1">
-                          <button onClick={() => handleEditDocument(doc)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                       <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleEditDocument(doc)} 
+                            className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"
+                            title="Edit Material"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <a href={doc.url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                          <a 
+                            href={doc.url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="p-2 text-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 rounded-xl transition-all active:scale-95 border border-indigo-100 dark:border-indigo-800"
+                            title="View Material"
+                          >
                             <Eye className="w-4 h-4" />
                           </a>
-                          <button disabled={deletingId === doc.id} onClick={() => handleDeleteDocument(doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50">
-                            {deletingId === doc.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          <button 
+                            disabled={deletingId === doc.id} 
+                            onClick={() => handleDeleteDocument(doc.id)} 
+                            className="p-2 text-red-600 bg-red-50/50 dark:bg-red-900/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-xl transition-all active:scale-95 border border-red-100 dark:border-red-800 disabled:opacity-50"
+                            title="Delete Material"
+                          >
+                            {deletingId === doc.id ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                           </button>
                        </div>
                      </div>
@@ -1149,12 +1182,21 @@ export default function SubAdminDashboard() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">{member.subject}</p>
                       </div>
                     </div>
-                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleEditFaculty(member)} className="text-slate-400 hover:text-blue-500 p-2 transition-colors">
+                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleEditFaculty(member)} 
+                        className="p-2 text-blue-600 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-xl transition-all active:scale-95 border border-blue-100 dark:border-blue-800"
+                        title="Edit Faculty"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button disabled={deletingId === member.id} onClick={() => handleDeleteFaculty(member.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors disabled:opacity-50">
-                        {deletingId === member.id ? <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      <button 
+                        disabled={deletingId === member.id} 
+                        onClick={() => handleDeleteFaculty(member.id)} 
+                        className="p-2 text-red-600 bg-red-50/50 dark:bg-red-900/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-xl transition-all active:scale-95 border border-red-100 dark:border-red-800 disabled:opacity-50"
+                        title="Delete Faculty"
+                      >
+                        {deletingId === member.id ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
