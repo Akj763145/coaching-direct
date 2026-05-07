@@ -212,6 +212,7 @@ export default function InstituteDetail() {
           {[
             { id: 'profile', label: 'Profile' },
             { id: 'batches', label: 'Batches' },
+            { id: 'resources', label: 'Resources' },
             { id: 'docs', label: 'Notice Board' },
             { id: 'reviews', label: 'Reviews' }
           ].map(tab => (
@@ -431,7 +432,9 @@ export default function InstituteDetail() {
               )}
             </div>
           </div>
+        </section>
 
+        <section className={`${activeTab === 'resources' ? 'block' : 'hidden'} w-full`}>
           {/* Resource Center - Grid View */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-6 shadow-sm">
             <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg flex items-center gap-2">
@@ -445,7 +448,7 @@ export default function InstituteDetail() {
                   key={doc.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + (i * 0.1) }}
+                  transition={{ delay: 0.1 * i }}
                   className="flex items-center p-3 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-all group cursor-pointer"
                   onClick={() => window.open(doc.url, '_blank')}
                 >
