@@ -372,13 +372,15 @@ export default function Home() {
         .limit(10);
 
       if (leaderboardData) {
-        setLeaderboard(leaderboardData);
+        // De-duplicate just in case there's something weird in the data/view
+        const uniqueLeaderboard = Array.from(new Map(leaderboardData.map(item => [item.id, item])).values());
+        setLeaderboard(uniqueLeaderboard);
       }
 
       const { data, error: supaError } = await supabase
         .from('institutes')
         .select(`
-          id, name, logo, latitude, longitude, address, location,
+          id, name, logo, latitude, longitude, address, location, rating, total_reviews,
           batches:batches(*),
           categories:categories(*)
         `)
@@ -450,7 +452,7 @@ export default function Home() {
       return true;
     }).sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === 'rating') return Number(b.rating || 0) - Number(a.rating || 0);
       if (sortBy === 'distance') return (a.numericDistance || 0) - (b.numericDistance || 0);
       if (sortBy === 'fee') return (a.minFee || 100000) - (b.minFee || 100000);
       return 0; // relevance (default order)
@@ -491,12 +493,13 @@ export default function Home() {
 
   const topRatedInstitutes = React.useMemo(() => {
     return [...enrichedInstitutes]
-      .filter((inst: any) => inst.rating && inst.rating >= 4.0)
       .sort((a: any, b: any) => {
-        if (b.rating !== a.rating) return b.rating - a.rating;
-        return (b.reviewCount || 0) - (a.reviewCount || 0);
+        const ratingB = Number(b.rating || 0);
+        const ratingA = Number(a.rating || 0);
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        return (b.total_reviews || 0) - (a.total_reviews || 0);
       })
-      .slice(0, 5);
+      .slice(0, 6);
   }, [enrichedInstitutes]);
 
   return (
@@ -593,10 +596,10 @@ export default function Home() {
                        <>
                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                          <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
-                           {inst.rating.toFixed(1)}
+                           {Number(inst.rating || 0).toFixed(1)}
                          </span>
                          <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
-                           ({inst.reviewCount || 0} {(inst.reviewCount === 1) ? 'review' : 'reviews'})
+                           ({inst.total_reviews || 0} {(inst.total_reviews === 1) ? 'review' : 'reviews'})
                          </span>
                        </>
                      ) : (
@@ -646,7 +649,7 @@ export default function Home() {
 
               return (
                 <motion.a 
-                  key={`leaderboard-${inst.id}`}
+                  key={`leaderboard-${inst.id}-${index}`}
                   href={`/institute/${inst.id}`}
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
