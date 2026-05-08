@@ -505,43 +505,17 @@ export default function Home() {
   return (
     <main className="w-full pb-32">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-32 pb-12 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight"
-          >
-            Find Top Institutes in <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Motihari</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium"
-          >
-            {institutes.length > 0 ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                {institutes.length}+ Verified Institutes Available
-              </span>
-            ) : (
-              'Discover your potential with the best coaching centers today.'
-            )}
-          </motion.p>
-        </div>
-
-        {/* Featured Institutes Carousel */}
-        <div className="mt-12 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
-          <div className="flex items-center justify-between">
-             <div className="flex flex-col mb-1.5 mt-2">
-               <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-                 <Sparkles className="w-6 h-6 text-amber-500 fill-amber-500 animate-pulse" />
-                 Top Rated in Motihari
-               </h3>
-               <span className="text-xs text-slate-500 font-normal pl-8">Based on verified student reviews</span>
-             </div>
+      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-24 pb-12 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
+        
+        {/* Featured Institutes Carousel - Moved to Top */}
+        <div className="max-w-7xl mx-auto px-4 md:px-8 mb-10 pt-6">
+          <div className="flex flex-col">
+            <div className="inline-flex items-center gap-2 mb-4 ml-1 w-fit px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full border border-blue-100 dark:border-blue-800/50 shadow-xs">
+              <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400 fill-blue-600/10" />
+              <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] text-blue-700 dark:text-blue-300">
+                Our Top Institutes
+              </h4>
+            </div>
           </div>
           <motion.div 
             ref={featuredScrollRef}
@@ -619,6 +593,32 @@ export default function Home() {
                </motion.a>
              ))}
           </motion.div>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight"
+          >
+            Find Top Institutes in <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Motihari</span>
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium"
+          >
+            {institutes.length > 0 ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                {institutes.length}+ Verified Institutes Available
+              </span>
+            ) : (
+              'Discover your potential with the best coaching centers today.'
+            )}
+          </motion.p>
         </div>
       </div>
 
