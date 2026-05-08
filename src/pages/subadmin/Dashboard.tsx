@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply } from 'lucide-react';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -20,8 +20,9 @@ export default function SubAdminDashboard() {
   const [faculty, setFaculty] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'categories' | 'batches' | 'notices' | 'faculty' | 'resources'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'categories' | 'batches' | 'notices' | 'faculty' | 'resources' | 'reviews'>('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
@@ -100,6 +101,10 @@ export default function SubAdminDashboard() {
   const [docForm, setDocForm] = useState({ title: '', size: '', format: 'PDF', url: '' });
   const [editingDocId, setEditingDocId] = useState<number | string | null>(null);
 
+  // Review Form
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -130,6 +135,9 @@ export default function SubAdminDashboard() {
 
       const cRes = await fetch('/api/institute/categories', { headers: { 'Authorization': `Bearer ${token}` }});
       if (cRes.ok) setCategories(await cRes.json());
+
+      const rRes = await fetch('/api/institute/reviews', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (rRes.ok) setReviews(await rRes.json());
     } finally {
       setIsLoading(false);
     }
@@ -392,6 +400,42 @@ export default function SubAdminDashboard() {
     }
   };
 
+  const handleReplyReview = async (id: string) => {
+    if (!replyText.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/institute/reviews/${id}/reply`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reply_text: replyText })
+      });
+      if (res.ok) {
+        setReplyText('');
+        setReplyingToId(null);
+        fetchData(token!);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFlagReview = async (id: string, currentlyFlagged: boolean) => {
+    if (!window.confirm(currentlyFlagged ? 'Unflag this review?' : 'Flag this review as inappropriate?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/institute/reviews/${id}/flag`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ is_flagged: !currentlyFlagged })
+      });
+      if (res.ok) {
+        fetchData(token!);
+      }
+    } finally {
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -440,7 +484,8 @@ export default function SubAdminDashboard() {
             { id: 'faculty', label: 'Faculty', icon: Users },
             { id: 'batches', label: 'Batch Builder', icon: FileText },
             { id: 'notices', label: 'Board', icon: Bell },
-            { id: 'resources', label: 'Resources', icon: BookOpen }
+            { id: 'resources', label: 'Resources', icon: BookOpen },
+            { id: 'reviews', label: 'Reviews', icon: Star }
           ].map(tab => {
             const Icon = tab.icon;
             return (
@@ -1347,6 +1392,148 @@ export default function SubAdminDashboard() {
                 ))}
               </div>
               {faculty.length === 0 && <p className="text-slate-500 text-sm mt-8 border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center rounded-[24px]">No faculty members added. Add your top educators to build trust with students.</p>}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === 'reviews' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Reputation Management</h2>
+                <p className="text-slate-500 dark:text-slate-400">Monitor student feedback and respond to reviews.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center text-yellow-600">
+                    <Star className="w-5 h-5 fill-current" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-tight">Average Rating</div>
+                    <div className="text-lg font-bold text-slate-900 dark:text-white leading-none mt-0.5">{Number(profile.rating || 0).toFixed(1)}</div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-tight">Total Reviews</div>
+                    <div className="text-lg font-bold text-slate-900 dark:text-white leading-none mt-0.5">{reviews.length}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {reviews.length === 0 ? (
+                <div className="bg-white dark:bg-slate-900 p-20 rounded-[40px] border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                  <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">No reviews yet</h3>
+                  <p className="text-slate-500 mt-2 max-w-sm mx-auto">Share your institute link with students to start collecting valuable feedback and building your reputation.</p>
+                </div>
+              ) : (
+                reviews.map((review) => (
+                  <motion.div 
+                    layout
+                    key={review.id} 
+                    className={`bg-white dark:bg-slate-900 p-6 rounded-[32px] border transition-all ${review.is_flagged ? 'border-red-200 dark:border-red-900/30 bg-red-50/10' : 'border-slate-200 dark:border-slate-800 shadow-sm'}`}
+                  >
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
+                              {review.student_name?.charAt(0) || 'S'}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-slate-900 dark:text-white">{review.student_name || 'Anonymous Student'}</h4>
+                              <p className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString()} • {review.batch_id || 'General Review'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1.5 rounded-full">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`} />
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                          {review.review_text}
+                        </p>
+
+                        {review.reply_text && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Reply className="w-3 h-3 text-blue-500" />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institute Response</span>
+                            </div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 italic">"{review.reply_text}"</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                          {!review.reply_text && (
+                            <button 
+                              onClick={() => setReplyingToId(replyingToId === review.id ? null : review.id)}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              {replyingToId === review.id ? 'Cancel' : 'Reply'}
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => handleFlagReview(review.id, review.is_flagged)}
+                            className={`text-xs font-bold flex items-center gap-1.5 px-3 py-2 rounded-xl transition-colors ${review.is_flagged ? 'text-red-700 bg-red-100 dark:bg-red-900/40' : 'text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
+                          >
+                            <Flag className="w-4 h-4" />
+                            {review.is_flagged ? 'Flagged' : 'Flag as Inappropriate'}
+                          </button>
+                        </div>
+
+                        <AnimatePresence>
+                          {replyingToId === review.id && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden mt-4"
+                            >
+                              <div className="space-y-3">
+                                <textarea 
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  placeholder="Write a professional response to the student..."
+                                  className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all dark:text-white h-24 resize-none"
+                                />
+                                <div className="flex justify-end gap-2">
+                                  <button 
+                                    onClick={() => setReplyingToId(null)}
+                                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button 
+                                    disabled={isSubmitting || !replyText.trim()}
+                                    onClick={() => handleReplyReview(review.id)}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+                                  >
+                                    {isSubmitting && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                                    Post Reply
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </motion.div>
         )}

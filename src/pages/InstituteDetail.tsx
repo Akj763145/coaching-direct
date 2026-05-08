@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft } from 'lucide-react';
-import { motion } from 'motion/react';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+import { supabase } from '../lib/supabase';
+
+import { InstituteReviewsTab } from '../components/InstituteReviewsTab';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -78,6 +81,7 @@ export default function InstituteDetail() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [institute, setInstitute] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const activeTab = searchParams.get('tab') || 'profile';
@@ -91,6 +95,7 @@ export default function InstituteDetail() {
 
   useEffect(() => {
     fetchInstitute();
+    fetchReviews();
   }, [id]);
 
   const fetchInstitute = async () => {
@@ -102,6 +107,17 @@ export default function InstituteDetail() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`/api/public/reviews?institute_id=${id}`);
+      if (res.ok) {
+        setReviews(await res.json());
+      }
+    } catch (err) {
+      console.error('Failed to fetch reviews:', err);
     }
   };
 
@@ -168,7 +184,24 @@ export default function InstituteDetail() {
           
           <div className="px-6 relative z-10 mt-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight capitalize">{formatAcronyms(institute.name)}</h1>
-            <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-0.5 capitalize max-w-md mx-auto line-clamp-1">
+            <div className="flex items-center justify-center gap-2 mt-1.5">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`w-4 h-4 ${i < Math.round(institute.rating || 0) ? 'fill-blue-600 text-blue-600 dark:fill-blue-500 dark:text-blue-500' : 'fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800'}`} 
+                  />
+                ))}
+              </div>
+              {institute.total_reviews > 0 ? (
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  {Number(institute.rating || 0).toFixed(1)} <span className="text-slate-400 font-medium">({institute.total_reviews} reviews)</span>
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic">No reviews yet</span>
+              )}
+            </div>
+            <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-1 capitalize max-w-md mx-auto line-clamp-1">
               {formatAcronyms(institute.address || institute.location || '')}
             </p>
             <div className="flex justify-center gap-3 sm:gap-4 mt-6">
@@ -474,42 +507,17 @@ export default function InstituteDetail() {
         </section>
 
         <section className={`${activeTab === 'reviews' ? 'block' : 'hidden'} w-full`}>
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 px-5 py-4 mb-3 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-             <div>
-               <h3 className="font-semibold text-slate-900 dark:text-white text-base">Student Reviews</h3>
-               <p className="text-xs text-slate-500">Read what others have to say about {institute.name}.</p>
-             </div>
-             <button className="text-xs font-medium border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 px-3 py-1.5 rounded-xl transition-colors">
-               Write a Review
-             </button>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            {MOCK_REVIEWS.map((review, i) => (
-              <motion.div 
-                key={review.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                className="bg-white dark:bg-slate-900 px-4 py-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 flex items-center justify-center font-bold text-[10px]">
-                      {review.name.charAt(0)}
-                    </div>
-                    <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">{review.name}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-slate-900 text-slate-900 dark:fill-white dark:text-white' : 'fill-slate-100 text-slate-200 dark:fill-white/5 dark:text-white/5'}`} />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">"{review.text}"</p>
-              </motion.div>
-            ))}
-          </div>
+          <InstituteReviewsTab 
+            instituteId={id!}
+            instituteName={institute.name}
+            reviews={reviews}
+            avgRating={institute.rating || 0}
+            totalReviews={institute.total_reviews || 0}
+            onReviewAdded={() => {
+              fetchReviews();
+              fetchInstitute();
+            }}
+          />
         </section>
 
         <section className={`${activeTab === 'docs' ? 'block' : 'hidden'} w-full space-y-6`}>

@@ -25,7 +25,7 @@ interface Institute {
   address?: string;
   location?: string;
   rating?: number;
-  reviewCount?: number;
+  total_reviews?: number;
   batches?: Batch[];
   isActive?: boolean;
 }
@@ -173,6 +173,7 @@ const FilterContent = React.memo(({
 
 export default function Home() {
   const [institutes, setInstitutes] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
   const setSearch = (val: string) => {
@@ -361,6 +362,19 @@ export default function Home() {
 
   const refreshInstitutes = async () => {
     try {
+      // Fetch leaderboard (Top 10 by rating)
+      const { data: leaderboardData } = await supabase
+        .from('institutes')
+        .select(`
+          id, name, logo, rating, total_reviews, address, location
+        `)
+        .order('rating', { ascending: false })
+        .limit(10);
+
+      if (leaderboardData) {
+        setLeaderboard(leaderboardData);
+      }
+
       const { data, error: supaError } = await supabase
         .from('institutes')
         .select(`
@@ -378,7 +392,6 @@ export default function Home() {
         // Enrich data with mock properties for filtering if they don't exist
         const enriched = data.map((inst: any) => ({
           ...inst,
-          reviewCount: inst.review_count || 0,
           batches: inst.batches?.map((b: any) => ({
             ...b,
             medium: b.medium || MEDIUMS[Math.floor(Math.random() * MEDIUMS.length)],
@@ -606,6 +619,95 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Top 10 Leaderboard Section */}
+      {leaderboard.length > 0 && (
+        <div className="mt-16 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+                <Sparkles className="w-6 h-6 text-indigo-500 fill-indigo-500" />
+                Top Ranked Institutes
+              </h3>
+              <p className="text-xs text-slate-500 font-normal pl-8">The top 10 highest-rated coaching centers in the city.</p>
+            </div>
+          </div>
+
+          <div className="flex overflow-x-auto gap-5 pb-8 scrollbar-hide snap-x snap-mandatory">
+            {leaderboard.map((inst, index) => {
+              const rank = index + 1;
+              const rankColors = {
+                1: "bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950 shadow-amber-500/40 border-amber-200",
+                2: "bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900 shadow-slate-400/40 border-slate-100",
+                3: "bg-gradient-to-br from-orange-300 to-orange-500 text-orange-950 shadow-orange-400/40 border-orange-200",
+                default: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+              };
+
+              const currentRankColor = rankColors[rank as keyof typeof rankColors] || rankColors.default;
+
+              return (
+                <motion.a 
+                  key={`leaderboard-${inst.id}`}
+                  href={`/institute/${inst.id}`}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -4 }}
+                  className="min-w-[260px] md:min-w-[300px] snap-start bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 p-5 group flex flex-col relative overflow-hidden"
+                >
+                  {/* Rank Badge */}
+                  <div className={`absolute top-0 left-0 px-4 py-1.5 rounded-br-2xl font-black text-sm border-b border-r ${currentRankColor} z-10 flex items-center gap-1.5`}>
+                    <span className="opacity-70 text-[10px]">RANK</span>
+                    <span>#{rank}</span>
+                  </div>
+
+                  <div className="flex items-start gap-4 mt-8">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-500">
+                      {inst.logo ? (
+                        <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" />
+                      ) : (
+                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 uppercase">{inst.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 flex flex-col h-16 justify-center">
+                      <h4 className="font-bold text-slate-900 dark:text-white leading-tight line-clamp-2 tracking-tight capitalize group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {formatAcronyms(inst.name)}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{Number(inst.rating || 0).toFixed(1)}</span>
+                        <div className="flex mb-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-3 h-3 ${i < Math.floor(inst.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-800'}`} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Global Rating</span>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{inst.total_reviews || 0}</span>
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Reviews</span>
+                    </div>
+                  </div>
+
+                  {/* Corner Accent */}
+                  <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500" />
+                </motion.a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-20 space-y-6">
         <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Available Institutes</h3>
       
@@ -791,7 +893,17 @@ export default function Home() {
                 </div>
 
                 {/* Right (Action) */}
-                <div className="flex flex-col items-end justify-center gap-3 shrink-0">
+                <div className="flex flex-col items-end justify-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1 mb-1">
+                    {inst.total_reviews > 0 ? (
+                      <>
+                        <Star className="w-3.5 h-3.5 fill-blue-600 text-blue-600 dark:fill-blue-500 dark:text-blue-500" />
+                        <span className="text-xs font-bold font-mono text-slate-900 dark:text-white">{Number(inst.rating || 0).toFixed(1)}</span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">New</span>
+                    )}
+                  </div>
                   <button 
                     onClick={(e) => handleToggleCompare(e, inst)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold tracking-tight uppercase ${

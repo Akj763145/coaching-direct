@@ -910,6 +910,114 @@ app.get('/api/public/batches/:id', async (req, res) => {
   }
 });
 
+app.get('/api/public/reviews', async (req, res) => {
+  const { institute_id } = req.query;
+  if (!institute_id) return res.status(400).json({ error: 'institute_id is required' });
+
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('reviews').select('*').eq('institute_id', institute_id).order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } else {
+    res.json([]);
+  }
+});
+
+app.post('/api/public/reviews', async (req, res) => {
+  const { institute_id, student_id, student_name, rating, review_text, batch_id } = req.body;
+  if (!institute_id || !rating) return res.status(400).json({ error: 'institute_id and rating are required' });
+
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('reviews').insert({
+      institute_id,
+      student_id: student_id || 'anonymous',
+      student_name: student_name || null,
+      rating: parseInt(rating),
+      review_text,
+      batch_id: batch_id || null
+    }).select().single();
+    
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, review: data });
+  } else {
+    res.status(501).json({ error: 'Reviews only supported on Supabase' });
+  }
+});
+
+// Administrative Review Management
+app.get('/api/institute/reviews', authenticateToken, async (req: any, res) => {
+  if (!isSupabaseEnabled) return res.status(501).json({ error: 'Supabase not enabled' });
+  
+  try {
+    const userId = req.user.id;
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    if (!inst) return res.status(404).json({ error: 'Institute not found' });
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('institute_id', inst.id)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/institute/reviews/:id/reply', authenticateToken, async (req: any, res) => {
+  const { id } = req.params;
+  const { reply_text } = req.body;
+  
+  if (!isSupabaseEnabled) return res.status(501).json({ error: 'Supabase not enabled' });
+  
+  try {
+    const userId = req.user.id;
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    if (!inst) return res.status(404).json({ error: 'Institute not found' });
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({ reply_text })
+      .eq('id', id)
+      .eq('institute_id', inst.id) // Ensure security
+      .select()
+      .single();
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/institute/reviews/:id/flag', authenticateToken, async (req: any, res) => {
+  const { id } = req.params;
+  const { is_flagged } = req.body;
+  
+  if (!isSupabaseEnabled) return res.status(501).json({ error: 'Supabase not enabled' });
+  
+  try {
+    const userId = req.user.id;
+    const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+    if (!inst) return res.status(404).json({ error: 'Institute not found' });
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({ is_flagged })
+      .eq('id', id)
+      .eq('institute_id', inst.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import('vite');
