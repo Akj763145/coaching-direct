@@ -237,26 +237,13 @@ export default function Home() {
     });
   }, [institutes, userLocation]);
 
-  const topRatedInstitutes = React.useMemo(() => {
+  const featuredInstitutes = React.useMemo(() => {
     const base = [...enrichedInstitutes]
       .filter((inst: any) => {
         // Handle boolean, number (SQLite), or string representations
         const isFeatured = inst.is_featured;
         return isFeatured === true || isFeatured === 1 || isFeatured === 'true' || isFeatured === '1';
-      })
-      .sort((a: any, b: any) => {
-        // Priority 1: Featured Status (Internal tie-break)
-        if (!!b.is_featured !== !!a.is_featured) return b.is_featured ? 1 : -1;
-        
-        // Priority 2: Rating
-        const ratingB = Number(b.rating || 0);
-        const ratingA = Number(a.rating || 0);
-        if (ratingB !== ratingA) return ratingB - ratingA;
-        
-        // Priority 3: Review Count
-        return (b.total_reviews || 0) - (a.total_reviews || 0);
-      })
-      .slice(0, 10);
+      });
       
     // Triple the array for infinite smooth loop
     if (base.length > 0) {
@@ -270,7 +257,7 @@ export default function Home() {
 
   useEffect(() => {
     const el = featuredScrollRef.current;
-    if (!el || topRatedInstitutes.length === 0) return;
+    if (!el || featuredInstitutes.length === 0) return;
 
     let animationFrameId: number;
     let lastTime = 0;
@@ -326,7 +313,7 @@ export default function Home() {
       el.removeEventListener('mousedown', handleInteractionStart);
       el.removeEventListener('mouseup', handleInteractionEnd);
     };
-  }, [topRatedInstitutes.length]);
+  }, [featuredInstitutes.length]);
 
   // Compare states
   const [compareList, setCompareList] = useState<any[]>([]);
@@ -377,13 +364,13 @@ export default function Home() {
 
   const refreshInstitutes = async () => {
     try {
-      // Fetch leaderboard (Top 10 by rating and featured status)
+      // Fetch leaderboard (Top 10 by review count and rating as requested)
       const { data: leaderboardData } = await supabase
         .from('institutes')
         .select(`
           id, name, logo, rating, total_reviews, address, location, is_featured
         `)
-        .order('is_featured', { ascending: false })
+        .order('total_reviews', { ascending: false })
         .order('rating', { ascending: false })
         .limit(10);
 
@@ -513,7 +500,7 @@ export default function Home() {
       <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-20 pb-8 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
         
         {/* Featured Institutes Carousel - Moved to Top */}
-        {topRatedInstitutes.length > 0 && (
+        {featuredInstitutes.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 md:px-8 mb-8">
             <div className="flex flex-col">
               <div className="inline-flex items-center gap-2 mb-4 ml-1 w-fit px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full border border-blue-100 dark:border-blue-800/50 shadow-xs">
@@ -530,7 +517,7 @@ export default function Home() {
               animate="show"
               className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0 cursor-grab active:cursor-grabbing"
             >
-               {topRatedInstitutes.map((inst, i) => (
+               {featuredInstitutes.map((inst, i) => (
                  <motion.a 
                    key={`featured-${inst.id}-${i}`}
                    variants={itemVariants}
