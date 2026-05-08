@@ -172,6 +172,8 @@ const FilterContent = React.memo(({
 ));
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
   const [institutes, setInstitutes] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -462,6 +464,12 @@ export default function Home() {
     });
   }, [enrichedInstitutes, search, selectedMediums, selectedBoards, deferredMaxFee, sortBy]);
 
+  const handleCardClick = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    setIsNavigating(true);
+    navigate(`/institute/${id}`);
+  };
+
   const handleToggleCompare = (e: React.MouseEvent, inst: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -496,6 +504,37 @@ export default function Home() {
 
   return (
     <main className="w-full pb-32">
+      {/* Navigation Loading Overlay */}
+      <AnimatePresence>
+        {isNavigating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center"
+          >
+            <div className="relative w-20 h-20">
+              {/* Spinner */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="w-full h-full border-4 border-blue-100 dark:border-blue-900/30 border-t-blue-600 dark:border-t-blue-500 rounded-full"
+              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ repeat: Infinity, duration: 1.5, repeatType: "reverse" }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </motion.div>
+            </div>
+            <p className="mt-6 text-slate-900 dark:text-white font-bold tracking-tight text-lg">Entering Institute Profile</p>
+            <p className="mt-1 text-slate-500 dark:text-slate-400 text-sm">Getting everything ready for you...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-20 pb-8 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
         
@@ -522,8 +561,9 @@ export default function Home() {
                    key={`featured-${inst.id}-${i}`}
                    variants={itemVariants}
                    href={`/institute/${inst.id}`}
+                   onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
                    whileHover={{ y: -2 }}
-                   className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300"
+                   className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300 cursor-pointer"
                  >
                    {inst.is_featured && (
                      <div className="absolute top-0 right-0 z-30">
@@ -654,6 +694,7 @@ export default function Home() {
                 <motion.a 
                   key={`leaderboard-${inst.id}-${index}`}
                   href={`/institute/${inst.id}`}
+                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -862,6 +903,7 @@ export default function Home() {
                 whileHover={{ y: -2 }}
                 key={inst.id} 
                 href={`/institute/${inst.id}`} 
+                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
                 className={`group flex flex-row items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer ${isSelectedForCompare ? 'border shadow-sm border-blue-500 shadow-blue-500/10 ring-1 ring-blue-500/20' : 'border border-slate-200 shadow-sm dark:border-slate-800'}`}
               >
                 {/* Left (Visual) */}
