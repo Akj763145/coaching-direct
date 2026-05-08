@@ -103,6 +103,9 @@ if (isSupabaseEnabled) {
       whatsapp_number TEXT,
       latitude REAL,
       longitude REAL,
+      is_featured INTEGER DEFAULT 0,
+      rating REAL DEFAULT 0,
+      total_reviews INTEGER DEFAULT 0,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS batches (
@@ -190,6 +193,9 @@ if (isSupabaseEnabled) {
   try { db.exec('ALTER TABLE faculty ADD COLUMN qualifications TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE faculty ADD COLUMN bio TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE faculty ADD COLUMN experience TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN is_featured INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN rating REAL DEFAULT 0'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN total_reviews INTEGER DEFAULT 0'); } catch(e) {}
 
   ensureMasterAdmin();
 }
@@ -331,15 +337,25 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
 
 app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
   const instId = req.params.id;
-  const { name, logo } = req.body;
+  const { name, logo, is_featured } = req.body;
   
   if (isSupabaseEnabled) {
-    const { error } = await supabase.from('institutes').update({ name, logo }).eq('id', instId);
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (logo !== undefined) updateData.logo = logo;
+    if (is_featured !== undefined) updateData.is_featured = is_featured;
+
+    const { error } = await supabase.from('institutes').update(updateData).eq('id', instId);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
   } else {
     try {
-      db.prepare('UPDATE institutes SET name = ?, logo = ? WHERE id = ?').run(name, logo, instId);
+      if (is_featured !== undefined) {
+        db.prepare('UPDATE institutes SET is_featured = ? WHERE id = ?').run(is_featured ? 1 : 0, instId);
+      }
+      if (name !== undefined && logo !== undefined) {
+        db.prepare('UPDATE institutes SET name = ?, logo = ? WHERE id = ?').run(name, logo, instId);
+      }
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

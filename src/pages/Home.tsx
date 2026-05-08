@@ -237,19 +237,46 @@ export default function Home() {
     });
   }, [institutes, userLocation]);
 
+  const topRatedInstitutes = React.useMemo(() => {
+    const base = [...enrichedInstitutes]
+      .filter((inst: any) => {
+        // Handle boolean, number (SQLite), or string representations
+        const isFeatured = inst.is_featured;
+        return isFeatured === true || isFeatured === 1 || isFeatured === 'true' || isFeatured === '1';
+      })
+      .sort((a: any, b: any) => {
+        // Priority 1: Featured Status (Internal tie-break)
+        if (!!b.is_featured !== !!a.is_featured) return b.is_featured ? 1 : -1;
+        
+        // Priority 2: Rating
+        const ratingB = Number(b.rating || 0);
+        const ratingA = Number(a.rating || 0);
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        
+        // Priority 3: Review Count
+        return (b.total_reviews || 0) - (a.total_reviews || 0);
+      })
+      .slice(0, 10);
+      
+    // Triple the array for infinite smooth loop
+    if (base.length > 0) {
+      return [...base, ...base, ...base];
+    }
+    return base;
+  }, [enrichedInstitutes]);
+
   const featuredScrollRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
 
   useEffect(() => {
     const el = featuredScrollRef.current;
-    if (!el || institutes.length === 0) return;
+    if (!el || topRatedInstitutes.length === 0) return;
 
     let animationFrameId: number;
     let lastTime = 0;
     
-    // Auto-scroll speed
-    const pixelsPerSecond = 45;
+    // Smooth auto-scroll speed (pixels per second)
+    const pixelsPerSecond = 50;
 
     const scroll = (time: number) => {
       if (!lastTime) lastTime = time;
@@ -259,37 +286,28 @@ export default function Home() {
       if (el && !isInteractingRef.current) {
         el.scrollLeft += pixelsPerSecond * deltaTime;
         
-        // Loop logic: when we pass the first set of items, loop back smoothly
-        const setWidth = el.scrollWidth / 3;
-        if (el.scrollLeft >= setWidth * 2) {
-          el.scrollLeft -= setWidth;
+        // The infinite loop math: 3 sets of data
+        const singleSetWidth = el.scrollWidth / 3;
+        
+        if (el.scrollLeft >= singleSetWidth * 2) {
+          el.scrollLeft -= singleSetWidth;
         } else if (el.scrollLeft <= 0) {
-          el.scrollLeft += setWidth;
+          el.scrollLeft += singleSetWidth;
         }
       }
       animationFrameId = requestAnimationFrame(scroll);
     };
 
-    // Delay start to allow for layout settlement
+    // Initial offset to the middle set for seamless looping in both directions
     const startTimeout = setTimeout(() => {
-      // Start in the middle set for pre-populated left/right content
-      const setWidth = el.scrollWidth / 3;
-      el.scrollLeft = setWidth;
-      animationFrameId = requestAnimationFrame(scroll);
-    }, 1000);
+      if (el && el.scrollWidth > 0) {
+        el.scrollLeft = el.scrollWidth / 3;
+        animationFrameId = requestAnimationFrame(scroll);
+      }
+    }, 500);
 
-    const handleInteractionStart = () => {
-      isInteractingRef.current = true;
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    };
-
-    const handleInteractionEnd = () => {
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-      scrollTimeoutRef.current = setTimeout(() => {
-        isInteractingRef.current = false;
-        lastTime = 0; // Reset timer on resume
-      }, 2000); 
-    };
+    const handleInteractionStart = () => { isInteractingRef.current = true; };
+    const handleInteractionEnd = () => { isInteractingRef.current = false; };
 
     el.addEventListener('mouseenter', handleInteractionStart);
     el.addEventListener('mouseleave', handleInteractionEnd);
@@ -297,21 +315,18 @@ export default function Home() {
     el.addEventListener('touchend', handleInteractionEnd, { passive: true });
     el.addEventListener('mousedown', handleInteractionStart);
     el.addEventListener('mouseup', handleInteractionEnd);
-    el.addEventListener('wheel', handleInteractionStart, { passive: true });
 
     return () => {
       clearTimeout(startTimeout);
       cancelAnimationFrame(animationFrameId);
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       el.removeEventListener('mouseenter', handleInteractionStart);
       el.removeEventListener('mouseleave', handleInteractionEnd);
       el.removeEventListener('touchstart', handleInteractionStart);
       el.removeEventListener('touchend', handleInteractionEnd);
       el.removeEventListener('mousedown', handleInteractionStart);
       el.removeEventListener('mouseup', handleInteractionEnd);
-      el.removeEventListener('wheel', handleInteractionStart);
     };
-  }, [institutes]);
+  }, [topRatedInstitutes.length]);
 
   // Compare states
   const [compareList, setCompareList] = useState<any[]>([]);
@@ -362,12 +377,13 @@ export default function Home() {
 
   const refreshInstitutes = async () => {
     try {
-      // Fetch leaderboard (Top 10 by rating)
+      // Fetch leaderboard (Top 10 by rating and featured status)
       const { data: leaderboardData } = await supabase
         .from('institutes')
         .select(`
-          id, name, logo, rating, total_reviews, address, location
+          id, name, logo, rating, total_reviews, address, location, is_featured
         `)
+        .order('is_featured', { ascending: false })
         .order('rating', { ascending: false })
         .limit(10);
 
@@ -380,7 +396,7 @@ export default function Home() {
       const { data, error: supaError } = await supabase
         .from('institutes')
         .select(`
-          id, name, logo, latitude, longitude, address, location, rating, total_reviews,
+          id, name, logo, latitude, longitude, address, location, rating, total_reviews, is_featured,
           batches:batches(*),
           categories:categories(*)
         `)
@@ -491,109 +507,109 @@ export default function Home() {
     show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } }
   };
 
-  const topRatedInstitutes = React.useMemo(() => {
-    return [...enrichedInstitutes]
-      .sort((a: any, b: any) => {
-        const ratingB = Number(b.rating || 0);
-        const ratingA = Number(a.rating || 0);
-        if (ratingB !== ratingA) return ratingB - ratingA;
-        return (b.total_reviews || 0) - (a.total_reviews || 0);
-      })
-      .slice(0, 6);
-  }, [enrichedInstitutes]);
-
   return (
     <main className="w-full pb-32">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-24 pb-12 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
+      <div className="relative bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-900 dark:via-[#0b1120] dark:to-slate-800 pt-20 pb-8 px-4 md:px-8 border-b border-white/20 dark:border-slate-800/50">
         
         {/* Featured Institutes Carousel - Moved to Top */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 mb-10 pt-6">
-          <div className="flex flex-col">
-            <div className="inline-flex items-center gap-2 mb-4 ml-1 w-fit px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full border border-blue-100 dark:border-blue-800/50 shadow-xs">
-              <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400 fill-blue-600/10" />
-              <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] text-blue-700 dark:text-blue-300">
-                Our Top Institutes
-              </h4>
+        {topRatedInstitutes.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 md:px-8 mb-8">
+            <div className="flex flex-col">
+              <div className="inline-flex items-center gap-2 mb-4 ml-1 w-fit px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full border border-blue-100 dark:border-blue-800/50 shadow-xs">
+                <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400 fill-blue-600/10" />
+                <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] text-blue-700 dark:text-blue-300">
+                  Our Top Institutes
+                </h4>
+              </div>
             </div>
+            <motion.div 
+              ref={featuredScrollRef}
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0 cursor-grab active:cursor-grabbing"
+            >
+               {topRatedInstitutes.map((inst, i) => (
+                 <motion.a 
+                   key={`featured-${inst.id}-${i}`}
+                   variants={itemVariants}
+                   href={`/institute/${inst.id}`}
+                   whileHover={{ y: -2 }}
+                   className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300"
+                 >
+                   {inst.is_featured && (
+                     <div className="absolute top-0 right-0 z-30">
+                       <div className="bg-blue-600 text-white text-[9px] uppercase font-black px-2 py-0.5 rounded-bl-lg shadow-sm flex items-center gap-1">
+                         <Sparkles className="w-2.5 h-2.5 fill-white/20" />
+                         Featured
+                       </div>
+                     </div>
+                   )}
+
+                   <div className="absolute top-2 right-2 z-20">
+                     {!inst.is_featured && <Star className="w-4 h-4 fill-amber-400 text-amber-500 opacity-80" />}
+                   </div>
+                   
+                   {/* Left (Visual) */}
+                   <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                      {inst.logo ? (
+                        <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
+                      ) : (
+                         <span className="text-amber-600 dark:text-amber-500 font-bold text-xl uppercase">
+                           {inst.name.charAt(0)}
+                         </span>
+                      )}
+                   </div>
+                   
+                   {/* Middle (Data) */}
+                   <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                     <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight capitalize pr-2 leading-tight">{formatAcronyms(inst.name)}</h4>
+                     
+                     <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                       {inst.distance ? (
+                         <span className="flex items-center gap-1 font-medium">
+                           <Navigation2 className="w-3 h-3 text-blue-500" />
+                           {inst.distance} {inst.isMockDistance && '(est.)'}
+                         </span>
+                       ) : (
+                         <span className="flex items-center gap-1">
+                           <MapPin className="w-3 h-3 opacity-70" />
+                           {formatAcronyms(getLocationText(inst))}
+                         </span>
+                       )}
+                     </div>
+                     
+                     <div className="flex items-center gap-1 mt-2 min-h-[16px]">
+                       {inst.rating ? (
+                         <>
+                           <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                           <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
+                             {Number(inst.rating || 0).toFixed(1)}
+                           </span>
+                           <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
+                             ({inst.total_reviews || 0} {(inst.total_reviews === 1) ? 'review' : 'reviews'})
+                           </span>
+                         </>
+                       ) : (
+                         <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">New</span>
+                       )}
+                     </div>
+                   </div>
+                   
+                   {/* Right (Action Indicator) */}
+                   <div className="flex flex-col items-end justify-center shrink-0 relative z-10">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
+                        <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-600 transition-colors" />
+                      </div>
+                   </div>
+                   
+                   <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
+                 </motion.a>
+               ))}
+            </motion.div>
           </div>
-          <motion.div 
-            ref={featuredScrollRef}
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0"
-          >
-             {topRatedInstitutes.map((inst, i) => (
-               <motion.a 
-                 key={`featured-${inst.id}-${i}`}
-                 variants={itemVariants}
-                 href={`/institute/${inst.id}`}
-                 whileHover={{ y: -2 }}
-                 className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300"
-               >
-                 <div className="absolute top-2 right-2 z-20">
-                   <Star className="w-4 h-4 fill-amber-400 text-amber-500 opacity-80" />
-                 </div>
-                 
-                 {/* Left (Visual) */}
-                 <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
-                    {inst.logo ? (
-                      <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
-                    ) : (
-                       <span className="text-amber-600 dark:text-amber-500 font-bold text-xl uppercase">
-                         {inst.name.charAt(0)}
-                       </span>
-                    )}
-                 </div>
-                 
-                 {/* Middle (Data) */}
-                 <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                   <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight capitalize pr-2 leading-tight">{formatAcronyms(inst.name)}</h4>
-                   
-                   <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                     {inst.distance ? (
-                       <span className="flex items-center gap-1 font-medium">
-                         <Navigation2 className="w-3 h-3 text-blue-500" />
-                         {inst.distance} {inst.isMockDistance && '(est.)'}
-                       </span>
-                     ) : (
-                       <span className="flex items-center gap-1">
-                         <MapPin className="w-3 h-3 opacity-70" />
-                         {formatAcronyms(getLocationText(inst))}
-                       </span>
-                     )}
-                   </div>
-                   
-                   <div className="flex items-center gap-1 mt-2 min-h-[16px]">
-                     {inst.rating ? (
-                       <>
-                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                         <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
-                           {Number(inst.rating || 0).toFixed(1)}
-                         </span>
-                         <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
-                           ({inst.total_reviews || 0} {(inst.total_reviews === 1) ? 'review' : 'reviews'})
-                         </span>
-                       </>
-                     ) : (
-                       <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">New</span>
-                     )}
-                   </div>
-                 </div>
-                 
-                 {/* Right (Action) */}
-                 <div className="flex flex-col items-end justify-center shrink-0 relative z-10">
-                   <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
-                     <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-600 transition-colors" />
-                   </div>
-                 </div>
-                 
-                 <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
-               </motion.a>
-             ))}
-          </motion.div>
-        </div>
+        )}
 
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <motion.h1 
@@ -624,7 +640,7 @@ export default function Home() {
 
       {/* Top 10 Leaderboard Section */}
       {leaderboard.length > 0 && (
-        <div className="mt-16 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
+        <div className="mt-8 max-w-7xl mx-auto px-4 md:px-8 space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">

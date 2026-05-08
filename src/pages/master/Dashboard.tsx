@@ -1,7 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -12,6 +13,7 @@ export default function MasterDashboard() {
   const [newCredentials, setNewCredentials] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'institutes' | 'featured'>('institutes');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -100,6 +102,39 @@ export default function MasterDashboard() {
     navigate('/login');
   };
 
+  const toggleFeatured = async (id: string | number, currentStatus: boolean) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Optimistic UI update
+    setInstitutes(prev => prev.map(inst => 
+      inst.id === id ? { ...inst, is_featured: !currentStatus } : inst
+    ));
+
+    try {
+      const res = await fetch(`/api/master/institutes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_featured: !currentStatus })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      // Revert on error
+      setInstitutes(prev => prev.map(inst => 
+        inst.id === id ? { ...inst, is_featured: currentStatus } : inst
+      ));
+      alert('Failed to update featured status. Please try again.');
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -114,7 +149,25 @@ export default function MasterDashboard() {
         <button onClick={handleLogout} className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-apple-gray dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-apple-border/50">Log out</button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="flex gap-1 bg-apple-gray/50 dark:bg-slate-800/50 p-1 rounded-xl w-fit border border-apple-border/30 mb-2">
+        <button 
+          onClick={() => setActiveTab('institutes')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'institutes' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Institute Management
+        </button>
+        <button 
+          onClick={() => setActiveTab('featured')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'featured' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <Star className="w-4 h-4" />
+          Featured Placement
+        </button>
+      </div>
+
+      {activeTab === 'institutes' ? (
+        <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
           <motion.form 
             initial={{ opacity: 0, y: 10 }}
@@ -239,6 +292,108 @@ export default function MasterDashboard() {
           </motion.div>
         </div>
       </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-apple-border/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden"
+        >
+          <div className="p-6 border-b border-apple-border/30 bg-apple-gray/10 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-apple-text dark:text-white">Featured Placement Control</h2>
+              <p className="text-[13px] text-apple-text-muted">Manage showcase institutes for public pages</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full border border-amber-100 dark:border-amber-800/50">
+              <Sparkles className="w-3.5 h-3.5 fill-amber-600/10" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Premium Control</span>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-apple-gray/30 dark:bg-slate-800/50">
+                  <th className="px-6 py-4 text-[13px] font-bold text-apple-text/60 dark:text-slate-400 uppercase tracking-wider w-1/2">Institute Info</th>
+                  <th className="px-6 py-4 text-[13px] font-bold text-apple-text/60 dark:text-slate-400 uppercase tracking-wider text-center">Rating</th>
+                  <th className="px-6 py-4 text-[13px] font-bold text-apple-text/60 dark:text-slate-400 uppercase tracking-wider text-right">Featured Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-apple-border/20 dark:divide-slate-800/50">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-slate-100 rounded-lg"/><div className="h-4 bg-slate-100 rounded w-32"/></div></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-16 mx-auto"/></td>
+                      <td className="px-6 py-4"><div className="h-8 bg-slate-100 rounded-full w-16 ml-auto"/></td>
+                    </tr>
+                  ))
+                ) : institutes.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-12 text-center text-apple-text-muted italic">No institutes found to manage.</td>
+                  </tr>
+                ) : (
+                  institutes.map((inst) => (
+                    <tr key={inst.id} className="hover:bg-apple-gray/20 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl border border-apple-border/30 overflow-hidden bg-apple-gray/50 flex-shrink-0 flex items-center justify-center">
+                            {inst.logo ? (
+                              <img src={inst.logo} alt="" className="w-full h-full object-contain p-1" />
+                            ) : (
+                              <span className="text-xl font-bold text-apple-blue uppercase">{inst.name.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-apple-text dark:text-white truncate">{inst.name}</div>
+                            <div className="text-[12px] text-apple-text-muted">ID: {inst.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-800 w-fit mx-auto">
+                          <Star className={`w-3.5 h-3.5 ${Number(inst.rating) > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`} />
+                          <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{Number(inst.rating || 0).toFixed(1)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex justify-end items-center gap-3">
+                          {inst.is_featured && (
+                            <motion.div 
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="text-amber-500"
+                            >
+                              <Sparkles className="w-4 h-4 fill-amber-500/20" />
+                            </motion.div>
+                          )}
+                          <button
+                            onClick={() => toggleFeatured(inst.id, inst.is_featured === 1 || inst.is_featured === true)}
+                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-apple-blue/20 ${
+                              (inst.is_featured === 1 || inst.is_featured === true) ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                                (inst.is_featured === 1 || inst.is_featured === true) ? 'translate-x-7' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-4 bg-apple-gray/20 dark:bg-slate-800/30 border-t border-apple-border/20 text-center">
+             <p className="text-[11px] text-apple-text-muted uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
+               <Flag className="w-3 h-3" />
+               Current total of {institutes.filter(i => i.is_featured).length} featured institutes
+             </p>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
