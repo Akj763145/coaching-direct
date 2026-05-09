@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag } from 'lucide-react';
+import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function MasterDashboard() {
@@ -146,6 +146,13 @@ export default function MasterDashboard() {
           <h1 className="text-3xl font-semibold text-apple-text tracking-tight">Master Admin Dashboard</h1>
           <p className="text-apple-text-muted mt-1 text-[15px]">Manage platform tenants (Institutes)</p>
         </div>
+        <button 
+          onClick={handleLogout} 
+          className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-apple-gray dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-apple-border/50 flex items-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          Log out
+        </button>
       </div>
 
       <div className="flex gap-1 bg-apple-gray/50 dark:bg-slate-800/50 p-1 rounded-xl w-fit border border-apple-border/30 mb-2">
