@@ -12,6 +12,7 @@ import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
 import Chatbot from './components/Chatbot';
 import { supabase } from './lib/supabase';
+import Onboarding from './components/Onboarding';
 
 export const ThemeContext = createContext({
   theme: 'light',
@@ -211,6 +212,53 @@ function ScrollToTop() {
 
 export default function App() {
   const [theme, setTheme] = useState('light');
+  const [user, setUser] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkOnboarding(session.user.id);
+      } else {
+        setOnboardingChecked(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        checkOnboarding(currentUser.id);
+      } else {
+        setShowOnboarding(false);
+        setOnboardingChecked(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkOnboarding = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('has_completed_onboarding')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (!data || !data.has_completed_onboarding) {
+        setShowOnboarding(true);
+      }
+      setOnboardingChecked(true);
+    } catch (err) {
+      console.error('Error checking onboarding:', err);
+      setOnboardingChecked(true);
+    }
+  };
 
   useEffect(() => {
     const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -236,6 +284,17 @@ export default function App() {
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <BrowserRouter>
         <ScrollToTop />
+        <AnimatePresence>
+          {user && showOnboarding && onboardingChecked && (
+            <Onboarding 
+              user={user} 
+              onComplete={() => {
+                setShowOnboarding(false);
+                // Refresh or redirect if needed
+              }} 
+            />
+          )}
+        </AnimatePresence>
         <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
           <Navigation />
           
