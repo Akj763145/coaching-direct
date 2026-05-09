@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Login from './pages/Login';
@@ -129,7 +129,7 @@ function Navigation({ user, handleSignOut }: { user: any; handleSignOut: () => v
               
               {user ? (
                 <div className="flex items-center gap-1.5 md:gap-3">
-                  <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2.5 hover:opacity-90 transition-all group shrink-0 ml-1">
+                  <Link to={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2.5 hover:opacity-90 transition-all group shrink-0 ml-1">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[15px] font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform border-2 border-white dark:border-slate-900 ring-1 ring-slate-200 dark:ring-slate-800">
                       {user.user_metadata?.avatar_url ? (
                         <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
@@ -143,23 +143,16 @@ function Navigation({ user, handleSignOut }: { user: any; handleSignOut: () => v
                       </span>
                       <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{user.role || 'User'}</span>
                     </div>
-                  </a>
-                  <button 
-                    onClick={handleSignOut}
-                    className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Sign Out"
-                  >
-                    <LogOut className="w-5 h-5 transition-transform hover:scale-110" />
-                  </button>
+                  </Link>
                 </div>
               ) : (
-                <a 
-                  href="/user/login" 
+                <Link 
+                  to="/user/login" 
                   className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl md:rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                   title="Sign In / Guest"
                 >
                   <User className="w-5 h-5" />
-                </a>
+                </Link>
               )}
             </nav>
           </div>

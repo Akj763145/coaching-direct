@@ -162,7 +162,7 @@ export default function InstituteDetail() {
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
-          <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</a>
+          <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</Link>
           <ChevronRight className="w-3.5 h-3.5 shrink-0" />
           <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
         </div>
