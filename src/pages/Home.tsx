@@ -499,7 +499,7 @@ export default function Home() {
 
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
-    show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as any } }
+    show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } }
   };
 
   return (

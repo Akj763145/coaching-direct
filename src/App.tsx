@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft } from 'lucide-react';
+import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Login from './pages/Login';
 import UserLogin from './pages/UserLogin';
@@ -11,16 +11,15 @@ import Dashboard from './pages/Dashboard';
 import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
 import Chatbot from './components/Chatbot';
+import OnboardingManager from './components/OnboardingManager';
 import { supabase } from './lib/supabase';
-import Onboarding from './components/Onboarding';
 
 export const ThemeContext = createContext({
   theme: 'light',
   toggleTheme: () => {},
 });
 
-function Navigation() {
-  const [user, setUser] = useState<any>(null);
+function Navigation({ user, handleSignOut }: { user: any; handleSignOut: () => void }) {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -29,18 +28,6 @@ function Navigation() {
   const navigate = useNavigate();
 
   const searchQuery = searchParams.get('search') || '';
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -139,21 +126,30 @@ function Navigation() {
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
               
               {user ? (
-                <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2.5 hover:opacity-90 transition-all group shrink-0 ml-1">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[15px] font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform border-2 border-white dark:border-slate-900 ring-1 ring-slate-200 dark:ring-slate-800">
-                    {user.user_metadata?.avatar_url ? (
-                      <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      <span>{(user.user_metadata?.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="hidden lg:flex flex-col items-start leading-none">
-                    <span className="text-[13px] font-bold text-slate-900 dark:text-white truncate max-w-[100px]">
-                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{user.role || 'User'}</span>
-                  </div>
-                </a>
+                <div className="flex items-center gap-1.5 md:gap-3">
+                  <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2.5 hover:opacity-90 transition-all group shrink-0 ml-1">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[15px] font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform border-2 border-white dark:border-slate-900 ring-1 ring-slate-200 dark:ring-slate-800">
+                      {user.user_metadata?.avatar_url ? (
+                        <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        <span>{(user.user_metadata?.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="hidden lg:flex flex-col items-start leading-none">
+                      <span className="text-[13px] font-bold text-slate-900 dark:text-white truncate max-w-[100px]">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{user.role || 'User'}</span>
+                    </div>
+                  </a>
+                  <button 
+                    onClick={handleSignOut}
+                    className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-xl md:rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-5 h-5 transition-transform hover:scale-110" />
+                  </button>
+                </div>
               ) : (
                 <a 
                   href="/user/login" 
@@ -213,52 +209,7 @@ function ScrollToTop() {
 export default function App() {
   const [theme, setTheme] = useState('light');
   const [user, setUser] = useState<any>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkOnboarding(session.user.id);
-      } else {
-        setOnboardingChecked(true);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) {
-        checkOnboarding(currentUser.id);
-      } else {
-        setShowOnboarding(false);
-        setOnboardingChecked(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkOnboarding = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('has_completed_onboarding')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (!data || !data.has_completed_onboarding) {
-        setShowOnboarding(true);
-      }
-      setOnboardingChecked(true);
-    } catch (err) {
-      console.error('Error checking onboarding:', err);
-      setOnboardingChecked(true);
-    }
-  };
+  const [onboardingPending, setOnboardingPending] = useState(false);
 
   useEffect(() => {
     const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -267,7 +218,32 @@ export default function App() {
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
     }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) setOnboardingPending(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) setOnboardingPending(true);
+      else setOnboardingPending(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('user_token');
+      localStorage.removeItem('user_role');
+      setUser(null);
+      setOnboardingPending(false);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -284,20 +260,18 @@ export default function App() {
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <BrowserRouter>
         <ScrollToTop />
-        <AnimatePresence>
-          {user && showOnboarding && onboardingChecked && (
-            <Onboarding 
-              user={user} 
-              onComplete={() => {
-                setShowOnboarding(false);
-                // Refresh or redirect if needed
-              }} 
-            />
-          )}
-        </AnimatePresence>
         <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
-          <Navigation />
+          <Navigation user={user} handleSignOut={handleSignOut} />
           
+          <AnimatePresence>
+            {user && onboardingPending && (
+              <OnboardingManager 
+                user={user} 
+                onComplete={() => setOnboardingPending(false)} 
+              />
+            )}
+          </AnimatePresence>
+
           <main className="flex-1 pt-20 md:pt-24 w-full">
             <Routes>
               <Route path="/" element={<Home />} />
