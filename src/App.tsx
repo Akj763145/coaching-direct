@@ -10,6 +10,7 @@ import BatchDetail from './pages/BatchDetail';
 import Dashboard from './pages/Dashboard';
 import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
+import AuthCallback from './pages/AuthCallback';
 import Chatbot from './components/Chatbot';
 import OnboardingManager from './components/OnboardingManager';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -261,6 +262,7 @@ function AppContent() {
               <Route path="/" element={<Home />} />
               <Route path="/institute/:id" element={<InstituteDetail />} />
               <Route path="/batch/:id" element={<BatchDetail />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/login" element={<Login />} />
               <Route path="/user/login" element={<UserLogin />} />
               <Route path="/dashboard" element={<Dashboard />} />

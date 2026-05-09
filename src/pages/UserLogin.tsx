@@ -22,7 +22,27 @@ export default function UserLogin() {
     };
     checkUser();
 
-    // Listen for auth state changes (especially after OAuth redirect)
+    // Listen for messages from the auth popup
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        const session = event.data.session;
+        if (session) {
+          localStorage.setItem('user_token', session.access_token);
+          localStorage.setItem('user_role', 'USER');
+          setIsSuccess(true);
+          setTimeout(() => navigate('/'), 1000);
+        }
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        setError(event.data.error || 'Authentication failed');
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Listen for auth state changes (especially after OAuth redirect if popup fails)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         localStorage.setItem('user_token', session.access_token);
@@ -32,7 +52,10 @@ export default function UserLogin() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
@@ -40,21 +63,45 @@ export default function UserLogin() {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      // 1. Get the OAuth URL from Supabase WITHOUT redirecting
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin.includes('localhost') 
-            ? 'https://ais-dev-kumbynxsgsmd2ffqhsuzrf-653632020489.asia-southeast1.run.app'
-            : window.location.origin
+          skipBrowserRedirect: true,
+          redirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 
       if (error) throw error;
+      if (!data?.url) throw new Error('Could not generate login URL');
+
+      // 2. Open login URL in a popup
+      // This helps keep the session in a window the app can communicate with
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
       
-      // Note: The page will redirect to Google's login consent screen
+      const popup = window.open(
+        data.url,
+        'google-login',
+        `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`
+      );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // if popup blocked, fallback to standard redirect
+        console.log('Popup blocked, falling back to redirect');
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          }
+        });
+      }
+      
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Failed to connect to Google. Please check your configuration.');
+      setError(err.message || 'Failed to connect to Google.');
       setIsLoading(false);
     }
   };
