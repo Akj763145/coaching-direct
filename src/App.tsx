@@ -12,6 +12,8 @@ import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
 import Chatbot from './components/Chatbot';
 import OnboardingManager from './components/OnboardingManager';
+import WelcomeScreen from './components/WelcomeScreen';
+import { UserProvider, useUser } from './contexts/UserContext';
 import { supabase } from './lib/supabase';
 
 export const ThemeContext = createContext({
@@ -206,9 +208,9 @@ function ScrollToTop() {
   return null;
 }
 
-export default function App() {
+function AppContent() {
+  const { user, profile, loading, signOut } = useUser();
   const [theme, setTheme] = useState('light');
-  const [user, setUser] = useState<any>(null);
   const [onboardingPending, setOnboardingPending] = useState(false);
 
   useEffect(() => {
@@ -218,32 +220,17 @@ export default function App() {
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
     }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) setOnboardingPending(true);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) setOnboardingPending(true);
-      else setOnboardingPending(false);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('user_token');
-      localStorage.removeItem('user_role');
-      setUser(null);
+  useEffect(() => {
+    if (user && profile && !profile.onboarding_completed) {
+      setOnboardingPending(true);
+    } else if (user && profile && !profile.tour_completed) {
+      setOnboardingPending(true);
+    } else {
       setOnboardingPending(false);
-    } catch (err) {
-      console.error('Logout error:', err);
     }
-  };
+  }, [user, profile]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -259,9 +246,10 @@ export default function App() {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <BrowserRouter>
+        <WelcomeScreen isLoading={loading} />
         <ScrollToTop />
         <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
-          <Navigation user={user} handleSignOut={handleSignOut} />
+          <Navigation user={user} handleSignOut={signOut} />
           
           <AnimatePresence>
             {user && onboardingPending && (
@@ -291,5 +279,13 @@ export default function App() {
         </div>
       </BrowserRouter>
     </ThemeContext.Provider>
+  );
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }

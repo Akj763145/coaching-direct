@@ -5,6 +5,7 @@ import {
   ArrowRight, X, Sparkles, Target, Star,
   Search, Bookmark, MessageSquare
 } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
 
 interface OnboardingManagerProps {
@@ -12,7 +13,8 @@ interface OnboardingManagerProps {
   onComplete: () => void;
 }
 
-export default function OnboardingManager({ user, onComplete }: OnboardingManagerProps) {
+export default function OnboardingManager({ onComplete }: OnboardingManagerProps) {
+  const { user, profile, loading: userLoading, updateProfile } = useUser();
   const [showForm, setShowForm] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,54 +30,29 @@ export default function OnboardingManager({ user, onComplete }: OnboardingManage
   });
 
   useEffect(() => {
-    const checkProfile = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('student_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error && error.code === 'PGRST116') {
-          // No profile yet
-          setShowForm(true);
-        } else if (data) {
-          if (!data.onboarding_completed) {
-            setShowForm(true);
-          } else if (!data.tour_completed) {
-            setShowTour(true);
-          } else {
-            onComplete();
-          }
-        }
-      } catch (err) {
-        console.error('Error checking profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkProfile();
-  }, [user, onComplete]);
+    if (userLoading) return;
+    
+    if (!profile || !profile.onboarding_completed) {
+      setShowForm(true);
+    } else if (!profile.tour_completed) {
+      setShowTour(true);
+    } else {
+      onComplete();
+    }
+    setLoading(false);
+  }, [userLoading, profile, onComplete]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('student_profiles')
-        .upsert({
-          id: user.id,
-          full_name: formData.full_name,
-          age: parseInt(formData.age),
-          education_level: formData.education_level,
-          phone_number: formData.phone_number,
-          onboarding_completed: true
-        });
-
-      if (error) throw error;
+      await updateProfile({
+        full_name: formData.full_name,
+        age: parseInt(formData.age),
+        education_level: formData.education_level,
+        phone_number: formData.phone_number,
+        onboarding_completed: true
+      });
       
       setShowForm(false);
       setShowTour(true);
@@ -88,10 +65,7 @@ export default function OnboardingManager({ user, onComplete }: OnboardingManage
 
   const handleCompleteTour = async () => {
     try {
-      await supabase
-        .from('student_profiles')
-        .update({ tour_completed: true })
-        .eq('id', user.id);
+      await updateProfile({ tour_completed: true });
       
       setShowTour(false);
       onComplete();
@@ -130,7 +104,7 @@ export default function OnboardingManager({ user, onComplete }: OnboardingManage
     }
   ];
 
-  if (loading) return null;
+  if (loading || (!showForm && !showTour)) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
