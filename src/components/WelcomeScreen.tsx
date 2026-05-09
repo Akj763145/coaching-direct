@@ -23,7 +23,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
     const contentTimer = setTimeout(() => setShowContent(true), 100);
     const minTimeTimer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 2000);
+    }, 3500);
 
     return () => {
       clearTimeout(contentTimer);
@@ -33,7 +33,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
 
   useEffect(() => {
     // Hide ONLY when:
-    // 1. Min animation time has passed (2s)
+    // 1. Min animation time has passed (3.5s)
     // 2. App loading is done (if provided)
     // 3. Welcome screen is currently visible
     if (minTimeElapsed && !isLoading && isVisible) {
