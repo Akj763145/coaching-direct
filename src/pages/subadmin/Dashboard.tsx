@@ -1,5 +1,5 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply } from 'lucide-react';
 
@@ -471,9 +471,6 @@ export default function SubAdminDashboard() {
               <p className="text-sm text-slate-500 dark:text-slate-400">Sub-Admin Dashboard</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-            Log out
-          </button>
         </div>
         
         {/* Navigation Tabs */}
@@ -867,9 +864,9 @@ export default function SubAdminDashboard() {
                         <div className="flex flex-col"><span className="text-slate-400 text-xs uppercase font-semibold">Total Fee</span><span className="text-slate-800 dark:text-slate-200 font-medium font-mono">₹{batch.fee_structure}</span></div>
                       </div>
 
-                      <a href={`/batch/${batch.id}`} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl transition-colors">
+                      <Link to={`/batch/${batch.id}`} className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl transition-colors">
                         <Eye className="w-4 h-4" /> View Live Page
-                      </a>
+                      </Link>
                     </div>
                   ))}
                   {batches.length === 0 && (

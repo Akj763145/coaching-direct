@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef, useDeferredValue } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Code, Star, CreditCard, Clock, Calendar, Navigation, SlidersHorizontal, X, CheckSquare, Square, Map as MapIcon, Sparkles, MessageSquarePlus, Navigation2, ChevronRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSearchParams } from 'react-router-dom';
 import { HomeSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { instituteStore } from '../lib/store';
@@ -549,92 +548,95 @@ export default function Home() {
                 </h4>
               </div>
             </div>
-            <motion.div 
-              ref={featuredScrollRef}
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0 cursor-grab active:cursor-grabbing"
-            >
-               {featuredInstitutes.map((inst, i) => (
-                 <motion.a 
-                   key={`featured-${inst.id}-${i}`}
-                   variants={itemVariants}
-                   href={`/institute/${inst.id}`}
-                   onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
-                   whileHover={{ y: -2 }}
-                   className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300 cursor-pointer"
-                 >
-                   {inst.is_featured && (
-                     <div className="absolute top-0 right-0 z-30">
-                       <div className="bg-blue-600 text-white text-[9px] uppercase font-black px-2 py-0.5 rounded-bl-lg shadow-sm flex items-center gap-1">
-                         <Sparkles className="w-2.5 h-2.5 fill-white/20" />
-                         Featured
-                       </div>
-                     </div>
-                   )}
-
-                   <div className="absolute top-2 right-2 z-20">
-                     {!inst.is_featured && <Star className="w-4 h-4 fill-amber-400 text-amber-500 opacity-80" />}
-                   </div>
-                   
-                   {/* Left (Visual) */}
-                   <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
-                      {inst.logo ? (
-                        <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
-                      ) : (
-                         <span className="text-amber-600 dark:text-amber-500 font-bold text-xl uppercase">
-                           {inst.name.charAt(0)}
-                         </span>
+              <motion.div 
+                ref={featuredScrollRef}
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="flex overflow-x-auto scrollbar-hide gap-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0 cursor-grab active:cursor-grabbing"
+              >
+                 {featuredInstitutes.map((inst, i) => (
+                   <motion.div
+                     key={`featured-${inst.id}-${i}`}
+                     variants={itemVariants}
+                     whileHover={{ y: -2 }}
+                   >
+                    <Link 
+                      to={`/institute/${inst.id}`}
+                      onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
+                      className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 shadow-sm relative overflow-hidden group flex flex-row items-center gap-4 p-4 transition-all duration-300 cursor-pointer"
+                    >
+                      {inst.is_featured && (
+                        <div className="absolute top-0 right-0 z-30">
+                          <div className="bg-blue-600 text-white text-[9px] uppercase font-black px-2 py-0.5 rounded-bl-lg shadow-sm flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 fill-white/20" />
+                            Featured
+                          </div>
+                        </div>
                       )}
-                   </div>
-                   
-                   {/* Middle (Data) */}
-                   <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                     <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight capitalize pr-2 leading-tight">{formatAcronyms(inst.name)}</h4>
-                     
-                     <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                       {inst.distance ? (
-                         <span className="flex items-center gap-1 font-medium">
-                           <Navigation2 className="w-3 h-3 text-blue-500" />
-                           {inst.distance} {inst.isMockDistance && '(est.)'}
-                         </span>
-                       ) : (
-                         <span className="flex items-center gap-1">
-                           <MapPin className="w-3 h-3 opacity-70" />
-                           {formatAcronyms(getLocationText(inst))}
-                         </span>
-                       )}
-                     </div>
-                     
-                     <div className="flex items-center gap-1 mt-2 min-h-[16px]">
-                       {inst.rating ? (
-                         <>
-                           <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                           <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
-                             {Number(inst.rating || 0).toFixed(1)}
-                           </span>
-                           <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
-                             ({inst.total_reviews || 0} {(inst.total_reviews === 1) ? 'review' : 'reviews'})
-                           </span>
-                         </>
-                       ) : (
-                         <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">New</span>
-                       )}
-                     </div>
-                   </div>
-                   
-                   {/* Right (Action Indicator) */}
-                   <div className="flex flex-col items-end justify-center shrink-0 relative z-10">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
-                        <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-600 transition-colors" />
+
+                      <div className="absolute top-2 right-2 z-20">
+                        {!inst.is_featured && <Star className="w-4 h-4 fill-amber-400 text-amber-500 opacity-80" />}
                       </div>
-                   </div>
-                   
-                   <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
-                 </motion.a>
-               ))}
-            </motion.div>
+                      
+                      {/* Left (Visual) */}
+                      <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                         {inst.logo ? (
+                           <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain p-2 mix-blend-darken dark:mix-blend-screen scale-100 group-hover:scale-110 transition-transform duration-500 ease-out" />
+                         ) : (
+                            <span className="text-amber-600 dark:text-amber-500 font-bold text-xl uppercase">
+                              {inst.name.charAt(0)}
+                            </span>
+                         )}
+                      </div>
+                      
+                      {/* Middle (Data) */}
+                      <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                        <h4 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight capitalize pr-2 leading-tight">{formatAcronyms(inst.name)}</h4>
+                        
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {inst.distance ? (
+                            <span className="flex items-center gap-1 font-medium">
+                              <Navigation2 className="w-3 h-3 text-blue-500" />
+                              {inst.distance} {inst.isMockDistance && '(est.)'}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 opacity-70" />
+                              {formatAcronyms(getLocationText(inst))}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1 mt-2 min-h-[16px]">
+                          {inst.rating ? (
+                            <>
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              <span className="text-xs font-bold text-slate-900 dark:text-white ml-0.5">
+                                {Number(inst.rating || 0).toFixed(1)}
+                              </span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-0.5">
+                                ({inst.total_reviews || 0} {(inst.total_reviews === 1) ? 'review' : 'reviews'})
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">New</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Right (Action Indicator) */}
+                      <div className="flex flex-col items-end justify-center shrink-0 relative z-10">
+                         <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
+                           <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-600 transition-colors" />
+                         </div>
+                      </div>
+                      
+                      <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom"></div>
+                    </Link>
+                   </motion.div>
+                 ))}
+              </motion.div>
           </div>
         )}
 
@@ -691,64 +693,67 @@ export default function Home() {
               const currentRankColor = rankColors[rank as keyof typeof rankColors] || rankColors.default;
 
               return (
-                <motion.a 
+                <motion.div
                   key={`leaderboard-${inst.id}-${index}`}
-                  href={`/institute/${inst.id}`}
-                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -4 }}
-                  className="min-w-[260px] md:min-w-[300px] snap-start bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 p-5 group flex flex-col relative overflow-hidden"
                 >
-                  {/* Rank Badge */}
-                  <div className={`absolute top-0 left-0 px-4 py-1.5 rounded-br-2xl font-black text-sm border-b border-r ${currentRankColor} z-10 flex items-center gap-1.5`}>
-                    <span className="opacity-70 text-[10px]">RANK</span>
-                    <span>#{rank}</span>
-                  </div>
-
-                  <div className="flex items-start gap-4 mt-8">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-500">
-                      {inst.logo ? (
-                        <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" />
-                      ) : (
-                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 uppercase">{inst.name.charAt(0)}</span>
-                      )}
+                  <Link 
+                    to={`/institute/${inst.id}`}
+                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
+                    className="min-w-[260px] md:min-w-[300px] snap-start bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 p-5 group flex flex-col relative overflow-hidden"
+                  >
+                    {/* Rank Badge */}
+                    <div className={`absolute top-0 left-0 px-4 py-1.5 rounded-br-2xl font-black text-sm border-b border-r ${currentRankColor} z-10 flex items-center gap-1.5`}>
+                      <span className="opacity-70 text-[10px]">RANK</span>
+                      <span>#{rank}</span>
                     </div>
-                    
-                    <div className="flex-1 min-w-0 flex flex-col h-16 justify-center">
-                      <h4 className="font-bold text-slate-900 dark:text-white leading-tight line-clamp-2 tracking-tight capitalize group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {formatAcronyms(inst.name)}
-                      </h4>
-                    </div>
-                  </div>
 
-                  <div className="mt-6 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="text-2xl font-black text-slate-900 dark:text-white">{Number(inst.rating || 0).toFixed(1)}</span>
-                        <div className="flex mb-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-3 h-3 ${i < Math.floor(inst.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-800'}`} 
-                            />
-                          ))}
-                        </div>
+                    <div className="flex items-start gap-4 mt-8">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-center p-2 group-hover:scale-110 transition-transform duration-500">
+                        {inst.logo ? (
+                          <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" />
+                        ) : (
+                          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 uppercase">{inst.name.charAt(0)}</span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Global Rating</span>
+                      
+                      <div className="flex-1 min-w-0 flex flex-col h-16 justify-center">
+                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight line-clamp-2 tracking-tight capitalize group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {formatAcronyms(inst.name)}
+                        </h4>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col items-end">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">{inst.total_reviews || 0}</span>
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Reviews</span>
-                    </div>
-                  </div>
+                    <div className="mt-6 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <span className="text-2xl font-black text-slate-900 dark:text-white">{Number(inst.rating || 0).toFixed(1)}</span>
+                          <div className="flex mb-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                className={`w-3 h-3 ${i < Math.floor(inst.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-800'}`} 
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Global Rating</span>
+                      </div>
 
-                  {/* Corner Accent */}
-                  <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500" />
-                </motion.a>
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{inst.total_reviews || 0}</span>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Reviews</span>
+                      </div>
+                    </div>
+
+                    {/* Corner Accent */}
+                    <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500" />
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
@@ -898,14 +903,16 @@ export default function Home() {
                 const isSelectedForCompare = compareList.some(p => p.id === inst.id);
                 
                 return (
-              <motion.a 
-                variants={itemVariants}
-                whileHover={{ y: -2 }}
-                key={inst.id} 
-                href={`/institute/${inst.id}`} 
-                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
-                className={`group flex flex-row items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer ${isSelectedForCompare ? 'border shadow-sm border-blue-500 shadow-blue-500/10 ring-1 ring-blue-500/20' : 'border border-slate-200 shadow-sm dark:border-slate-800'}`}
-              >
+                <motion.div 
+                  variants={itemVariants}
+                  whileHover={{ y: -2 }}
+                  key={inst.id}
+                >
+                  <Link 
+                    to={`/institute/${inst.id}`} 
+                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => handleCardClick(e, inst.id)}
+                    className={`group flex flex-row items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer ${isSelectedForCompare ? 'border shadow-sm border-blue-500 shadow-blue-500/10 ring-1 ring-blue-500/20' : 'border border-slate-200 shadow-sm dark:border-slate-800'}`}
+                  >
                 {/* Left (Visual) */}
                 <div className="w-14 h-14 min-w-[56px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
                    {inst.logo ? (
@@ -976,7 +983,8 @@ export default function Home() {
                     <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
                   </div>
                 </div>
-              </motion.a>
+                  </Link>
+                </motion.div>
               )})}
             </motion.div>
           )}
@@ -1053,7 +1061,7 @@ export default function Home() {
                         )}
                       </div>
                       <h4 className="font-semibold text-lg text-slate-900 dark:text-white line-clamp-2 capitalize">{formatAcronyms(inst.name)}</h4>
-                      <a href={`/institute/${inst.id}`} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline">View Profile</a>
+                      <Link to={`/institute/${inst.id}`} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline">View Profile</Link>
                     </div>
                   ))}
                   

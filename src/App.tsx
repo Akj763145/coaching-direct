@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft, LogOut } from 'lucide-react';
+import { GraduationCap, LogIn, User, Sun, Moon, Search, X, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Login from './pages/Login';
 import UserLogin from './pages/UserLogin';
@@ -57,18 +57,21 @@ function Navigation({ user, handleSignOut }: { user: any; handleSignOut: () => v
         <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/40 rounded-2xl md:rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] px-3 md:px-5 py-2 md:py-2.5 flex items-center justify-between gap-3 md:gap-4 transition-all duration-300">
           <AnimatePresence mode="wait">
             {!(isSearchOpen || searchQuery) ? (
-              <motion.a 
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                href="/" 
-                className="flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity shrink-0 group min-w-0"
               >
-                <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <span className="text-base md:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">Coaching Direct</span>
-              </motion.a>
+                <Link 
+                  to="/" 
+                  className="flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity shrink-0 group min-w-0"
+                >
+                  <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <span className="text-base md:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">Coaching Direct</span>
+                </Link>
+              </motion.div>
             ) : (
               <motion.button
                 initial={{ opacity: 0, x: -10 }}
@@ -168,11 +171,11 @@ function GlobalFooter() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
-            <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</a>
+            <Link to="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
             <span>&middot;</span>
-            <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</a>
+            <Link to="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link>
             <span>&middot;</span>
-            <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Contact</a>
+            <Link to="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Contact</Link>
           </div>
           
           <div className="mt-4 md:mt-0 flex shrink-0">
