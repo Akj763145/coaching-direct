@@ -23,7 +23,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
     const contentTimer = setTimeout(() => setShowContent(true), 100);
     const minTimeTimer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 2500);
+    }, 2000);
 
     return () => {
       clearTimeout(contentTimer);
@@ -33,7 +33,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
 
   useEffect(() => {
     // Hide ONLY when:
-    // 1. Min animation time has passed (2.5s)
+    // 1. Min animation time has passed (2s)
     // 2. App loading is done (if provided)
     // 3. Welcome screen is currently visible
     if (minTimeElapsed && !isLoading && isVisible) {
@@ -48,36 +48,38 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 1 }}
+          initial={{ opacity: 1, scale: 1 }}
           exit={{ 
             opacity: 0,
-            transition: { duration: 0.8, ease: [0.43, 0.13, 0.23, 0.96] }
+            scale: 0.95,
+            transition: { duration: 0.6, ease: [0.43, 0.13, 0.23, 0.96] }
           }}
-          className="fixed inset-0 z-[9999] bg-white dark:bg-slate-950 flex flex-col items-center justify-center overflow-hidden"
+          className="fixed inset-0 z-[9999] bg-white dark:bg-slate-950 flex flex-col items-center justify-center overflow-hidden will-change-transform"
         >
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Animated Background Elements - Simplified for mobile/performance */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-50 sm:opacity-100">
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.1, 1],
+                opacity: [0.2, 0.3, 0.2],
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] sm:blur-[120px] rounded-full will-change-[transform,opacity]"
+            />
             <motion.div 
               animate={{ 
                 scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-                rotate: [0, 90, 0]
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-              className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full"
-            />
-            <motion.div 
-              animate={{ 
-                scale: [1, 1.3, 1],
-                opacity: [0.2, 0.4, 0.2],
-                rotate: [0, -90, 0]
+                opacity: [0.1, 0.2, 0.1],
               }}
               transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-              className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full"
+              className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[80px] sm:blur-[120px] rounded-full will-change-[transform,opacity]"
             />
           </div>
 
-          <div className="relative z-10 flex flex-col items-center">
+          <motion.div 
+            className="relative z-10 flex flex-col items-center"
+            exit={{ scale: 0.9, opacity: 0, transition: { duration: 0.4 } }}
+          >
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={showContent ? { scale: 1, opacity: 1 } : {}}
@@ -87,20 +89,20 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
                 damping: 20,
                 delay: 0.2 
               }}
-              className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 mb-8 relative group"
+              className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 mb-8 relative group will-change-transform"
             >
               <div className="absolute inset-0 bg-white/20 rounded-[32px] animate-pulse group-hover:scale-110 transition-transform" />
               <GraduationCap className="w-12 h-12 md:w-16 md:h-16 relative z-10" />
               
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-4 border border-blue-500/20 rounded-[40px]"
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 border border-blue-500/20 rounded-[40px] hidden sm:block"
               />
               <motion.div
                 animate={{ rotate: -360 }}
-                transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-8 border border-indigo-500/10 rounded-[48px]"
+                transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-8 border border-indigo-500/10 rounded-[48px] hidden sm:block"
               />
             </motion.div>
 
@@ -155,7 +157,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
                 Discovering Excellence
               </span>
             </motion.div>
-          </div>
+          </motion.div>
 
           {/* Bottom Branding */}
           <motion.div
