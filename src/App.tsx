@@ -138,9 +138,20 @@ function Navigation() {
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
               
               {user ? (
-                <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2 bg-slate-100/50 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[14px] font-semibold border border-slate-200 dark:border-slate-700 transition-all shadow-sm active:scale-95">
-                  <User className="w-4 h-4" />
-                  <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                <a href={user.role === 'MASTER' ? '/master' : user.role === 'SUB_ADMIN' ? '/admin' : '/dashboard'} className="flex items-center gap-2.5 hover:opacity-90 transition-all group shrink-0 ml-1">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[15px] font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform border-2 border-white dark:border-slate-900 ring-1 ring-slate-200 dark:ring-slate-800">
+                    {user.user_metadata?.avatar_url ? (
+                      <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <span>{(user.user_metadata?.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="hidden lg:flex flex-col items-start leading-none">
+                    <span className="text-[13px] font-bold text-slate-900 dark:text-white truncate max-w-[100px]">
+                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{user.role || 'User'}</span>
+                  </div>
                 </a>
               ) : (
                 <a 
