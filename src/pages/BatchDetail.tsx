@@ -76,7 +76,7 @@ export default function BatchDetail() {
   const handleFavoriteClick = async () => {
     if (!id) return;
     if (!user) {
-      navigate('/user-login');
+      navigate('/user/login');
       return;
     }
     const success = await toggleFavoriteBatch(id);
