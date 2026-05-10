@@ -180,7 +180,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
     if (!batchDetails) return;
     
     if (finalPrice <= 0) {
-      toast.success('Enrolled successfully! (Amount was ₹0)');
+      toast.success('Enrolled successfully! (Amount was ₹0)', {
+        style: {
+          border: '2px solid #10b981',
+          boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)',
+        }
+      });
       onClose();
       return;
     }
@@ -215,7 +220,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
               batchDetails.id,
               finalPrice
             );
-            toast.success('Payment Successful! Welcome to the batch.');
+            toast.success('Payment Successful! Welcome to the batch.', {
+              style: {
+                border: '2px solid #10b981',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)',
+              }
+            });
             onClose();
             navigate('/dashboard');
           } catch(err: any) {

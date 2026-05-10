@@ -281,8 +281,20 @@ function AppContent() {
           <Toaster 
             position="top-center" 
             toastOptions={{ 
-              className: 'dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-lg',
-              duration: 4000
+              duration: 6000,
+              className: '!bg-white dark:!bg-slate-900 !text-slate-900 dark:!text-white !rounded-2xl !py-4 !px-6 shadow-2xl !border !border-slate-100 dark:!border-slate-800 !font-semibold !tracking-tight',
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
             }} 
           />
         </div>

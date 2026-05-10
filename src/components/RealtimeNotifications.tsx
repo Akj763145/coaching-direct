@@ -17,19 +17,11 @@ export default function RealtimeNotifications() {
           (payload) => {
             console.log('New enrollment received!', payload);
             toast.success('🎉 New sale! A student just enrolled.', {
-              duration: 5000,
-              position: 'top-right',
+              duration: 8000,
               style: {
-                background: '#10b981',
-                color: '#fff',
-                fontWeight: 'bold',
-                padding: '16px',
-                borderRadius: '12px',
-              },
-              iconTheme: {
-                primary: '#fff',
-                secondary: '#10b981',
-              },
+                border: '2px solid #10b981',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)',
+              }
             });
           }
         )
@@ -43,5 +35,5 @@ export default function RealtimeNotifications() {
     }
   }, []);
 
-  return <Toaster />;
+  return null;
 }
