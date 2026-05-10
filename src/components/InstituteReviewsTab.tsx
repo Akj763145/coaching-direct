@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface Review {
   id: string;
@@ -68,13 +69,13 @@ export const InstituteReviewsTab: React.FC<InstituteReviewsTabProps> = ({
         setShowReviewForm(false);
         onReviewAdded();
       } else if (res.status === 501) {
-        alert('Reviews are currently only supported with a Supabase backend. Please configure your Supabase secrets in the AI Studio settings.');
+        toast.error('Reviews are currently only supported with a backend configuration.');
       } else {
-        alert(`Error: ${data.error || 'Failed to submit review'}. Make sure the reviews table is set up in your Supabase dashboard.`);
+        toast.error(`Error: ${data.error || 'Failed to submit review'}.`);
       }
     } catch (err) {
       console.error('Failed to submit review:', err);
-      alert('Failed to submit review. Connectivity issue.');
+      toast.error('Failed to submit review. Connectivity issue.');
     } finally {
       setSubmitting(false);
     }

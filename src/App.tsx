@@ -17,6 +17,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import RealtimeNotifications from './components/RealtimeNotifications';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { supabase } from './lib/supabase';
+import { Toaster } from 'react-hot-toast';
 
 export const ThemeContext = createContext({
   theme: 'light',
@@ -277,6 +278,13 @@ function AppContent() {
           <GlobalFooter />
           <Chatbot />
           <RealtimeNotifications />
+          <Toaster 
+            position="top-center" 
+            toastOptions={{ 
+              className: 'dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-lg',
+              duration: 4000
+            }} 
+          />
         </div>
       </BrowserRouter>
     </ThemeContext.Provider>

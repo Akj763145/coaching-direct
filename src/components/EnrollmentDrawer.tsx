@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createRazorpayOrder } from '../actions/payment';
 import { verifyAndEnroll } from '../actions/enrollment';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface EnrollmentDrawerProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       });
       if (error) throw error;
     } catch (error: any) {
-      alert(`Sign in error: ${error.message}`);
+      toast.error(`Sign in error: ${error.message}`);
     }
   };
 
@@ -127,7 +128,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       if (error) throw error;
       setIsProfileComplete(true);
     } catch (error: any) {
-      alert(`Failed to save profile: ${error.message}`);
+      toast.error(`Failed to save profile: ${error.message}`);
     } finally {
       setIsSavingProfile(false);
     }
@@ -179,7 +180,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
     if (!batchDetails) return;
     
     if (finalPrice <= 0) {
-      alert('Enrolled successfully! (Amount was ₹0)');
+      toast.success('Enrolled successfully! (Amount was ₹0)');
       onClose();
       return;
     }
@@ -214,12 +215,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
               batchDetails.id,
               finalPrice
             );
-            alert('Payment Successful! Welcome to the batch.');
+            toast.success('Payment Successful! Welcome to the batch.');
             onClose();
             navigate('/dashboard');
           } catch(err: any) {
             console.error(err);
-            alert(`Payment verification failed: ${err.message}`);
+            toast.error(`Payment verification failed: ${err.message}`);
           }
         },
         prefill: {
@@ -235,12 +236,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         console.error('Payment failed', response.error);
-        alert('Payment failed. Please try again.');
+        toast.error('Payment failed. Please try again.');
       });
       rzp.open();
     } catch (error: any) {
       console.error('Payment initiation error:', error);
-      alert(`Failed to initiate payment: ${error.message || 'Please try again'}`);
+      toast.error(`Failed to initiate payment: ${error.message || 'Please try again'}`);
     } finally {
       setIsProcessing(false);
     }
