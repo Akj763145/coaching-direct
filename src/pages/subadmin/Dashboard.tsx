@@ -1604,7 +1604,7 @@ export default function SubAdminDashboard() {
                     enrollments.map((e: any, index) => (
                       <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                         <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                          {new Date(e.created_at).toLocaleDateString()}
+                          {new Date(e.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' })}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium text-slate-900 dark:text-white">
                           {e.student_profiles?.full_name || 'Anonymous Student'}

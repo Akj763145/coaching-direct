@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut, Grid } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import AdminLedger from '../../components/AdminLedger';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -570,75 +571,7 @@ export default function MasterDashboard() {
           </div>
         </motion.div>
       ) : activeTab === 'ledger' ? (
-        <motion.div
-           initial={{ opacity: 0, y: 10 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="bg-white dark:bg-slate-900 rounded-[28px] border border-apple-border/20 shadow-apple-lg overflow-hidden flex flex-col"
-        >
-          <div className="p-8 border-b border-apple-border/30 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">Platform Ledger</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Comprehensive view of all enrollments and sales across the platform.</p>
-            </div>
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 px-6 py-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Total Revenue</p>
-              {/* Calculate master revenue using e.amount if it exists, else batch fee_structure */}
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">₹{enrollments.reduce((sum, e) => sum + (e.amount != null ? Number(e.amount) : parseInt((e.batches?.fee_structure || '1000').replace(/[^0-9]/g, '') || '1000', 10)), 0).toLocaleString()}</p>
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-apple-border/20">
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Institute</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Batch</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Payment ID</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-apple-border/20">
-                {enrollments.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
-                      No sales recorded yet.
-                    </td>
-                  </tr>
-                ) : (
-                  enrollments.map((e: any, index) => (
-                    <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                        {new Date(e.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6 text-sm font-medium text-slate-900 dark:text-white">
-                        {e.batches?.institutes?.name || 'N/A'}
-                      </td>
-                      <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                        {e.batches?.name || 'N/A'}
-                      </td>
-                      <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-slate-900 dark:text-white">{e.student_profiles?.full_name || 'Student'}</span>
-                          {e.student_profiles?.phone_number && (
-                            <a href={`tel:${e.student_profiles?.phone_number}`} className="text-xs text-blue-600 hover:underline">{e.student_profiles?.phone_number}</a>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-slate-500 font-mono text-xs">
-                        {e.razorpay_payment_id || 'manual'}
-                      </td>
-                      <td className="py-4 px-6 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">
-                        ₹{e.amount != null ? Number(e.amount).toLocaleString() : (e.batches?.fee_structure || '1000')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+        <AdminLedger enrollments={enrollments} />
       ) : null}
     </motion.div>
   );
