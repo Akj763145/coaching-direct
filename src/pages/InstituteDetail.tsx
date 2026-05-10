@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft, Loader2, Share2 } from 'lucide-react';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft, Loader2, Share2, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
+import { useFavorites } from '../hooks/useFavorites';
+import { useUser } from '../contexts/UserContext';
 
 import { InstituteReviewsTab } from '../components/InstituteReviewsTab';
 
@@ -95,8 +97,24 @@ const MOCK_REVIEWS = [
 
 export default function InstituteDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const { isFavoriteInstitite, toggleFavoriteInstitute } = useFavorites();
   const [searchParams, setSearchParams] = useSearchParams();
   const [institute, setInstitute] = useState<any>(null);
+
+  const handleFavoriteClick = async () => {
+    if (!id) return;
+    if (!user) {
+      navigate('/user-login');
+      return;
+    }
+    const success = await toggleFavoriteInstitute(id);
+    if (success) {
+      triggerToast(isFavoriteInstitite(id) ? 'Removed from favorites' : 'Added to favorites');
+    }
+  };
+
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
@@ -214,12 +232,20 @@ export default function InstituteDetail() {
             <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
           </div>
         </div>
-        <button 
-          onClick={handleShare}
-          className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <Share2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleFavoriteClick}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <Heart className={`w-4 h-4 ${id && isFavoriteInstitite(id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+          </button>
+          <button 
+            onClick={handleShare}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="px-4 w-full">

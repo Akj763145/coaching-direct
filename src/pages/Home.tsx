@@ -470,7 +470,7 @@ export default function Home() {
       }
 
       if (selectedCategoryId) {
-        if (inst.category_id !== selectedCategoryId) return false;
+        if (inst.category_id != selectedCategoryId) return false;
       }
 
       return true;

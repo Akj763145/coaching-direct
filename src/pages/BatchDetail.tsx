@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare, Monitor, Share2 } from 'lucide-react';
+import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare, Monitor, Share2, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+import { useFavorites } from '../hooks/useFavorites';
+import { useUser } from '../contexts/UserContext';
 
 const ShareToast = ({ message, visible }: { message: string, visible: boolean }) => (
   <AnimatePresence>
@@ -64,10 +66,24 @@ const TeacherAvatar = ({ src, name }: { src?: string; name: string }) => {
 export default function BatchDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
+  const { isFavoriteBatch, toggleFavoriteBatch } = useFavorites();
   const [loading, setLoading] = useState(true);
   const [batch, setBatch] = useState<any>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const handleFavoriteClick = async () => {
+    if (!id) return;
+    if (!user) {
+      navigate('/user-login');
+      return;
+    }
+    const success = await toggleFavoriteBatch(id);
+    if (success) {
+      triggerToast(isFavoriteBatch(id) ? 'Removed from favorites' : 'Added to favorites');
+    }
+  };
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -169,6 +185,12 @@ export default function BatchDetail() {
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </motion.button>
+          <button 
+            onClick={handleFavoriteClick}
+            className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500"
+          >
+             <Heart className={`w-5 h-5 ${id && isFavoriteBatch(id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+          </button>
           <button 
             onClick={handleShare}
             className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500"

@@ -169,3 +169,19 @@ CREATE POLICY "Public insert leads" ON public.demo_requests FOR INSERT WITH CHEC
 INSERT INTO public.institute_categories (name) VALUES 
 ('Coaching'), ('School'), ('College'), ('Computer Center')
 ON CONFLICT (name) DO NOTHING;
+
+-- 6. FAVORITES (INSTITUTES & BATCHES)
+CREATE TABLE IF NOT EXISTS public.favorites (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    institute_id UUID REFERENCES public.institutes(id) ON DELETE CASCADE,
+    batch_id UUID REFERENCES public.batches(id) ON DELETE CASCADE,
+    type TEXT DEFAULT 'INSTITUTE' CHECK (type IN ('INSTITUTE', 'BATCH')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, institute_id, batch_id)
+);
+
+-- RLS for favorites
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own favorites" ON public.favorites
+    FOR ALL USING (auth.uid() = user_id);

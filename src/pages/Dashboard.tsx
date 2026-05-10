@@ -9,14 +9,45 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { useFavorites } from '../hooks/useFavorites';
 import { supabase } from '../lib/supabase';
-
-const MockSavedInstitutes: any[] = [];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, profile, updateProfile, signOut: userSignOut } = useUser();
+  const { favorites, isFavoriteInstitite, toggleFavoriteInstitute, toggleFavoriteBatch } = useFavorites();
   const [isSignOutLoading, setIsSignOutLoading] = React.useState(false);
+  const [favoriteDetails, setFavoriteDetails] = React.useState<{institutes: any[], batches: any[]}>({institutes: [], batches: []});
+
+  React.useEffect(() => {
+    // Fetch details for favorites to display them
+    const loadFavDetails = async () => {
+      const instIds = favorites.filter(f => f.type === 'INSTITUTE').map(f => f.institute_id).filter(Boolean) as string[];
+      const batchIds = favorites.filter(f => f.type === 'BATCH').map(f => f.batch_id).filter(Boolean) as string[];
+      
+      let instData: any[] = [];
+      let batchData: any[] = [];
+      
+      if (instIds.length > 0) {
+        const res = await supabase.from('institutes').select('*').in('id', instIds);
+        if (res.data) instData = res.data;
+      }
+      
+      if (batchIds.length > 0) {
+        const res = await supabase.from('batches').select('*, institutes(name, logo)').in('id', batchIds);
+        if (res.data) batchData = res.data;
+      }
+      
+      setFavoriteDetails({ institutes: instData, batches: batchData });
+    };
+    
+    if (favorites.length > 0) {
+      loadFavDetails();
+    } else {
+      setFavoriteDetails({ institutes: [], batches: [] });
+    }
+  }, [favorites]);
+
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isSavingProfile, setIsSavingProfile] = React.useState(false);
   const [editFormData, setEditFormData] = React.useState({
@@ -38,7 +69,6 @@ export default function Dashboard() {
   }, [profile]);
   const [activeTab, setActiveTab] = React.useState<'overview' | 'batches' | 'materials' | 'saved' | 'notices'>('overview');
   const [compareList, setCompareList] = React.useState<string[]>([]);
-  const [savedInstitutes, setSavedInstitutes] = React.useState(MockSavedInstitutes);
 
   const [activeBatches] = React.useState([
     { id: 1, name: 'Lakshya Batch 2024', institute: 'Physics Wallah', subject: 'Physics', progress: 65, nextClass: 'Today, 4:00 PM', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
@@ -91,10 +121,6 @@ export default function Dashboard() {
     setCompareList(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  };
-
-  const removeSaved = (id: string) => {
-    setSavedInstitutes(prev => prev.filter(i => i !== id));
   };
 
   const containerVariants = {
@@ -177,7 +203,7 @@ export default function Dashboard() {
               { id: 'batches', label: 'My Batches', icon: Layers },
               { id: 'materials', label: 'Resources', icon: Book },
               { id: 'notices', label: 'Notices', icon: Bell },
-              { id: 'saved', label: 'Shortlist', icon: Heart },
+              { id: 'saved', label: 'Favorites', icon: Heart },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -361,8 +387,8 @@ export default function Dashboard() {
                       <div className="w-10 h-10 bg-rose-50 dark:bg-rose-900/40 rounded-xl flex items-center justify-center text-rose-600 mb-4">
                         <Heart className="w-5 h-5" />
                       </div>
-                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Shortlisted</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{savedInstitutes.length}</p>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Favorites</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{favorites.length}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -516,73 +542,88 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                        <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
-                       Saved Institutes
+                       Favorites
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {savedInstitutes.length === 0 ? (
+                    {favoriteDetails.institutes.length === 0 && favoriteDetails.batches.length === 0 ? (
                       <div className="col-span-full bg-white dark:bg-slate-900 rounded-[28px] border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center">
                         <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                            <Heart className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your shortlist is empty</h3>
-                        <p className="text-slate-500 text-sm mt-1">Explore institutes and heart them to see them here.</p>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your favorites are empty</h3>
+                        <p className="text-slate-500 text-sm mt-1">Explore institutes and batches, and favorite them to see them here.</p>
                         <Link to="/" className="inline-block mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">Start Browsing</Link>
                       </div>
                     ) : (
-                      savedInstitutes.map((inst) => (
-                        <motion.div 
-                          key={inst.id} variants={itemVariants}
-                          className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group p-5 transition-all duration-300 hover:shadow-xl"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
-                               <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" />
+                      <>
+                        {favoriteDetails.institutes.map((inst) => (
+                          <motion.div 
+                            key={inst.id} variants={itemVariants}
+                            className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group p-5 transition-all duration-300 hover:shadow-xl"
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative text-blue-500 font-black text-2xl uppercase">
+                                 {inst.logo ? <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" /> : inst.name.charAt(0)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors">
+                                   <Link to={`/institute/${inst.id}`}>{inst.name}</Link>
+                                 </h4>
+                                 <div className="text-xs font-semibold text-slate-500 mt-1 uppercase">Institute</div>
+                              </div>
+                              <button 
+                                onClick={() => toggleFavoriteInstitute(inst.id)}
+                                className="p-2 rounded-full bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:scale-110 transition-all"
+                              >
+                                <Heart className="w-5 h-5 fill-rose-500" />
+                              </button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                               <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors">
-                                 <Link to={`/institute/${inst.id}`}>{inst.name}</Link>
-                               </h4>
-                               <div className="flex items-center gap-3 mt-1.5">
-                                 <div className="flex items-center text-xs font-bold text-slate-500 dark:text-slate-400">
-                                   <MapPin className="w-3.5 h-3.5 mr-1 text-blue-500" />
-                                   {inst.distance}
-                                 </div>
-                                 <div className="flex items-center text-xs font-bold text-slate-500 dark:text-slate-400">
-                                   <Star className="w-3.5 h-3.5 mr-1 text-amber-500 fill-amber-500" />
-                                   {inst.rating} ({inst.reviewCount})
-                                 </div>
-                               </div>
+                            
+                            <div className="mt-6 flex items-center gap-2">
+                               <Link 
+                                 to={`/institute/${inst.id}`}
+                                 className="flex-1 text-center py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all"
+                               >
+                                 View Details
+                               </Link>
                             </div>
-                            <button 
-                              onClick={() => removeSaved(inst.id)}
-                              className="p-2 rounded-full bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:scale-110 transition-all"
-                            >
-                              <Heart className="w-5 h-5 fill-rose-500" />
-                            </button>
-                          </div>
-                          
-                          <div className="mt-6 flex items-center gap-2">
-                             <button 
-                               onClick={() => toggleCompare(inst.id)}
-                               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold tracking-wide uppercase transition-all ${
-                                 compareList.includes(inst.id) 
-                                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                               }`}
-                             >
-                               {compareList.includes(inst.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                               {compareList.includes(inst.id) ? 'In Compare' : 'Compare'}
-                             </button>
-                             <Link 
-                               to={`/institute/${inst.id}`}
-                               className="flex-1 text-center py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all"
-                             >
-                               View Details
-                             </Link>
-                          </div>
-                        </motion.div>
-                      ))
+                          </motion.div>
+                        ))}
+                        {favoriteDetails.batches.map((batch) => (
+                          <motion.div 
+                            key={batch.id} variants={itemVariants}
+                            className="bg-white dark:bg-slate-900 rounded-[28px] border border-blue-200 dark:border-blue-800 shadow-sm relative overflow-hidden group p-5 transition-all duration-300 hover:shadow-xl"
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800 overflow-hidden relative text-blue-600 font-bold text-2xl uppercase">
+                                 {batch.institutes?.logo ? <img src={batch.institutes.logo} alt={batch.institutes.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" /> : batch.batch_name.charAt(0)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors">
+                                   <Link to={`/batch/${batch.id}`}>{batch.batch_name}</Link>
+                                 </h4>
+                                 <div className="text-xs font-semibold text-blue-500 mt-1 uppercase">Batch at {batch.institutes?.name}</div>
+                              </div>
+                              <button 
+                                onClick={() => toggleFavoriteBatch(batch.id)}
+                                className="p-2 rounded-full bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:scale-110 transition-all"
+                              >
+                                <Heart className="w-5 h-5 fill-rose-500" />
+                              </button>
+                            </div>
+                            
+                            <div className="mt-6 flex items-center gap-2">
+                               <Link 
+                                 to={`/batch/${batch.id}`}
+                                 className="flex-1 text-center py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all"
+                               >
+                                 View Details
+                               </Link>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </>
                     )}
                   </div>
                 </motion.div>

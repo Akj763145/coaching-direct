@@ -182,6 +182,15 @@ if (isSupabaseEnabled) {
       FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
       FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS favorites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      institute_id TEXT,
+      batch_id TEXT,
+      type TEXT DEFAULT 'INSTITUTE',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, institute_id, batch_id)
+    );
   `);
 
   // Migrations for existing DBs
