@@ -1,9 +1,14 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { createClient } from '@supabase/supabase-js';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -11,8 +16,14 @@ const SECRET_KEY = process.env.SECRET_KEY || 'super-secret-jwt-key-for-coaching-
 
 app.use(express.json());
 
+// --- Setup Razorpay ---
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret',
+});
+
 // --- Setup Supabase vs SQLite ---
-const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const isSupabaseEnabled = Boolean(supabaseUrl && supabaseKey);
 let supabase: any = null;
@@ -191,9 +202,20 @@ if (isSupabaseEnabled) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, institute_id, batch_id)
     );
+    CREATE TABLE IF NOT EXISTS enrollments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id TEXT NOT NULL,
+      batch_id INTEGER NOT NULL,
+      razorpay_payment_id TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
+
   // Migrations for existing DBs
+  try { db.exec('ALTER TABLE batches ADD COLUMN next_class_time TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE batches ADD COLUMN zoom_link TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN whatsapp_number TEXT'); } catch(e) {}
   try { db.exec("ALTER TABLE batches ADD COLUMN status TEXT DEFAULT 'running'"); } catch(e) {}
   try { db.exec('ALTER TABLE batches ADD COLUMN medium TEXT'); } catch(e) {}
@@ -566,6 +588,181 @@ app.put('/api/institute/profile', authenticateToken, requireRole('SUB_ADMIN'), a
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  }
+});
+
+app.get('/api/institute/enrollments', authenticateToken, requireRole('SUB_ADMIN'), async (req, res) => {
+  const userId = (req as any).user.id;
+  if (isSupabaseEnabled) {
+    try {
+      const { data: inst } = await supabase.from('institutes').select('id').eq('user_id', userId).single();
+      if (!inst) return res.status(404).json({ error: 'Institute not found' });
+      
+      let { data, error } = await supabase
+        .from('enrollments')
+        .select(`
+          created_at, 
+          razorpay_payment_id, 
+          student_id,
+          amount,
+          batches!inner (batch_name, institute_id, fee_structure)
+        `)
+        .eq('batches.institute_id', inst.id);
+      
+      if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+        // Fallback if amount column doesn't exist
+        const fallbackQuery = await supabase
+          .from('enrollments')
+          .select(`
+            created_at, 
+            razorpay_payment_id, 
+            student_id,
+            batches!inner (batch_name, institute_id, fee_structure)
+          `)
+          .eq('batches.institute_id', inst.id);
+        data = fallbackQuery.data;
+        error = fallbackQuery.error;
+      }
+      
+      if (error) {
+        console.error('Supabase fetch enrollments error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      // Fetch student profiles manually since foreign key relations are nested via auth.users
+      const studentIds = [...new Set((data || []).map(e => e.student_id))].filter(Boolean);
+      let profilesMap: Record<string, any> = {};
+      if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('student_profiles')
+          .select('id, full_name, phone_number')
+          .in('id', studentIds);
+        
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            profilesMap[p.id] = p;
+          });
+        }
+      }
+      
+      const formattedData = (data || []).map((item: any) => ({
+        ...item,
+        student_profiles: profilesMap[item.student_id] || { full_name: 'Unknown User' },
+        batches: {
+          ...item.batches,
+          name: item.batches?.batch_name || 'Unnamed Batch'
+        }
+      }));
+      res.json(formattedData);
+    } catch (err: any) {
+      console.error('System error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  } else {
+    // SQLite implementation
+    const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
+    if (!institute) return res.status(404).json({ error: 'Institute not found' });
+    
+    const localData = db.prepare(`
+      SELECT e.id, e.created_at, e.razorpay_payment_id, e.student_id, e.amount, b.batch_name as name
+      FROM enrollments e
+      JOIN batches b ON e.batch_id = b.id
+      WHERE b.institute_id = ?
+    `).all(institute.id);
+    
+    // In local sqlite we don't have student profiles
+    const formatted = localData.map((d: any) => ({
+      ...d,
+      created_at: d.created_at,
+      razorpay_payment_id: d.razorpay_payment_id,
+      amount: d.amount,
+      student_profiles: { full_name: 'Local User', phone_number: 'N/A' },
+      batches: { name: d.name }
+    }));
+    res.json(formatted);
+  }
+});
+
+app.get('/api/master/enrollments', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  if (isSupabaseEnabled) {
+    try {
+      let { data, error } = await supabase
+        .from('enrollments')
+        .select(`
+          created_at, 
+          razorpay_payment_id,
+          student_id,
+          amount,
+          batches:batch_id (batch_name, institute_id, fee_structure, institutes (name))
+        `);
+      
+      if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+        const fallbackQuery = await supabase
+          .from('enrollments')
+          .select(`
+            created_at, 
+            razorpay_payment_id,
+            student_id,
+            batches:batch_id (batch_name, institute_id, fee_structure, institutes (name))
+          `);
+        data = fallbackQuery.data;
+        error = fallbackQuery.error;
+      }
+      
+      if (error) {
+        console.error('Supabase fetch enrollments error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      // Fetch student profiles manually
+      const studentIds = [...new Set((data || []).map(e => e.student_id))].filter(Boolean);
+      let profilesMap: Record<string, any> = {};
+      if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('student_profiles')
+          .select('id, full_name, phone_number')
+          .in('id', studentIds);
+        
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            profilesMap[p.id] = p;
+          });
+        }
+      }
+      
+      const formattedData = (data || []).map((item: any) => ({
+        ...item,
+        student_profiles: profilesMap[item.student_id] || { full_name: 'Unknown User' },
+        batches: {
+          ...item.batches,
+          name: item.batches?.batch_name || 'Unnamed Batch'
+        }
+      }));
+      res.json(formattedData);
+    } catch (err: any) {
+      console.error('System error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  } else {
+    const localData = db.prepare(`
+      SELECT e.id, e.created_at, e.razorpay_payment_id, e.amount, b.batch_name as batch_name, i.name as institute_name
+      FROM enrollments e
+      JOIN batches b ON e.batch_id = b.id
+      JOIN institutes i ON b.institute_id = i.id
+    `).all();
+    
+    const formatted = localData.map((d: any) => ({
+      ...d,
+      created_at: d.created_at,
+      razorpay_payment_id: d.razorpay_payment_id,
+      amount: d.amount,
+      student_profiles: { full_name: 'Local User', phone_number: 'N/A' },
+      batches: { 
+        name: d.batch_name,
+        institutes: { name: d.institute_name }
+      }
+    }));
+    res.json(formatted);
   }
 });
 
@@ -1192,6 +1389,197 @@ app.patch('/api/institute/reviews/:id/flag', authenticateToken, async (req: any,
     if (error) throw error;
     res.json(data);
   } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/create-razorpay-order', async (req, res) => {
+  try {
+    const { amount, batchId } = req.body;
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ error: 'Amount is required' });
+    }
+    
+    if (amount === 0) {
+      return res.status(400).json({ error: 'Amount must be greater than 0' });
+    }
+
+    const options = {
+      amount: amount * 100, // convert INR to paise
+      currency: "INR",
+      receipt: `rcpt_${batchId || 'default'}`.substring(0, 40),
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({ id: order.id, amount: order.amount });
+  } catch (error: any) {
+    console.error('Razorpay Order Error:', error);
+    res.status(500).json({ error: error?.error?.description || error.message || 'Razorpay order creation failed' });
+  }
+});
+
+app.get('/api/student/enrollments', async (req: any, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  let userId = null;
+
+  if (isSupabaseEnabled) {
+    // Verify using Supabase auth
+    const { data: userAuth, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !userAuth.user) {
+      return res.status(403).json({ error: 'Forbidden: Invalid Supabase token' });
+    }
+    userId = userAuth.user.id;
+  } else {
+    // Verify using local JWT
+    try {
+      const decoded: any = jwt.verify(token, SECRET_KEY);
+      userId = decoded.id;
+    } catch(err) {
+      return res.status(403).json({ error: 'Forbidden: Invalid local token' });
+    }
+  }
+
+  if (isSupabaseEnabled) {
+    try {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('id, batch_id, created_at, batches(batch_name, teacher_name, mode, next_class_time, zoom_link)')
+        .eq('student_id', userId)
+        .eq('status', 'active');
+      
+      if (error) {
+        console.error('Supabase fetch enrollments error:', error);
+        if (error.code === '42P01') {
+          // Table missing, fallback to sqlite
+          console.warn('Supabase enrollments missing on select, fallback to sqlite');
+          const localData = db.prepare(`
+            SELECT e.id, e.batch_id, e.created_at,
+                   b.batch_name as name, b.teacher_name, b.mode, b.next_class_time, b.zoom_link
+            FROM enrollments e
+            JOIN batches b ON e.batch_id = b.id
+            WHERE e.student_id = ? AND e.status = 'active'
+          `).all(userId);
+          
+          const formatted = localData.map((d: any) => ({
+            id: d.id,
+            batch_id: d.batch_id,
+            created_at: d.created_at,
+            batches: {
+              name: d.name,
+              teacher_name: d.teacher_name,
+              mode: d.mode,
+              next_class_time: d.next_class_time,
+              zoom_link: d.zoom_link
+            }
+          }));
+          return res.json(formatted);
+        }
+        throw error;
+      }
+      
+      const formattedData = (data || []).map((item: any) => ({
+        ...item,
+        batches: {
+          ...item.batches,
+          name: item.batches?.batch_name || 'Unnamed Batch'
+        }
+      }));
+      return res.json(formattedData);
+    } catch (err: any) {
+      console.error('Error fetching enrollments:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  } else {
+    try {
+      const localData = db.prepare(`
+        SELECT e.id, e.batch_id, e.created_at,
+               b.batch_name as name, b.teacher_name, b.mode, b.next_class_time, b.zoom_link
+        FROM enrollments e
+        JOIN batches b ON e.batch_id = b.id
+        WHERE e.student_id = ? AND e.status = 'active'
+      `).all(userId);
+      
+      const formatted = localData.map((d: any) => ({
+        id: d.id,
+        batch_id: d.batch_id,
+        created_at: d.created_at,
+        batches: {
+          name: d.name,
+          teacher_name: d.teacher_name,
+          mode: d.mode,
+          next_class_time: d.next_class_time,
+          zoom_link: d.zoom_link
+        }
+      }));
+      res.json(formatted);
+    } catch (err: any) {
+      console.error('Local enrollments error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+app.post('/api/verify-enrollment', async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, student_id, batch_id, amount } = req.body;
+
+    const secret = process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret';
+    const generated_signature = crypto
+      .createHmac('sha256', secret)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+
+    if (generated_signature !== razorpay_signature) {
+      return res.status(400).json({ success: false, error: 'Invalid Payment Signature. Enrollment failed.' });
+    }
+
+    if (isSupabaseEnabled) {
+      // Use supabase
+      const { error } = await supabase.from('enrollments').insert({
+        student_id,
+        batch_id,
+        razorpay_payment_id,
+        amount,
+        status: 'active'
+      });
+      if (error) {
+        if (error.code === 'PGRST204' || error.code === '42703') { // Column not found error
+          console.warn('Supabase enrollments table missing amount column, inserting without amount.', error);
+          await supabase.from('enrollments').insert({
+            student_id,
+            batch_id,
+            razorpay_payment_id,
+            status: 'active'
+          });
+        }
+        else if (error.code === '42P01') {
+          // Table doesn't exist
+          console.warn('Supabase enrollments table does not exist, falling back to SQLite.', error);
+          db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, amount, 'active');
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      // Use SQLite
+      try {
+        db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, amount, 'active');
+      } catch (e: any) {
+        if (e.message && e.message.includes('has no column named amount')) {
+          db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, status) VALUES (?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, 'active');
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('Verify enrollment error:', err);
     res.status(500).json({ error: err.message });
   }
 });

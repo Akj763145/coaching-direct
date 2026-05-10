@@ -21,8 +21,9 @@ export default function SubAdminDashboard() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'categories' | 'batches' | 'notices' | 'faculty' | 'resources' | 'reviews'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'categories' | 'batches' | 'notices' | 'faculty' | 'resources' | 'reviews' | 'enrollments'>('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
@@ -153,6 +154,9 @@ export default function SubAdminDashboard() {
 
       const rRes = await fetch('/api/institute/reviews', { headers: { 'Authorization': `Bearer ${token}` }});
       if (rRes.ok) setReviews(await rRes.json());
+
+      const eRes = await fetch('/api/institute/enrollments', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (eRes.ok) setEnrollments(await eRes.json());
     } catch (err) {
       console.error(err);
       alert('Network error while connecting to server');
@@ -505,6 +509,7 @@ export default function SubAdminDashboard() {
             { id: 'categories', label: 'Categories', icon: CheckSquare },
             { id: 'faculty', label: 'Faculty', icon: Users },
             { id: 'batches', label: 'Batch Builder', icon: FileText },
+            { id: 'enrollments', label: 'Recent Enrollments', icon: BookOpen },
             { id: 'notices', label: 'Board', icon: Bell },
             { id: 'resources', label: 'Resources', icon: BookOpen },
             { id: 'reviews', label: 'Reviews', icon: Star }
@@ -1556,6 +1561,78 @@ export default function SubAdminDashboard() {
                   </motion.div>
                 ))
               )}
+            </div>
+          </motion.div>
+        )}
+        {activeTab === 'enrollments' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col"
+          >
+            <div className="p-6 md:p-8 border-b border-slate-200/60 dark:border-slate-800/60 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recent Enrollments</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Keep track of all new students enrolled in your batches.</p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 px-6 py-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Total Revenue</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">₹{enrollments.reduce((sum, e) => sum + (e.amount != null ? Number(e.amount) : parseInt((e.batches?.fee_structure || '0').replace(/[^0-9]/g, '') || '0', 10)), 0).toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200/60 dark:border-slate-800/60">
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch Name</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment ID</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                  {enrollments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        No enrollments found for your institute.
+                      </td>
+                    </tr>
+                  ) : (
+                    enrollments.map((e: any, index) => (
+                      <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
+                          {new Date(e.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-6 text-sm font-medium text-slate-900 dark:text-white">
+                          {e.student_profiles?.full_name || 'Anonymous Student'}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
+                          {e.student_profiles?.phone_number ? (
+                            <a href={`tel:${e.student_profiles?.phone_number}`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
+                              <Phone className="w-3.5 h-3.5" />
+                              <span className="hover:underline">{e.student_profiles?.phone_number}</span>
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 italic">Not provided</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
+                          {e.batches?.name || 'N/A'}
+                        </td>
+                        <td className="py-4 px-6 text-xs text-slate-500 font-mono">
+                          {e.razorpay_payment_id || 'Manual Enrollment'}
+                        </td>
+                        <td className="py-4 px-6 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                          ₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '0').replace(/[^0-9]/g, '') || '0', 10).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </motion.div>
         )}

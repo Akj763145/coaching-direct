@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare, Monitor, Share2, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+import EnrollmentDrawer from '../components/EnrollmentDrawer';
 import { useFavorites } from '../hooks/useFavorites';
 import { useUser } from '../contexts/UserContext';
 
@@ -72,6 +73,7 @@ export default function BatchDetail() {
   const [batch, setBatch] = useState<any>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isEnrollDrawerOpen, setIsEnrollDrawerOpen] = useState(false);
 
   const handleFavoriteClick = async () => {
     if (!id) return;
@@ -405,12 +407,24 @@ export default function BatchDetail() {
           WhatsApp
         </a>
         <button 
+          onClick={() => setIsEnrollDrawerOpen(true)}
           className="flex-[2] bg-blue-600 text-white rounded-2xl font-bold text-sm h-12 shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-[0.98] transition-all"
         >
           Enroll Now
         </button>
       </motion.div>
       <ShareToast message={toastMessage} visible={showToast} />
+      
+      <EnrollmentDrawer
+        isOpen={isEnrollDrawerOpen}
+        onClose={() => setIsEnrollDrawerOpen(false)}
+        batchDetails={batch ? {
+          id: batch.id,
+          name: batch.batch_name,
+          price: batch.fee_structure ? parseInt(String(batch.fee_structure).match(/\d+/g)?.join('') || '0', 10) : 0,
+          faculty: batch.faculty?.map((f: any) => f.faculty?.name).join(', ')
+        } : null}
+      />
     </div>
   );
 }

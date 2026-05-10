@@ -70,10 +70,37 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = React.useState<'overview' | 'batches' | 'materials' | 'saved' | 'notices'>('overview');
   const [compareList, setCompareList] = React.useState<string[]>([]);
 
-  const [activeBatches] = React.useState([
-    { id: 1, name: 'Lakshya Batch 2024', institute: 'Physics Wallah', subject: 'Physics', progress: 65, nextClass: 'Today, 4:00 PM', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
-    { id: 2, name: 'NEET Fastrack', institute: 'Aakash Institute', subject: 'Biology', progress: 40, nextClass: 'Tomorrow, 10:00 AM', image: 'https://images.unsplash.com/photo-1532187863486-abf51ad9f69d?w=400' }
-  ]);
+  const [enrolledBatches, setEnrolledBatches] = React.useState<any[]>([]);
+  const [isLoadingBatches, setIsLoadingBatches] = React.useState(false);
+
+  React.useEffect(() => {
+    async function loadBatches() {
+      if (!user) return;
+      setIsLoadingBatches(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const response = await fetch('/api/student/enrollments', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load enrollments');
+        }
+        
+        const data = await response.json();
+        setEnrolledBatches(data);
+      } catch(err) {
+        console.error('Error loading enrolled batches:', err);
+      } finally {
+        setIsLoadingBatches(false);
+      }
+    }
+    loadBatches();
+  }, [user]);
 
   const [resources] = React.useState([
     { id: 1, title: 'Class 10 Math Formula Sheet', type: 'PDF', size: '2.4 MB', date: 'Oct 12, 2023' },
@@ -374,7 +401,7 @@ export default function Dashboard() {
                         <Layers className="w-5 h-5" />
                       </div>
                       <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Enrolled Batches</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">2</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{enrolledBatches.length}</p>
                     </div>
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                       <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center text-emerald-600 mb-4">
@@ -404,57 +431,82 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Active Batches</h2>
-                    <button className="text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-4 py-1.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Find More Batches</button>
+                    <Link to="/" className="text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-4 py-1.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                      Browse Institutes
+                    </Link>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {activeBatches.map(batch => (
-                      <div key={batch.id} className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                        <div className="aspect-video w-full relative">
-                          <img src={batch.image} alt={batch.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                          <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
-                            {batch.subject}
-                          </div>
-                        </div>
-                        <div className="p-6">
-                          <div className="flex items-start justify-between mb-2">
+                  
+                  {isLoadingBatches ? (
+                    <div className="py-20 flex flex-col items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+                      <p className="text-slate-500 font-medium">Loading your batches...</p>
+                    </div>
+                  ) : enrolledBatches.length === 0 ? (
+                    <div className="py-24 flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-900/20">
+                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6">
+                        <Layers className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">You haven't enrolled in any batches yet.</h3>
+                      <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md text-center">
+                        Explore our top institutes and find the perfect batch to start your learning journey.
+                      </p>
+                      <Link 
+                        to="/"
+                        className="px-6 py-3 font-bold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl transition-colors shadow-sm"
+                      >
+                        Browse Institutes
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {enrolledBatches.map((enrollment) => (
+                        <div key={enrollment.id} className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group p-5">
+                          <div className="flex items-start justify-between mb-4">
                             <div>
-                              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{batch.name}</h3>
-                              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{batch.institute}</p>
-                            </div>
-                            <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                              <ChevronRight className="w-5 h-5" />
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="px-2.5 py-1 uppercase text-[10px] font-bold tracking-wider rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20">
+                                  Active
+                                </span>
+                                {enrollment.batches.mode && (
+                                  <span className="px-2.5 py-1 uppercase text-[10px] font-bold tracking-wider rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {enrollment.batches.mode}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
+                                {enrollment.batches.name}
+                              </h3>
+                              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 flex flex-col gap-1">
+                                {enrollment.batches.teacher_name && <span>By {enrollment.batches.teacher_name}</span>}
+                              </p>
                             </div>
                           </div>
                           
-                          <div className="mt-6 space-y-4">
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-xs font-bold">
-                                <span className="text-slate-500 dark:text-slate-400">Course Progress</span>
-                                <span className="text-blue-600">{batch.progress}%</span>
+                          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/50 space-y-4">
+                            {enrollment.batches.next_class_time && (
+                              <div className="flex items-center justify-between text-xs font-bold bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Next Class</span>
+                                <span className="text-slate-700 dark:text-slate-200">{enrollment.batches.next_class_time}</span>
                               </div>
-                              <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${batch.progress}%` }}
-                                  className="h-full bg-blue-600 rounded-full"
-                                />
-                              </div>
-                            </div>
+                            )}
                             
-                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600">
-                                <Calendar className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Next Session</p>
-                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{batch.nextClass}</p>
-                              </div>
-                            </div>
+                            <a 
+                              href={enrollment.batches.zoom_link || '#'}
+                              target={enrollment.batches.zoom_link ? "_blank" : "_self"}
+                              rel="noreferrer"
+                              className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-xl transition-all shadow-sm ${
+                                enrollment.batches.zoom_link 
+                                ? 'bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 active:scale-[0.98]' 
+                                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed'
+                              }`}
+                            >
+                              Join Live Class
+                            </a>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
 

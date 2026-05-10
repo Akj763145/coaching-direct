@@ -14,6 +14,7 @@ import AuthCallback from './pages/AuthCallback';
 import Chatbot from './components/Chatbot';
 import OnboardingManager from './components/OnboardingManager';
 import WelcomeScreen from './components/WelcomeScreen';
+import RealtimeNotifications from './components/RealtimeNotifications';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { supabase } from './lib/supabase';
 
@@ -275,6 +276,7 @@ function AppContent() {
           
           <GlobalFooter />
           <Chatbot />
+          <RealtimeNotifications />
         </div>
       </BrowserRouter>
     </ThemeContext.Provider>
