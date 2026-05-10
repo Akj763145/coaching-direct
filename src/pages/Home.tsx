@@ -984,7 +984,7 @@ export default function Home() {
 
                 {/* Middle (Data) */}
                 <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight truncate capitalize pr-2">{formatAcronyms(inst.name)}</h3>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight line-clamp-2 capitalize pr-2">{formatAcronyms(inst.name)}</h3>
                   
                   <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
                     {inst.distance ? (

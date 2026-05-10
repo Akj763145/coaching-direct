@@ -51,7 +51,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     
     // Optimistic update
     const oldProfile = profile;
-    setProfile(prev => prev ? { ...prev, ...updates } : null);
+    setProfile(prev => prev ? { ...prev, ...updates } : { 
+      id: user.id, 
+      full_name: null, 
+      age: null, 
+      education_level: null, 
+      phone_number: null, 
+      onboarding_completed: false, 
+      tour_completed: false, 
+      ...updates 
+    });
 
     try {
       const { error } = await supabase

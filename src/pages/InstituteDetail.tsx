@@ -111,7 +111,7 @@ export default function InstituteDetail() {
     }
     const success = await toggleFavoriteInstitute(id);
     if (success) {
-      triggerToast(isFavoriteInstitite(id) ? 'Removed from favorites' : 'Added to favorites');
+      triggerToast(isFavoriteInstitite(id) ? 'Removed from favorites' : 'Added to favorites. You can view it in your dashboard.');
     }
   };
 

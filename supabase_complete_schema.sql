@@ -185,3 +185,35 @@ CREATE TABLE IF NOT EXISTS public.favorites (
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own favorites" ON public.favorites
     FOR ALL USING (auth.uid() = user_id);
+
+-- 7. STUDENT PROFILES
+CREATE TABLE IF NOT EXISTS public.student_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    age INTEGER,
+    education_level TEXT,
+    phone_number TEXT,
+    onboarding_completed BOOLEAN DEFAULT false,
+    tour_completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS for student_profiles
+ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own profile" ON public.student_profiles
+    FOR ALL USING (auth.uid() = id);
+
+-- Create profile on signup trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.student_profiles (id, full_name, onboarding_completed, tour_completed)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', false, false);
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users cascade;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

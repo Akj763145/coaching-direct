@@ -81,7 +81,7 @@ export default function BatchDetail() {
     }
     const success = await toggleFavoriteBatch(id);
     if (success) {
-      triggerToast(isFavoriteBatch(id) ? 'Removed from favorites' : 'Added to favorites');
+      triggerToast(isFavoriteBatch(id) ? 'Removed from favorites' : 'Added to favorites. You can view it in your dashboard.');
     }
   };
 

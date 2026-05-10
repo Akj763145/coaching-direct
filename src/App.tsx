@@ -220,14 +220,15 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (user && profile && !profile.onboarding_completed) {
+    if (loading) return; // Wait for profile fetch to complete
+    if (user && (!profile || !profile.onboarding_completed)) {
       setOnboardingPending(true);
-    } else if (user && profile && !profile.tour_completed) {
+    } else if (user && (!profile || !profile.tour_completed)) {
       setOnboardingPending(true);
     } else {
       setOnboardingPending(false);
     }
-  }, [user, profile]);
+  }, [user, profile, loading]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';

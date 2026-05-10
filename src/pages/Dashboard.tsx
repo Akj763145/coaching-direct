@@ -567,7 +567,7 @@ export default function Dashboard() {
                                  {inst.logo ? <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" /> : inst.name.charAt(0)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors">
+                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
                                    <Link to={`/institute/${inst.id}`}>{inst.name}</Link>
                                  </h4>
                                  <div className="text-xs font-semibold text-slate-500 mt-1 uppercase">Institute</div>
@@ -600,7 +600,7 @@ export default function Dashboard() {
                                  {batch.institutes?.logo ? <img src={batch.institutes.logo} alt={batch.institutes.name} className="w-full h-full object-contain mix-blend-darken dark:mix-blend-screen" /> : batch.batch_name.charAt(0)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors">
+                                 <h4 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
                                    <Link to={`/batch/${batch.id}`}>{batch.batch_name}</Link>
                                  </h4>
                                  <div className="text-xs font-semibold text-blue-500 mt-1 uppercase">Batch at {batch.institutes?.name}</div>
