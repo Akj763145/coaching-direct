@@ -1,8 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare, Monitor } from 'lucide-react';
+import { Calendar, Clock, IndianRupee, BookOpen, ChevronDown, ChevronUp, MessageCircle, ArrowLeft, Star, FileText, PlayCircle, X, CheckSquare, Monitor, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
+
+const ShareToast = ({ message, visible }: { message: string, visible: boolean }) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div
+        initial={{ opacity: 0, y: 50, x: '-50%' }}
+        animate={{ opacity: 1, y: 0, x: '-50%' }}
+        exit={{ opacity: 0, y: 50, x: '-50%' }}
+        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 border border-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-xl flex items-center gap-2 whitespace-nowrap"
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+        {message}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 const formatAcronyms = (text: string) => {
   if (!text) return '';
@@ -50,6 +66,36 @@ export default function BatchDetail() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [batch, setBatch] = useState<any>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${batch.batch_name} - ${batch.institute_name}`,
+      text: `Join the ${batch.batch_name} batch at ${batch.institute_name}!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast('Link copied to clipboard');
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast('Link copied to clipboard');
+      }
+    }
+  };
   
   useEffect(() => {
     const fetchBatch = async () => {
@@ -107,21 +153,29 @@ export default function BatchDetail() {
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
       {/* Navigation */}
       <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
-        <motion.button 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => {
-            if (batch?.institute_id || batch?.id) {
-              const instId = batch.institute_id || id;
-              navigate(`/institute/${instId}?tab=batches`);
-            } else {
-              navigate(-1);
-            }
-          }} 
-          className="p-2 -ml-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500 group"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.button 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => {
+              if (batch?.institute_id || batch?.id) {
+                const instId = batch.institute_id || id;
+                navigate(`/institute/${instId}?tab=batches`);
+              } else {
+                navigate(-1);
+              }
+            }} 
+            className="p-2 -ml-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500 group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          </motion.button>
+          <button 
+            onClick={handleShare}
+            className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Updates</span>
@@ -334,6 +388,7 @@ export default function BatchDetail() {
           Enroll Now
         </button>
       </motion.div>
+      <ShareToast message={toastMessage} visible={showToast} />
     </div>
   );
 }

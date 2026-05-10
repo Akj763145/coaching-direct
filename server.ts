@@ -89,9 +89,15 @@ if (isSupabaseEnabled) {
       password TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('MASTER', 'SUB_ADMIN'))
     );
+    CREATE TABLE IF NOT EXISTS institute_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT (datetime('now')) NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS institutes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL UNIQUE,
+      category_id INTEGER,
       name TEXT NOT NULL,
       description TEXT,
       logo TEXT,
@@ -106,7 +112,8 @@ if (isSupabaseEnabled) {
       is_featured INTEGER DEFAULT 0,
       rating REAL DEFAULT 0,
       total_reviews INTEGER DEFAULT 0,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES institute_categories(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS batches (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -195,7 +202,17 @@ if (isSupabaseEnabled) {
   try { db.exec('ALTER TABLE faculty ADD COLUMN experience TEXT'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN is_featured INTEGER DEFAULT 0'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN rating REAL DEFAULT 0'); } catch(e) {}
-  try { db.exec('ALTER TABLE institutes ADD COLUMN total_reviews INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.exec('ALTER TABLE institutes ADD COLUMN category_id INTEGER REFERENCES institute_categories(id) ON DELETE SET NULL'); } catch(e) {}
+  try { db.exec('CREATE TABLE IF NOT EXISTS institute_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'); } catch(e) {}
+  
+  // Seed some categories if empty
+  try {
+    const cats = db.prepare('SELECT count(*) as count FROM institute_categories').get() as any;
+    if (cats.count === 0) {
+      const insert = db.prepare('INSERT INTO institute_categories (name) VALUES (?)');
+      ['Coaching', 'School', 'College', 'Computer Center'].forEach(c => insert.run(c));
+    }
+  } catch(e) {}
 
   ensureMasterAdmin();
 }
@@ -206,13 +223,15 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.warn('⚠️ No token provided in request');
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
     if (err) {
-      res.status(403).json({ error: 'Forbidden' });
+      console.error('❌ JWT Verify Error:', err.message);
+      res.status(403).json({ error: 'Forbidden: Invalid token' });
       return;
     }
     (req as any).user = user;
@@ -222,8 +241,10 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
 
 const requireRole = (role: string) => {
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if ((req as any).user?.role !== role) {
-      res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
+    const user = (req as any).user;
+    if (user?.role !== role) {
+      console.warn(`⚠️ Role mismatch: Expected ${role}, got ${user?.role || 'none'}`);
+      res.status(403).json({ error: `Forbidden: Insufficient privileges. Expected ${role}` });
       return;
     }
     next();
@@ -270,20 +291,53 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/master/institutes', authenticateToken, requireRole('MASTER'), async (req, res) => {
   if (isSupabaseEnabled) {
-    const { data, error } = await supabase.from('institutes')
-      .select('*, app_users (username)');
-    if (error) return res.status(500).json({ error: error.message });
-    // Flatten result to match frontend expectation
-    const formatted = data.map((d: any) => ({ ...d, username: d.app_users?.username }));
-    res.json(formatted);
+    try {
+      const { data, error } = await supabase.from('institutes')
+        .select('*, app_users!inner(username), institute_categories(name)');
+      
+      if (error) {
+        console.error('❌ Supabase Master Institutes Fetch Error:', error);
+        // Fallback: Try without categories if the relationship is missing
+        if (error.message.includes('relationship') || error.message.includes('institute_categories')) {
+          console.warn('⚠️ Retrying without categories join...');
+          const { data: fallbackData, error: fallbackError } = await supabase.from('institutes')
+            .select('*, app_users!inner(username)');
+          
+          if (fallbackError) throw fallbackError;
+          const formatted = (fallbackData || []).map((d: any) => ({ 
+            ...d, 
+            username: d.app_users?.username,
+            category_name: 'Unknown' 
+          }));
+          return res.json(formatted);
+        }
+        return res.status(500).json({ error: error.message });
+      }
+
+      // Flatten result to match frontend expectation
+      const formatted = (data || []).map((d: any) => ({ 
+        ...d, 
+        username: d.app_users?.username,
+        category_name: d.institute_categories?.name || 'Uncategorized'
+      }));
+      res.json(formatted);
+    } catch (err: any) {
+      console.error('❌ System error during master fetch:', err);
+      res.status(500).json({ error: err.message });
+    }
   } else {
-    const institutes = db.prepare('SELECT institutes.*, users.username FROM institutes JOIN users ON institutes.user_id = users.id').all();
+    const institutes = db.prepare(`
+      SELECT institutes.*, users.username, institute_categories.name as category_name 
+      FROM institutes 
+      JOIN users ON institutes.user_id = users.id
+      LEFT JOIN institute_categories ON institutes.category_id = institute_categories.id
+    `).all();
     res.json(institutes);
   }
 });
 
 app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), async (req, res) => {
-  const { name, logo } = req.body;
+  const { name, logo, category_id } = req.body;
   if (!name) return res.status(400).json({ error: 'Institute name is required' });
 
   const uniqueId = Math.floor(1000 + Math.random() * 9000);
@@ -295,7 +349,7 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
     try {
       // 1. Create sub-admin
       const { data: userData, error: userError } = await supabase.from('app_users')
-        .insert({ username, password_hash: hash, role: 'SUB_ADMIN' }).select().maybeSingle();
+        .insert({ username: username, password_hash: hash, role: 'SUB_ADMIN' }).select().maybeSingle();
       
       if (userError) {
         console.error('❌ Supabase creation error:', userError);
@@ -308,7 +362,7 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
       
       // 2. Create institute
       const { data: instData, error: instError } = await supabase.from('institutes')
-        .insert({ user_id: userData.id, name, logo: logo || '' }).select().maybeSingle();
+        .insert({ user_id: userData.id, name, logo: logo || '', category_id: category_id || null }).select().maybeSingle();
       
       if (instError) {
         console.error('❌ Supabase institute creation error:', instError);
@@ -324,7 +378,7 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
     const tx = db.transaction(() => {
       const userRes = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run(username, hash, 'SUB_ADMIN');
       const userId = userRes.lastInsertRowid;
-      const instRes = db.prepare('INSERT INTO institutes (user_id, name, logo) VALUES (?, ?, ?)').run(userId, name, logo || '');
+      const instRes = db.prepare('INSERT INTO institutes (user_id, name, logo, category_id) VALUES (?, ?, ?, ?)').run(userId, name, logo || '', category_id || null);
       return { id: instRes.lastInsertRowid, username, password };
     });
     try {
@@ -337,13 +391,14 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
 
 app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
   const instId = req.params.id;
-  const { name, logo, is_featured } = req.body;
+  const { name, logo, is_featured, category_id } = req.body;
   
   if (isSupabaseEnabled) {
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (logo !== undefined) updateData.logo = logo;
     if (is_featured !== undefined) updateData.is_featured = is_featured;
+    if (category_id !== undefined) updateData.category_id = category_id;
 
     const { error } = await supabase.from('institutes').update(updateData).eq('id', instId);
     if (error) return res.status(500).json({ error: error.message });
@@ -354,7 +409,9 @@ app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), 
         db.prepare('UPDATE institutes SET is_featured = ? WHERE id = ?').run(is_featured ? 1 : 0, instId);
       }
       if (name !== undefined && logo !== undefined) {
-        db.prepare('UPDATE institutes SET name = ?, logo = ? WHERE id = ?').run(name, logo, instId);
+        db.prepare('UPDATE institutes SET name = ?, logo = ?, category_id = ? WHERE id = ?').run(name, logo, category_id || null, instId);
+      } else if (category_id !== undefined) {
+        db.prepare('UPDATE institutes SET category_id = ? WHERE id = ?').run(category_id || null, instId);
       }
       res.json({ success: true });
     } catch (err: any) {
@@ -386,6 +443,81 @@ app.delete('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  }
+});
+
+// --- INSTITUTE CATEGORIES (MASTER ONLY) ---
+app.get('/api/master/institute-categories', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('institute_categories').select('*').order('name');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  } else {
+    res.json(db.prepare('SELECT * FROM institute_categories ORDER BY name').all());
+  }
+});
+
+app.post('/api/master/institute-categories', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('institute_categories').insert({ name }).select().maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  } else {
+    try {
+      const result = db.prepare('INSERT INTO institute_categories (name) VALUES (?)').run(name);
+      res.json({ id: result.lastInsertRowid, name });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+app.put('/api/master/institute-categories/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  const { name } = req.body;
+  const { id } = req.params;
+
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('institute_categories').update({ name }).eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    try {
+      db.prepare('UPDATE institute_categories SET name = ? WHERE id = ?').run(name, id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+app.delete('/api/master/institute-categories/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  const { id } = req.params;
+
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('institute_categories').delete().eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } else {
+    try {
+      db.prepare('DELETE FROM institute_categories WHERE id = ?').run(id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+// --- PUBLIC (Home) ---
+app.get('/api/public/institute-categories', async (req, res) => {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('institute_categories').select('*').order('name');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  } else {
+    res.json(db.prepare('SELECT * FROM institute_categories ORDER BY name').all());
   }
 });
 
@@ -840,15 +972,22 @@ app.get('/api/public/institutes', async (req, res) => {
   const { subject } = req.query;
   
   if (isSupabaseEnabled) {
-    const { data: institutes } = await supabase.from('institutes').select('*, batches(*), categories(*)');
-    let results = institutes || [];
+    const { data: institutes } = await supabase.from('institutes').select('*, batches(*), categories(*), institute_categories(name)');
+    let results = (institutes || []).map((inst: any) => ({
+      ...inst,
+      category_name: inst.institute_categories?.name
+    }));
     if (subject) {
       const s = String(subject).toLowerCase();
       results = results.filter((inst: any) => inst.batches.some((b: any) => b.subject.toLowerCase().includes(s)));
     }
     res.json(results);
   } else {
-    let institutes = db.prepare('SELECT * FROM institutes').all() as any[];
+    let institutes = db.prepare(`
+      SELECT institutes.*, institute_categories.name as category_name 
+      FROM institutes 
+      LEFT JOIN institute_categories ON institutes.category_id = institute_categories.id
+    `).all() as any[];
     const allBatches = db.prepare('SELECT * FROM batches').all() as any[];
     const allCategories = db.prepare('SELECT * FROM categories').all() as any[];
     institutes = institutes.map(inst => {
@@ -868,11 +1007,25 @@ app.get('/api/public/institutes/:id', async (req, res) => {
   const id = req.params.id;
   
   if (isSupabaseEnabled) {
-    const { data: institute, error } = await supabase.from('institutes').select('*, batches(*), faculty(*), notices(*), documents(*), categories(*)').eq('id', id).single();
+    const { data: institute, error } = await supabase.from('institutes')
+      .select('*, batches(*), faculty(*), notices(*), documents(*), categories(*), institute_categories(name)')
+      .eq('id', id)
+      .single();
     if (error || !institute) return res.status(404).json({ error: 'Institute not found' });
-    res.json(institute);
+    
+    // Flatten category name
+    const result = {
+      ...institute,
+      category_name: institute.institute_categories?.name
+    };
+    res.json(result);
   } else {
-    const institute = db.prepare('SELECT * FROM institutes WHERE id = ?').get(id) as any;
+    const institute = db.prepare(`
+      SELECT institutes.*, institute_categories.name as category_name 
+      FROM institutes 
+      LEFT JOIN institute_categories ON institutes.category_id = institute_categories.id
+      WHERE institutes.id = ?
+    `).get(id) as any;
     if (!institute) return res.status(404).json({ error: 'Institute not found' });
     institute.batches = db.prepare('SELECT * FROM batches WHERE institute_id = ?').all(id);
     institute.categories = db.prepare('SELECT * FROM categories WHERE institute_id = ?').all(id);

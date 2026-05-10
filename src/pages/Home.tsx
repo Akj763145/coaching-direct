@@ -174,6 +174,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
   const [institutes, setInstitutes] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
@@ -190,6 +191,7 @@ export default function Home() {
   // Filter states
   const [selectedMediums, setSelectedMediums] = useState<string[]>([]);
   const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | number | null>(null);
   const [maxFee, setMaxFee] = useState<number>(50000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'rating' | 'distance' | 'fee'>('name');
@@ -330,6 +332,7 @@ export default function Home() {
     });
 
     fetchInstitutes();
+    fetchPublicCategories();
     
     // Auto-locate user on mount
     if ("geolocation" in navigator) {
@@ -384,9 +387,10 @@ export default function Home() {
       const { data, error: supaError } = await supabase
         .from('institutes')
         .select(`
-          id, name, logo, latitude, longitude, address, location, rating, total_reviews, is_featured,
+          id, name, logo, latitude, longitude, address, location, rating, total_reviews, is_featured, category_id,
           batches:batches(*),
-          categories:categories(*)
+          categories:categories(*),
+          institute_categories:institute_categories(name)
         `)
         .order('name', { ascending: true });
 
@@ -398,6 +402,7 @@ export default function Home() {
         // Enrich data with mock properties for filtering if they don't exist
         const enriched = data.map((inst: any) => ({
           ...inst,
+          category_name: inst.institute_categories?.name,
           batches: inst.batches?.map((b: any) => ({
             ...b,
             medium: b.medium || MEDIUMS[Math.floor(Math.random() * MEDIUMS.length)],
@@ -415,6 +420,17 @@ export default function Home() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPublicCategories = async () => {
+    try {
+      const res = await fetch('/api/public/institute-categories');
+      if (res.ok) {
+        setCategories(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -453,6 +469,10 @@ export default function Home() {
         if (!hasAffordableBatch && inst.batches && inst.batches.length > 0) return false;
       }
 
+      if (selectedCategoryId) {
+        if (inst.category_id !== selectedCategoryId) return false;
+      }
+
       return true;
     }).sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -461,7 +481,7 @@ export default function Home() {
       if (sortBy === 'fee') return (a.minFee || 100000) - (b.minFee || 100000);
       return 0; // relevance (default order)
     });
-  }, [enrichedInstitutes, search, selectedMediums, selectedBoards, deferredMaxFee, sortBy]);
+  }, [enrichedInstitutes, search, selectedMediums, selectedBoards, selectedCategoryId, deferredMaxFee, sortBy]);
 
   const handleCardClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -761,7 +781,45 @@ export default function Home() {
       )}
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-20 space-y-6">
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Available Institutes</h3>
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Available Institutes</h3>
+            <div className="md:hidden">
+                <button
+                  onClick={() => {
+                    setSearchParams(prev => {
+                      if (prev.get('filters') === 'open') prev.delete('filters');
+                      else prev.set('filters', 'open');
+                      return prev;
+                    }, { replace: true });
+                  }}
+                  className={`flex items-center gap-2 p-2 px-3 transition-all rounded-xl border ${searchParams.get('filters') === 'open' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800' : 'text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase">Filters</span>
+                </button>
+            </div>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            <button
+              onClick={() => setSelectedCategoryId(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${!selectedCategoryId ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-700'}`}
+            >
+              All Categories
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategoryId(cat.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${selectedCategoryId === cat.id ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-700'}`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
       
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Desktop Sidebar */}
@@ -943,7 +1001,11 @@ export default function Home() {
                   </div>
                   
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {/* Category and subjects removed per user request */}
+                    {inst.category_name && (
+                      <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800/50">
+                        {inst.category_name}
+                      </span>
+                    )}
                   </div>
                 </div>
 

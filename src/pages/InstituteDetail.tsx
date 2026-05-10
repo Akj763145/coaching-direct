@@ -1,11 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft, Loader2 } from 'lucide-react';
+import { MapPin, Phone, Mail, Globe, Map, Calendar, Clock, IndianRupee, User, BookOpen, X, Star, Bell, Download, ChevronRight, Monitor, Users, FileText, ArrowLeft, Loader2, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DetailSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 
 import { InstituteReviewsTab } from '../components/InstituteReviewsTab';
+
+const ShareToast = ({ message, visible }: { message: string, visible: boolean }) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div
+        initial={{ opacity: 0, y: 50, x: '-50%' }}
+        animate={{ opacity: 1, y: 0, x: '-50%' }}
+        exit={{ opacity: 0, y: 50, x: '-50%' }}
+        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 border border-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-xl flex items-center gap-2 whitespace-nowrap"
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+        {message}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -84,7 +100,37 @@ export default function InstituteDetail() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const activeTab = searchParams.get('tab') || 'profile';
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: institute.name,
+      text: `Check out ${institute.name} on Coaching Direct!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast('Link copied to clipboard');
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast('Link copied to clipboard');
+      }
+    }
+  };
 
   const setActiveTab = (tabId: string) => {
     setSearchParams(prev => {
@@ -154,18 +200,26 @@ export default function InstituteDetail() {
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
       className="max-w-4xl mx-auto flex flex-col min-h-screen pt-4 md:pt-6 pb-32"
     >
-      <div className="px-4 pb-4 flex items-center gap-3 shrink-0">
-        <Link 
-          to="/" 
+      <div className="px-4 pb-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <Link 
+            to="/" 
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
+            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</Link>
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
+          </div>
+        </div>
+        <button 
+          onClick={handleShare}
           className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
-          <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Home</Link>
-          <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-          <span className="font-semibold text-slate-900 dark:text-white capitalize truncate">{formatAcronyms(institute.name)}</span>
-        </div>
+          <Share2 className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="px-4 w-full">
@@ -610,6 +664,7 @@ export default function InstituteDetail() {
           </div>
         </section>
       </div>
+      <ShareToast message={toastMessage} visible={showToast} />
     </motion.main>
   );
 }

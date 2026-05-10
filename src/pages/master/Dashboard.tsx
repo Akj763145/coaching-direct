@@ -1,19 +1,23 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut } from 'lucide-react';
+import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut, Grid } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
+  const [categoryId, setCategoryId] = useState<string | number>('');
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [editingInstId, setEditingInstId] = useState<number | string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const [newCredentials, setNewCredentials] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'institutes' | 'featured'>('institutes');
+  const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories'>('institutes');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +27,7 @@ export default function MasterDashboard() {
       return;
     }
     fetchInstitutes(token);
+    fetchCategories(token);
   }, [navigate]);
 
   const fetchInstitutes = async (token: string) => {
@@ -33,11 +38,40 @@ export default function MasterDashboard() {
       });
       if (res.ok) {
         setInstitutes(await res.json());
-      } else {
+      } else if (res.status === 401) {
         navigate('/login');
+      } else if (res.status === 403) {
+        const data = await res.json();
+        alert(`Access Denied: ${data.error || 'You do not have permission to view this.'}`);
+        navigate('/'); // Go back home instead of login to break loop
+      } else {
+        const errorData = await res.json();
+        console.error('Server error:', errorData.error);
+        alert(`Server Error: ${errorData.error || 'Failed to fetch institutes'}`);
       }
+    } catch (e) {
+      console.error(e);
+      alert('Network error while connecting to server');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async (token: string) => {
+    try {
+      const res = await fetch('/api/master/institute-categories', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setCategories(await res.json());
+      } else if (res.status === 401) {
+        navigate('/login');
+      } else if (res.status === 403) {
+        const data = await res.json();
+        console.error('Access Denied for categories:', data.error);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -55,7 +89,7 @@ export default function MasterDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name, logo })
+        body: JSON.stringify({ name, logo, category_id: categoryId || null })
       });
       const data = await res.json();
       if (res.ok) {
@@ -64,6 +98,7 @@ export default function MasterDashboard() {
         }
         setName('');
         setLogo('');
+        setCategoryId('');
         setEditingInstId(null);
         fetchInstitutes(token!);
       } else {
@@ -74,9 +109,37 @@ export default function MasterDashboard() {
     }
   };
 
+  const handleCategorySubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const method = editingCategoryId ? 'PUT' : 'POST';
+      const url = editingCategoryId ? `/api/master/institute-categories/${editingCategoryId}` : '/api/master/institute-categories';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: newCategoryName })
+      });
+      if (res.ok) {
+        setNewCategoryName('');
+        setEditingCategoryId(null);
+        fetchCategories(token!);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleEdit = (inst: any) => {
     setName(inst.name);
     setLogo(inst.logo || '');
+    setCategoryId(inst.category_id || '');
     setEditingInstId(inst.id);
   };
 
@@ -170,6 +233,13 @@ export default function MasterDashboard() {
           <Star className="w-4 h-4" />
           Featured Placement
         </button>
+        <button 
+          onClick={() => setActiveTab('categories')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'categories' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <Grid className="w-4 h-4" />
+          Global Categories
+        </button>
       </div>
 
       {activeTab === 'institutes' ? (
@@ -194,6 +264,19 @@ export default function MasterDashboard() {
               <div className="space-y-1.5">
                 <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Logo URL (optional)</label>
                 <input type="text" className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" value={logo} onChange={e => setLogo(e.target.value)} placeholder="https://..." />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Category</label>
+                <select 
+                  className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px] appearance-none" 
+                  value={categoryId} 
+                  onChange={e => setCategoryId(e.target.value)}
+                >
+                  <option value="">No Category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
               <button 
                 disabled={isSubmitting}
@@ -271,6 +354,11 @@ export default function MasterDashboard() {
                       <div className="min-w-0">
                         <h3 className="font-semibold text-apple-text leading-tight truncate">{inst.name}</h3>
                         <p className="text-[13px] text-apple-text-muted mt-1 font-mono truncate">@{inst.username}</p>
+                        {inst.category_name && (
+                          <span className="inline-block mt-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            {inst.category_name}
+                          </span>
+                        )}
                       </div>
                     </div>
                     
@@ -298,6 +386,66 @@ export default function MasterDashboard() {
           </motion.div>
         </div>
       </div>
+      ) : activeTab === 'categories' ? (
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-1">
+            <motion.form 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onSubmit={handleCategorySubmit} 
+              className="bg-white p-6 md:p-8 rounded-[24px] shadow-sm border border-apple-border/40"
+            >
+              <h2 className="text-lg font-semibold text-apple-text mb-5">{editingCategoryId ? 'Edit Category' : 'Add New Category'}</h2>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[13px] font-medium text-apple-text-muted ml-1">Category Name</label>
+                  <input required type="text" className="w-full px-4 py-2.5 bg-apple-gray/50 border border-apple-border/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-apple-blue/10 focus:border-apple-blue outline-none transition-all text-[15px]" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="e.g. School, Coaching" />
+                </div>
+                <button 
+                  disabled={isSubmitting}
+                  type="submit" 
+                  className="w-full bg-apple-text text-white font-medium py-3 rounded-xl hover:bg-black transition-all mt-2"
+                >
+                  {editingCategoryId ? 'Update Category' : 'Create Category'}
+                </button>
+                {editingCategoryId && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setEditingCategoryId(null); setNewCategoryName(''); }}
+                    className="w-full text-slate-500 text-sm font-medium py-2"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
+            </motion.form>
+          </div>
+          <div className="md:col-span-2">
+            <div className="grid sm:grid-cols-2 gap-4">
+              {categories.map((cat) => (
+                <div key={cat.id} className="bg-white p-5 rounded-[20px] border border-apple-border/40 flex items-center justify-between group">
+                  <span className="font-semibold text-apple-text">{cat.name}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditingCategoryId(cat.id); setNewCategoryName(cat.name); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (!confirm('Delete category?')) return;
+                        const token = localStorage.getItem('token');
+                        await fetch(`/api/master/institute-categories/${cat.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                        fetchCategories(token!);
+                      }} 
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       ) : (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}

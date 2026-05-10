@@ -118,9 +118,24 @@ export default function SubAdminDashboard() {
     setIsLoading(true);
     try {
       const pRes = await fetch('/api/institute/profile', { headers: { 'Authorization': `Bearer ${token}` }});
-      if (pRes.ok) setProfile(await pRes.json());
-      else { navigate('/login'); return; }
+      if (pRes.ok) {
+        setProfile(await pRes.json());
+      } else if (pRes.status === 401) {
+        navigate('/login');
+        return;
+      } else if (pRes.status === 403) {
+        const data = await pRes.json();
+        alert(`Access Denied: ${data.error || 'You do not have permission to view this.'}`);
+        navigate('/');
+        return;
+      } else {
+        const errorData = await pRes.json();
+        alert(`Server Error (Profile): ${errorData.error || 'Failed to fetch profile'}`);
+        setIsLoading(false);
+        return;
+      }
 
+      // Chain of other fetches, but if profile failed we already returned
       const bRes = await fetch('/api/institute/batches', { headers: { 'Authorization': `Bearer ${token}` }});
       if (bRes.ok) setBatches(await bRes.json());
 
@@ -138,6 +153,9 @@ export default function SubAdminDashboard() {
 
       const rRes = await fetch('/api/institute/reviews', { headers: { 'Authorization': `Bearer ${token}` }});
       if (rRes.ok) setReviews(await rRes.json());
+    } catch (err) {
+      console.error(err);
+      alert('Network error while connecting to server');
     } finally {
       setIsLoading(false);
     }
