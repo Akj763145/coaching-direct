@@ -67,7 +67,7 @@ export default function Chatbot() {
         }
       }
 
-      const systemInstruction = `You are a helpful AI assistant for the Coaching Direct platform. Your job is to help students find coaching institutes based on their requirements.
+      const systemInstruction = `You are a helpful AI assistant for the VidyaNation platform. Your job is to help students find coaching institutes based on their requirements.
 Here is the real-time JSON data of all available institutes and their batches on the platform:
 ${JSON.stringify(currentInstitutes || [], null, 2)}
 
@@ -141,7 +141,7 @@ Be friendly, concise, and professional. Recommend specific institutes and batche
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[15px]">Coaching Direct AI</h3>
+                  <h3 className="font-semibold text-[15px]">VidyaNation AI</h3>
                   <p className="text-white/80 text-[11px] leading-tight">Your personal institute guide</p>
                 </div>
               </div>

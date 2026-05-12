@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface WelcomeScreenProps {
   isLoading?: boolean;
@@ -89,21 +89,13 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
                 damping: 20,
                 delay: 0.2 
               }}
-              className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 mb-8 relative group will-change-transform"
+              className="mb-8 relative group"
             >
-              <div className="absolute inset-0 bg-white/20 rounded-[32px] animate-pulse group-hover:scale-110 transition-transform" />
-              <GraduationCap className="w-12 h-12 md:w-16 md:h-16 relative z-10" />
-              
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-4 border border-blue-500/20 rounded-[40px] hidden sm:block"
-              />
-              <motion.div
-                animate={{ rotate: -360 }}
-                transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-8 border border-indigo-500/10 rounded-[48px] hidden sm:block"
-              />
+              <svg className="w-24 h-24 md:w-32 md:h-32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 38L8 16C8 16 12 10 24 18C24 18 24 38 24 38Z" fill="#2563eb"/>
+                <path d="M24 38L40 16C40 16 36 10 24 18C24 18 24 38 24 38Z" className="fill-slate-900 dark:fill-white"/>
+                <circle cx="24" cy="8" r="5" fill="#2563eb"/>
+              </svg>
             </motion.div>
 
             <div className="overflow-hidden mb-2">
@@ -113,7 +105,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
                 className="text-4xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white flex items-center gap-3"
               >
-                CoachingDirect
+                VidyaNation
                 <Sparkles className="w-8 h-8 md:w-12 md:h-12 text-blue-500 animate-pulse" />
               </motion.h1>
             </div>
