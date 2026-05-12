@@ -69,10 +69,15 @@ function Navigation({ user, handleSignOut }: { user: any; handleSignOut: () => v
                   to="/" 
                   className="flex items-center gap-2 md:gap-2.5 hover:opacity-80 transition-opacity shrink-0 group min-w-0"
                 >
-                  <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
-                    <GraduationCap className="w-5 h-5" />
+                  <svg className="w-8 h-8 md:w-9 md:h-9 group-hover:scale-105 transition-transform shrink-0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 38L8 16C8 16 12 10 24 18C24 18 24 38 24 38Z" fill="#2563eb"/>
+                    <path d="M24 38L40 16C40 16 36 10 24 18C24 18 24 38 24 38Z" className="fill-slate-900 dark:fill-white"/>
+                    <circle cx="24" cy="8" r="5" fill="#2563eb"/>
+                  </svg>
+                  <div className="text-base md:text-xl font-extrabold tracking-tight truncate flex items-center leading-none">
+                    <span className="text-slate-900 dark:text-white">Vidya</span>
+                    <span className="text-blue-600">Nation</span>
                   </div>
-                  <span className="text-base md:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">Coaching Direct</span>
                 </Link>
               </motion.div>
             ) : (
@@ -190,7 +195,7 @@ function GlobalFooter() {
         </div>
         
         <div className="text-center md:text-left text-xs text-slate-400 dark:text-slate-500">
-          &copy; {new Date().getFullYear()} Coaching Direct. All rights reserved.
+          &copy; {new Date().getFullYear()} VidyaNation. All rights reserved.
         </div>
       </div>
     </footer>
