@@ -1,6 +1,5 @@
 import React, { forwardRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react'; // We can use lucide icon instead since qrcode.react is not installed and user mentioned "use a Lucide icon or simple div". Let's use Lucide QrCode
-import { QrCode, ShieldCheck } from 'lucide-react';
+import { QrCode, Building2, GraduationCap } from 'lucide-react';
 
 interface StudentIDCardProps {
   studentName: string;
@@ -9,81 +8,113 @@ interface StudentIDCardProps {
   className: string;
   enrollmentDate: string;
   instituteName?: string;
+  bloodGroup?: string;
+  rollNo?: string;
+  paymentId?: string;
 }
 
 export const StudentIDCard = forwardRef<HTMLDivElement, StudentIDCardProps>(
-  ({ studentName, studentPhone, batchName, className, enrollmentDate, instituteName = "Coaching Direct" }, ref) => {
+  ({ studentName, studentPhone, batchName, className, enrollmentDate, instituteName = "Coaching Direct", bloodGroup = "O+", rollNo = "-", paymentId = "N/A" }, ref) => {
+    // Generate a simple avatar
+    const photoUrl = `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(studentName)}&backgroundColor=f1f5f9`;
+
     return (
       <div 
         ref={ref}
-        className="relative w-[350px] h-[500px] bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col font-sans"
-        style={{
-          boxShadow: '0 0 40px -10px rgba(124, 58, 237, 0.3), inset 0 0 20px -5px rgba(124, 58, 237, 0.2)',
-          border: '1px solid rgba(124, 58, 237, 0.3)'
-        }}
+        className="relative w-[340px] h-[540px] bg-white rounded-lg overflow-hidden shadow-2xl border border-gray-200 flex flex-col print:shadow-none print:border-none print:rounded-none font-sans"
       >
-        {/* Glow effect */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/30 rounded-full blur-[50px] pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-600/20 rounded-full blur-[50px] pointer-events-none" />
-
-        {/* Header */}
-        <div className="pt-6 pb-4 px-6 text-center border-b border-white/10 relative z-10 bg-gradient-to-b from-purple-900/40 to-transparent">
-          <div className="flex justify-center mb-1">
-            <ShieldCheck className="w-8 h-8 text-purple-400" />
-          </div>
-          <h2 className="text-white font-bold tracking-widest text-sm uppercase opacity-90">{instituteName}</h2>
-          <p className="text-purple-300 text-[10px] tracking-widest uppercase mt-0.5">Official Student ID</p>
+        {/* Background Watermark */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+          <GraduationCap size={240} />
         </div>
 
-        {/* Body */}
-        <div className="flex-1 px-6 py-6 flex flex-col items-center relative z-10">
-          {/* Photo Placeholder */}
-          <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/30 flex items-center justify-center p-1 shadow-inner mb-5">
-            <div className="w-full h-full bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 overflow-hidden">
-               {/* Simple initials if no photo */}
-               <span className="text-3xl font-bold text-slate-400">{studentName.charAt(0)}</span>
+        {/* HEADER: Institute Branding */}
+        <div className="bg-blue-800 text-white text-center pt-5 pb-4 px-4 relative z-10">
+          <div className="flex justify-center mb-2">
+             <Building2 size={28} className="text-white" />
+          </div>
+          <h1 className="text-lg font-bold uppercase tracking-widest leading-tight">Coaching Direct</h1>
+          <p className="text-[10px] uppercase tracking-wider text-blue-200 font-medium mt-1">{instituteName}</p>
+        </div>
+
+        {/* Title Ribbon */}
+        <div className="bg-amber-500 text-center py-1 relative z-10 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Student ID Card</span>
+        </div>
+
+        {/* CARD BODY */}
+        <div className="flex-1 flex flex-col items-center pt-6 px-6 relative z-10">
+          
+          {/* Photo Area - Standard Passport Ratio */}
+          <div className="w-24 h-32 border-2 border-gray-300 p-1 bg-white mb-4 shadow-sm relative">
+            <img 
+              src={photoUrl} 
+              alt="Student Photo" 
+              className="w-full h-full object-cover bg-gray-50"
+            />
+          </div>
+
+          {/* Student Name */}
+          <h2 className="text-xl font-extrabold text-gray-900 uppercase tracking-wide mb-4 text-center pb-2">
+            {studentName}
+          </h2>
+
+          {/* Data Table */}
+          <div className="w-full space-y-1 text-sm bg-white">
+            <div className="flex border-b border-gray-100 pb-1.5">
+              <span className="w-24 font-bold text-gray-500 text-[10px] uppercase tracking-wider">Payment ID</span>
+              <span className="font-semibold text-gray-800 text-[11px]">: {paymentId}</span>
             </div>
+            
+            <div className="flex border-b border-gray-100 pb-1.5 pt-0.5">
+              <span className="w-24 font-bold text-gray-500 text-[10px] uppercase tracking-wider">Course</span>
+              <span className="font-semibold text-gray-800 text-[11px] truncate w-full">: {batchName}</span>
+            </div>
+
+            <div className="flex border-b border-gray-100 pb-1.5 pt-0.5">
+              <span className="w-24 font-bold text-gray-500 text-[10px] uppercase tracking-wider">Class</span>
+              <span className="font-semibold text-gray-800 text-[11px]">: {className || 'Student'}</span>
+            </div>
+
+            <div className="flex border-b border-gray-100 pb-1.5 pt-0.5">
+              <span className="w-24 font-bold text-gray-500 text-[10px] uppercase tracking-wider">Contact</span>
+              <span className="font-semibold text-gray-800 text-[11px]">: {studentPhone}</span>
+            </div>
+            
+            <div className="flex border-b border-gray-100 pb-1.5 pt-0.5">
+              <span className="w-24 font-bold text-gray-500 text-[10px] uppercase tracking-wider">Enrolled</span>
+              <span className="font-semibold text-gray-800 text-[11px]">: {enrollmentDate}</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* FOOTER: Signatures and QR */}
+        <div className="mt-auto px-6 py-4 flex justify-between items-end bg-gray-50 border-t border-gray-200 relative z-10 w-full">
+          
+          {/* QR Code */}
+          <div className="flex flex-col items-center">
+            <div className="bg-white p-1 border border-gray-200 rounded shadow-sm mb-1">
+              <QrCode size={32} className="text-gray-800" />
+            </div>
+            <p className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Scan to Verify</p>
           </div>
           
-          <h1 className="text-2xl font-bold text-white mb-1 text-center leading-tight">
-            {studentName}
-          </h1>
-          <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20">
-            {className || 'Student'}
-          </p>
+          {/* Signature */}
+          <div className="flex flex-col items-center pb-1">
+            <div className="h-6 flex items-end justify-center mb-1 w-24">
+               {/* Signature Image or cursive font placeholder */}
+               <span className="font-serif italic text-blue-900 text-base opacity-90">Coaching Direct</span>
+            </div>
+            <div className="w-24 h-px bg-gray-400 mb-1"></div>
+            <p className="text-[8px] font-bold text-gray-600 uppercase tracking-wider">Principal / Director</p>
+          </div>
 
-          <div className="w-full grid grid-cols-2 gap-4 text-left">
-            <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Batch</p>
-              <p className="text-sm font-semibold text-slate-200 line-clamp-1">{batchName}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Phone</p>
-              <p className="text-sm font-semibold text-slate-200">{studentPhone}</p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Enrolled On</p>
-              <p className="text-sm font-semibold text-slate-200">{enrollmentDate}</p>
-            </div>
-          </div>
         </div>
+        
+        {/* Bottom Accent Bar */}
+        <div className="h-1.5 w-full bg-blue-800"></div>
 
-        {/* Footer */}
-        <div className="mt-auto px-6 py-4 bg-black/40 border-t border-white/5 flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-2">
-             <div className="bg-white p-1 rounded-md">
-               <QrCode className="w-8 h-8 text-black" />
-             </div>
-             <div>
-               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Verification</p>
-               <p className="text-[10px] font-mono text-purple-300">SCAN TO VERIFY</p>
-             </div>
-          </div>
-          <div className="text-right">
-             <p className="text-[8px] text-slate-500 uppercase tracking-widest">Valid For</p>
-             <p className="text-[10px] font-bold text-slate-300">2026-2027</p>
-          </div>
-        </div>
       </div>
     );
   }

@@ -65,6 +65,7 @@ export function IdCardModal({
               className={classNameLabel || 'Student'}
               enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
               instituteName={instituteName || 'Coaching Direct'}
+              paymentId={enrollment.razorpay_payment_id || 'Manual Payment'}
             />
           </div>
 
