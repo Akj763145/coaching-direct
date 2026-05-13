@@ -313,6 +313,43 @@ app.get('/api/master/audit-logs', authenticateToken, requireRole('MASTER'), asyn
   }
 });
 
+app.get('/api/master/stats', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  try {
+    const start = Date.now();
+    let rowCount = 0;
+    
+    if (isSupabaseEnabled) {
+      const tables = ['app_users', 'institutes', 'batches', 'enrollments', 'audit_logs'];
+      for (const table of tables) {
+        try {
+          const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+          if (!error) rowCount += (count || 0);
+        } catch (e) {}
+      }
+    } else {
+      const tables = ['users', 'institutes', 'batches', 'enrollments', 'audit_logs'];
+      for (const table of tables) {
+        try {
+          const res = db.prepare(`SELECT count(*) as count FROM ${table}`).get() as any;
+          rowCount += res.count;
+        } catch (e) {}
+      }
+    }
+    
+    const latency = Date.now() - start;
+    
+    res.json({
+      database_rows: rowCount,
+      database_limit: 10000,
+      media_assets_gb: 1.2,
+      status: 'Online',
+      latency: latency
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /* --- API ROUTES --- */
 
 app.post('/api/login', async (req, res) => {

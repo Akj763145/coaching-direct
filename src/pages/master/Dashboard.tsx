@@ -6,7 +6,8 @@ import { supabase } from '../../lib/supabase';
 import AdminLedger from '../../components/AdminLedger';
 import SeoSettingsPanel from '../../components/SeoSettingsPanel';
 import AuditLogsPanel from '../../components/AuditLogsPanel';
-import { Activity } from 'lucide-react';
+import SystemHealthDashboard from '../../components/SystemHealthDashboard';
+import { Activity, ShieldCheck } from 'lucide-react';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export default function MasterDashboard() {
   const [newCredentials, setNewCredentials] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories' | 'ledger' | 'seo' | 'audit'>('institutes');
+  const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories' | 'ledger' | 'seo' | 'audit' | 'health'>('institutes');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -279,6 +280,13 @@ export default function MasterDashboard() {
         >
           <Activity className="w-4 h-4" />
           Audit Logs
+        </button>
+        <button 
+          onClick={() => setActiveTab('health')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'health' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          System Health
         </button>
       </div>
 
@@ -593,6 +601,8 @@ export default function MasterDashboard() {
         <SeoSettingsPanel />
       ) : activeTab === 'audit' ? (
         <AuditLogsPanel />
+      ) : activeTab === 'health' ? (
+        <SystemHealthDashboard />
       ) : null}
     </motion.div>
   );
