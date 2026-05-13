@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Search, Filter } from 'lucide-react';
+import { CheckCircle2, Search, Filter, IdCard } from 'lucide-react';
+import { IdCardModal } from './IdCardModal';
 
 interface AdminLedgerProps {
   enrollments: any[];
@@ -8,6 +9,7 @@ interface AdminLedgerProps {
 
 export default function AdminLedger({ enrollments }: AdminLedgerProps) {
   const [selectedInstitute, setSelectedInstitute] = useState<string>('all');
+  const [selectedIdCard, setSelectedIdCard] = useState<any>(null);
 
   const uniqueInstitutes = useMemo(() => {
     const map = new Map<string, string>();
@@ -79,12 +81,13 @@ export default function AdminLedger({ enrollments }: AdminLedgerProps) {
               <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
               <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Payment ID</th>
               <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Amount</th>
+              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {filteredEnrollments.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-500">
+                <td colSpan={7} className="py-12 text-center text-slate-500">
                   No sales recorded yet.
                 </td>
               </tr>
@@ -101,7 +104,10 @@ export default function AdminLedger({ enrollments }: AdminLedgerProps) {
                     {e.batches?.batch_name || 'N/A'}
                   </td>
                   <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                    {e.student_profiles?.full_name || 'Anonymous Student'}
+                    <div className="flex flex-col">
+                      <span>{e.student_profiles?.full_name || 'Anonymous Student'}</span>
+                      <span className="text-xs text-slate-500 font-mono mt-0.5">{e.razorpay_payment_id || 'manual'}</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-xs text-slate-500 font-mono">
                     {e.razorpay_payment_id || 'manual'}
@@ -109,12 +115,31 @@ export default function AdminLedger({ enrollments }: AdminLedgerProps) {
                   <td className="py-4 px-6 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">
                     ₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '1000').replace(/[^0-9]/g, '') || '1000', 10).toLocaleString()}
                   </td>
+                  <td className="py-4 px-6 text-right">
+                    <button
+                      onClick={() => setSelectedIdCard(e)}
+                      className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 rounded-lg transition-colors"
+                    >
+                      <IdCard className="w-3.5 h-3.5" />
+                      View ID
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+      
+      <IdCardModal
+        isOpen={!!selectedIdCard}
+        onClose={() => setSelectedIdCard(null)}
+        enrollment={selectedIdCard}
+        studentName={selectedIdCard?.student_profiles?.full_name || 'Anonymous Student'}
+        studentPhone={selectedIdCard?.student_profiles?.phone_number || 'N/A'}
+        classNameLabel={selectedIdCard?.student_profiles?.education_level || 'Student'}
+        instituteName={selectedIdCard?.batches?.institutes?.name || 'Coaching Direct'}
+      />
     </motion.div>
   );
 }

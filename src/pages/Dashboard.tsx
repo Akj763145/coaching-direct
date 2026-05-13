@@ -11,6 +11,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useFavorites } from '../hooks/useFavorites';
 import { supabase } from '../lib/supabase';
+import { IdCardModal } from '../components/IdCardModal';
+import { IdCard } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -69,6 +71,7 @@ export default function Dashboard() {
   }, [profile]);
   const [activeTab, setActiveTab] = React.useState<'overview' | 'batches' | 'materials' | 'saved' | 'notices'>('overview');
   const [compareList, setCompareList] = React.useState<string[]>([]);
+  const [selectedIdCard, setSelectedIdCard] = React.useState<any>(null);
 
   const [enrolledBatches, setEnrolledBatches] = React.useState<any[]>([]);
   const [isLoadingBatches, setIsLoadingBatches] = React.useState(false);
@@ -502,6 +505,13 @@ export default function Dashboard() {
                             >
                               Join Live Class
                             </a>
+                            <button
+                              onClick={() => setSelectedIdCard(enrollment)}
+                              className="w-full flex items-center justify-center gap-2 font-bold py-3 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 rounded-xl transition-colors"
+                            >
+                              <IdCard className="w-5 h-5" />
+                              View ID Card
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -736,6 +746,19 @@ export default function Dashboard() {
 
         </div>
       </div>
+      
+      <IdCardModal
+        isOpen={!!selectedIdCard}
+        onClose={() => setSelectedIdCard(null)}
+        enrollment={selectedIdCard}
+        studentName={profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Ayush'}
+        studentPhone={profile?.phone_number || 'N/A'}
+        classNameLabel={profile?.education_level 
+                      ? profile.education_level === 'highschool' ? 'High School' 
+                      : profile.education_level === 'undergraduate' ? 'Under Graduate' 
+                      : 'Post Graduate'
+                      : user?.user_metadata?.class || 'Class 10 (CBSE)'}
+      />
     </main>
   );
 }

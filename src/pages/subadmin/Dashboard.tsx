@@ -1,7 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply, LogOut } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply, LogOut, IdCard } from 'lucide-react';
+import { IdCardModal } from '../../components/IdCardModal';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -105,6 +106,8 @@ export default function SubAdminDashboard() {
   // Review Form
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  
+  const [selectedIdCard, setSelectedIdCard] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -1589,14 +1592,14 @@ export default function SubAdminDashboard() {
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch Name</th>
-                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment ID</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Amount</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
                   {enrollments.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                      <td colSpan={6} className="py-12 text-center text-slate-500">
                         No enrollments found for your institute.
                       </td>
                     </tr>
@@ -1607,7 +1610,10 @@ export default function SubAdminDashboard() {
                           {new Date(e.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' })}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium text-slate-900 dark:text-white">
-                          {e.student_profiles?.full_name || 'Anonymous Student'}
+                          <div className="flex flex-col">
+                            <span>{e.student_profiles?.full_name || 'Anonymous Student'}</span>
+                            <span className="text-xs text-slate-500 font-mono mt-0.5">{e.razorpay_payment_id || 'Manual Enrollment'}</span>
+                          </div>
                         </td>
                         <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
                           {e.student_profiles?.phone_number ? (
@@ -1622,11 +1628,17 @@ export default function SubAdminDashboard() {
                         <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
                           {e.batches?.name || 'N/A'}
                         </td>
-                        <td className="py-4 px-6 text-xs text-slate-500 font-mono">
-                          {e.razorpay_payment_id || 'Manual Enrollment'}
-                        </td>
                         <td className="py-4 px-6 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">
                           ₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '0').replace(/[^0-9]/g, '') || '0', 10).toLocaleString()}
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <button
+                            onClick={() => setSelectedIdCard(e)}
+                            className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 rounded-lg transition-colors"
+                          >
+                            <IdCard className="w-3.5 h-3.5" />
+                            View ID
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -1637,6 +1649,16 @@ export default function SubAdminDashboard() {
           </motion.div>
         )}
       </div>
+
+      <IdCardModal
+        isOpen={!!selectedIdCard}
+        onClose={() => setSelectedIdCard(null)}
+        enrollment={selectedIdCard}
+        studentName={selectedIdCard?.student_profiles?.full_name || 'Anonymous Student'}
+        studentPhone={selectedIdCard?.student_profiles?.phone_number || 'N/A'}
+        classNameLabel={selectedIdCard?.student_profiles?.education_level || 'Student'}
+        instituteName={profile?.name || 'Coaching Direct'}
+      />
     </div>
   );
 }

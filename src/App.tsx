@@ -18,6 +18,7 @@ import RealtimeNotifications from './components/RealtimeNotifications';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { supabase } from './lib/supabase';
 import { Toaster } from 'react-hot-toast';
+import { Helmet } from 'react-helmet-async';
 
 export const ThemeContext = createContext({
   theme: 'light',
@@ -212,6 +213,29 @@ function ScrollToTop() {
   return null;
 }
 
+function PlatformSEO() {
+  const [seo, setSeo] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/public/seo-settings')
+      .then(res => res.json())
+      .then(data => setSeo(data))
+      .catch(err => console.error('SEO Load Error:', err));
+  }, []);
+
+  if (!seo) return null;
+
+  return (
+    <Helmet>
+      <title>{seo.title || 'VidyaNation'}</title>
+      <meta name="description" content={seo.description || ''} />
+      <meta name="keywords" content={seo.keywords || ''} />
+      <meta property="og:title" content={seo.title || 'VidyaNation'} />
+      <meta property="og:description" content={seo.description || ''} />
+    </Helmet>
+  );
+}
+
 function AppContent() {
   const { user, profile, loading, signOut } = useUser();
   const [theme, setTheme] = useState('light');
@@ -250,6 +274,7 @@ function AppContent() {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <PlatformSEO />
       <BrowserRouter>
         <WelcomeScreen isLoading={loading} />
         <ScrollToTop />

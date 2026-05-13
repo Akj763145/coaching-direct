@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -235,6 +236,9 @@ if (isSupabaseEnabled) {
   try { db.exec('ALTER TABLE institutes ADD COLUMN rating REAL DEFAULT 0'); } catch(e) {}
   try { db.exec('ALTER TABLE institutes ADD COLUMN category_id INTEGER REFERENCES institute_categories(id) ON DELETE SET NULL'); } catch(e) {}
   try { db.exec('CREATE TABLE IF NOT EXISTS institute_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'); } catch(e) {}
+  try { db.exec('CREATE TABLE IF NOT EXISTS platform_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, keywords TEXT)'); } catch(e) {}
+  try { db.exec("INSERT OR IGNORE INTO platform_settings (id, title, description, keywords) VALUES (1, 'VidyaNation', 'A premium multi-tenant platform for students to explore coaching institutes.', 'education, coaching, institutes, learning')"); } catch(e) {}
+  try { db.exec('CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, user_id TEXT, username TEXT, details TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'); } catch(e) {}
   
   // Seed some categories if empty
   try {
@@ -282,6 +286,33 @@ const requireRole = (role: string) => {
   };
 };
 
+// --- AUDIT LOGS ---
+async function logAudit(action: string, user_id: string | number, username: string, details: string) {
+  try {
+    if (isSupabaseEnabled) {
+      await supabase.from('audit_logs').insert({ action, user_id: String(user_id), username, details });
+    } else {
+      db.prepare('INSERT INTO audit_logs (action, user_id, username, details) VALUES (?, ?, ?, ?)').run(String(user_id), username, details);
+    }
+  } catch(e) {
+    console.error('Audit log failed', e);
+  }
+}
+
+app.get('/api/master/audit-logs', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  try {
+    if (isSupabaseEnabled) {
+      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(data || []);
+    } else {
+      res.json(db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100').all());
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* --- API ROUTES --- */
 
 app.post('/api/login', async (req, res) => {
@@ -309,6 +340,7 @@ app.post('/api/login', async (req, res) => {
     if (user && bcrypt.compareSync(cleanPassword, user.password)) {
       console.log(`✅ Login successful for: ${cleanUsername} (${user.role})`);
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
+      await logAudit('LOGIN', user.id, user.username, `Successful login by ${user.role}`);
       res.json({ token, role: user.role });
     } else {
       console.log(`❌ Login failed for: ${cleanUsername} - ${!user ? 'User not found' : 'Invalid password'}`);
@@ -367,7 +399,7 @@ app.get('/api/master/institutes', authenticateToken, requireRole('MASTER'), asyn
   }
 });
 
-app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), async (req, res) => {
+app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), async (req: any, res) => {
   const { name, logo, category_id } = req.body;
   if (!name) return res.status(400).json({ error: 'Institute name is required' });
 
@@ -400,6 +432,7 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
         return res.status(500).json({ error: instError.message });
       }
 
+      await logAudit('CREATE_INSTITUTE', req.user.id, req.user.username, `Created institute: ${name}`);
       res.json({ message: 'Institute generated successfully', credentials: { id: instData.id, username, password } });
     } catch (err: any) {
       console.error('❌ System error during institute creation:', err);
@@ -413,14 +446,16 @@ app.post('/api/master/institutes', authenticateToken, requireRole('MASTER'), asy
       return { id: instRes.lastInsertRowid, username, password };
     });
     try {
-      res.json({ message: 'Institute generated successfully', credentials: tx() });
+      const credentials = tx();
+      await logAudit('CREATE_INSTITUTE', req.user.id, req.user.username, `Created institute: ${name}`);
+      res.json({ message: 'Institute generated successfully', credentials });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   }
 });
 
-app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req: any, res) => {
   const instId = req.params.id;
   const { name, logo, is_featured, category_id } = req.body;
   
@@ -433,6 +468,7 @@ app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), 
 
     const { error } = await supabase.from('institutes').update(updateData).eq('id', instId);
     if (error) return res.status(500).json({ error: error.message });
+    await logAudit('UPDATE_INSTITUTE', req.user.id, req.user.username, `Updated institute ${instId}`);
     res.json({ success: true });
   } else {
     try {
@@ -444,6 +480,7 @@ app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), 
       } else if (category_id !== undefined) {
         db.prepare('UPDATE institutes SET category_id = ? WHERE id = ?').run(category_id || null, instId);
       }
+      await logAudit('UPDATE_INSTITUTE', req.user.id, req.user.username, `Updated institute ${instId}`);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -451,24 +488,26 @@ app.put('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), 
   }
 });
 
-app.delete('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req, res) => {
+app.delete('/api/master/institutes/:id', authenticateToken, requireRole('MASTER'), async (req: any, res) => {
   const instId = req.params.id;
   
   if (isSupabaseEnabled) {
     // Need to find the user_id first to delete from app_users as well
-    const { data: inst } = await supabase.from('institutes').select('user_id').eq('id', instId).single();
+    const { data: inst } = await supabase.from('institutes').select('name, user_id').eq('id', instId).single();
     if (inst) {
       // CASCADE should handle institutes deletion if app_users is deleted, but let's be explicit if needed
       // Actually, standard setup usually cascades from user to institute
       const { error } = await supabase.from('app_users').delete().eq('id', inst.user_id);
       if (error) return res.status(500).json({ error: error.message });
+      await logAudit('DELETE_INSTITUTE', req.user.id, req.user.username, `Deleted institute: ${inst.name}`);
     }
     res.json({ success: true });
   } else {
     try {
-      const inst = db.prepare('SELECT user_id FROM institutes WHERE id = ?').get(instId) as any;
+      const inst = db.prepare('SELECT name, user_id FROM institutes WHERE id = ?').get(instId) as any;
       if (inst) {
         db.prepare('DELETE FROM users WHERE id = ?').run(inst.user_id);
+        await logAudit('DELETE_INSTITUTE', req.user.id, req.user.username, `Deleted institute: ${inst.name}`);
       }
       res.json({ success: true });
     } catch (err: any) {
@@ -542,6 +581,20 @@ app.delete('/api/master/institute-categories/:id', authenticateToken, requireRol
 });
 
 // --- PUBLIC (Home) ---
+app.get('/api/public/seo-settings', async (req, res) => {
+  try {
+    if (isSupabaseEnabled) {
+      const { data } = await supabase.from('platform_settings').select('*').eq('id', 1).maybeSingle();
+      res.json(data || { title: 'VidyaNation', description: '', keywords: '' });
+    } else {
+      const data = db.prepare('SELECT * FROM platform_settings WHERE id = 1').get();
+      res.json(data || { title: 'VidyaNation', description: '', keywords: '' });
+    }
+  } catch (err: any) {
+    res.json({ title: 'VidyaNation', description: '', keywords: '' });
+  }
+});
+
 app.get('/api/public/institute-categories', async (req, res) => {
   if (isSupabaseEnabled) {
     const { data, error } = await supabase.from('institute_categories').select('*').order('name');
@@ -1584,6 +1637,40 @@ app.post('/api/verify-enrollment', async (req, res) => {
   }
 });
 
+// --- SEO SETTINGS ---
+app.get('/api/master/seo-settings', authenticateToken, requireRole('MASTER'), async (req, res) => {
+  try {
+    if (isSupabaseEnabled) {
+      const { data, error } = await supabase.from('platform_settings').select('*').eq('id', 1).maybeSingle();
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(data || { title: 'VidyaNation', description: '', keywords: '' });
+    } else {
+      const data = db.prepare('SELECT * FROM platform_settings WHERE id = 1').get();
+      res.json(data || { title: 'VidyaNation', description: '', keywords: '' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/master/seo-settings', authenticateToken, requireRole('MASTER'), async (req: any, res) => {
+  const { title, description, keywords } = req.body;
+  try {
+    if (isSupabaseEnabled) {
+      const { error } = await supabase.from('platform_settings').upsert({ id: 1, title, description, keywords });
+      if (error) return res.status(500).json({ error: error.message });
+      await logAudit('UPDATE_SEO', req.user.id, req.user.username, `Updated SEO settings (Title: ${title})`);
+      res.json({ success: true });
+    } else {
+      db.prepare('INSERT INTO platform_settings (id, title, description, keywords) VALUES (1, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title=excluded.title, description=excluded.description, keywords=excluded.keywords').run(title, description, keywords);
+      await logAudit('UPDATE_SEO', req.user.id, req.user.username, `Updated SEO settings (Title: ${title})`);
+      res.json({ success: true });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import('vite');
@@ -1595,8 +1682,47 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get('*', async (req, res) => {
+      try {
+        const htmlPath = path.join(distPath, 'index.html');
+        if (!fs.existsSync(htmlPath)) {
+          return res.status(404).send('Not built yet');
+        }
+        
+        let html = fs.readFileSync(htmlPath, 'utf8');
+
+        // Fetch SEO settings for dynamic injection
+        let seo;
+        try {
+          if (isSupabaseEnabled) {
+            const { data } = await supabase.from('platform_settings').select('*').eq('id', 1).maybeSingle();
+            seo = data;
+          } else {
+            seo = db.prepare('SELECT * FROM platform_settings WHERE id = 1').get();
+          }
+
+          if (seo) {
+            const title = seo.title || 'VidyaNation';
+            const description = seo.description || '';
+            const keywords = seo.keywords || '';
+
+            html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+            html = html.replace('</head>', `
+<meta name="description" content="${description}">
+<meta name="keywords" content="${keywords}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${description}">
+</head>`);
+          }
+        } catch (seoErr) {
+          console.error('Meta injection data fetch error:', seoErr);
+        }
+
+        res.send(html);
+      } catch (err) {
+        console.error('Meta injection error:', err);
+        res.status(500).send('Internal Server Error');
+      }
     });
   }
 

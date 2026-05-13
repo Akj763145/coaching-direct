@@ -1,9 +1,12 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut, Grid } from 'lucide-react';
+import { Trash2, Edit, Star, Sparkles, LayoutDashboard, Flag, LogOut, Grid, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import AdminLedger from '../../components/AdminLedger';
+import SeoSettingsPanel from '../../components/SeoSettingsPanel';
+import AuditLogsPanel from '../../components/AuditLogsPanel';
+import { Activity } from 'lucide-react';
 
 export default function MasterDashboard() {
   const [institutes, setInstitutes] = useState<any[]>([]);
@@ -19,7 +22,7 @@ export default function MasterDashboard() {
   const [newCredentials, setNewCredentials] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories' | 'ledger'>('institutes');
+  const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories' | 'ledger' | 'seo' | 'audit'>('institutes');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -262,6 +265,20 @@ export default function MasterDashboard() {
         >
           <Sparkles className="w-4 h-4" />
           Platform Ledger
+        </button>
+        <button 
+          onClick={() => setActiveTab('seo')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'seo' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <Globe className="w-4 h-4" />
+          SEO Settings
+        </button>
+        <button 
+          onClick={() => setActiveTab('audit')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'audit' ? 'bg-white dark:bg-slate-700 text-apple-text dark:text-white shadow-sm ring-1 ring-black/5' : 'text-apple-text-muted hover:text-apple-text'}`}
+        >
+          <Activity className="w-4 h-4" />
+          Audit Logs
         </button>
       </div>
 
@@ -572,6 +589,10 @@ export default function MasterDashboard() {
         </motion.div>
       ) : activeTab === 'ledger' ? (
         <AdminLedger enrollments={enrollments} />
+      ) : activeTab === 'seo' ? (
+        <SeoSettingsPanel />
+      ) : activeTab === 'audit' ? (
+        <AuditLogsPanel />
       ) : null}
     </motion.div>
   );
