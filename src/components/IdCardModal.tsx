@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Loader2 } from 'lucide-react';
-import * as htmlToImage from 'html-to-image';
-import { StudentIDCard } from './StudentIDCard';
+import { X, Download, Loader2, FileText } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { StudentIDCardFront, StudentIDCardBack } from './StudentIDCard';
 
 interface IdCardModalProps {
   isOpen: boolean;
@@ -19,20 +20,50 @@ export function IdCardModal({
   studentName, studentPhone, classNameLabel, 
   instituteName 
 }: IdCardModalProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const frontCardRef = useRef<HTMLDivElement>(null);
+  const backCardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadCard = async () => {
-    if (!cardRef.current) return;
+    if (!frontCardRef.current || !backCardRef.current) return;
     setIsDownloading(true);
     try {
-      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 1, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = `${studentName.replace(/\s+/g, '_')}_ID.png`;
-      link.href = dataUrl;
-      link.click();
+      // Capture Front Side
+      const canvasFront = await html2canvas(frontCardRef.current, {
+        scale: 2, // 2x for quality (matches instruction)
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      // Capture Back Side
+      const canvasBack = await html2canvas(backCardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgDataFront = canvasFront.toDataURL('image/png');
+      const imgDataBack = canvasBack.toDataURL('image/png');
+      
+      // Create PDF - Landscape 800x450 px
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [800, 450]
+      });
+
+      // Page 1: Front
+      pdf.addImage(imgDataFront, 'PNG', 0, 0, 800, 450);
+      
+      // Page 2: Back
+      pdf.addPage([800, 450], 'landscape');
+      pdf.addImage(imgDataBack, 'PNG', 0, 0, 800, 450);
+
+      pdf.save(`${studentName.replace(/\s+/g, '_')}_VidyaNation_ID.pdf`);
     } catch (err) {
-      console.error('Failed to download image', err);
+      console.error('Failed to generate PDF', err);
     } finally {
       setIsDownloading(false);
     }
@@ -42,45 +73,68 @@ export function IdCardModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: -20 }}
-          className="bg-zinc-900/50 p-6 rounded-3xl relative overflow-hidden flex flex-col items-center border border-white/10"
+          exit={{ opacity: 0, scale: 0.9, y: -30 }}
+          className="bg-white p-4 md:p-8 rounded-[2.5rem] relative overflow-hidden flex flex-col items-center border border-slate-200 shadow-2xl max-w-full max-h-[95vh]"
         >
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors bg-black/20 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="mb-6 mt-4">
-            <StudentIDCard 
-              ref={cardRef}
-              studentName={studentName || 'Student'}
-              studentPhone={studentPhone || 'N/A'}
-              batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'N/A'}
-              className={classNameLabel || 'Student'}
-              enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
-              instituteName={instituteName || 'Coaching Direct'}
-              paymentId={enrollment.razorpay_payment_id || 'Manual Payment'}
-            />
+          {/* Modal Header */}
+          <div className="w-full flex items-center justify-between mb-6 px-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Identity Asset</h2>
+              <p className="text-sm text-slate-500 font-medium">Verified 2-Sided credential for {instituteName || 'Academy'}</p>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-3 text-slate-400 hover:text-slate-900 transition-all bg-slate-50 hover:bg-slate-100 rounded-2xl"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <button
-            onClick={downloadCard}
-            disabled={isDownloading}
-            className="w-[350px] py-4 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
-          >
-            {isDownloading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Download className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
-            )}
-            {isDownloading ? 'Generating...' : 'Download ID Card'}
-          </button>
+          <div className="mb-6 overflow-y-auto max-w-full p-2 flex flex-col gap-8 scrollbar-hide">
+            <div className="scale-[0.4] sm:scale-[0.55] md:scale-[0.7] lg:scale-[0.85] xl:scale-100 origin-top">
+              <div className="flex flex-col gap-10">
+                <StudentIDCardFront 
+                  ref={frontCardRef}
+                  studentName={studentName || 'Ayush Kumar'}
+                  studentPhone={studentPhone || '0000000000'}
+                  batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'Generic Batch'}
+                  className={classNameLabel || 'Student'}
+                  enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
+                  instituteName={instituteName || enrollment.batches?.institutes?.name || 'Ritik Sir\'s Academy'}
+                  instituteLogo={enrollment.batches?.institutes?.logo}
+                  paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
+                  location="Motihari, Bihar"
+                  studentEmail={enrollment.student_profiles?.email || 'student@vidyanation.online'}
+                />
+                <StudentIDCardBack 
+                  ref={backCardRef}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full flex flex-col sm:flex-row gap-4 items-center justify-center mt-auto">
+            <button
+              onClick={downloadCard}
+              disabled={isDownloading}
+              className="w-full sm:w-[380px] py-4.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-2xl font-black shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
+            >
+              {isDownloading ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <FileText className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+              )}
+              {isDownloading ? 'Capturing Sides...' : 'Download 2-Side HD ID Card'}
+            </button>
+            
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center sm:text-left">
+              High Definition • 2 Pages • A4/Landscape PDF
+            </p>
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>
