@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Search, Filter, IdCard } from 'lucide-react';
+import { Filter, IdCard, Grid } from 'lucide-react';
 import { IdCardModal } from './IdCardModal';
 
 interface AdminLedgerProps {
@@ -39,89 +39,85 @@ export default function AdminLedger({ enrollments }: AdminLedgerProps) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col"
+      className="bg-white rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col"
     >
-      <div className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-6 md:p-8 lg:p-10 border-b border-slate-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">Platform Ledger</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Comprehensive view of all enrollments and sales across the platform.</p>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">Platform Ledger</h2>
+          <p className="text-sm text-slate-500 mt-1 md:mt-2 font-medium">Global enrollment and financial performance index.</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 md:gap-6">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-4 md:left-5 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-slate-400" />
             </div>
             <select
               value={selectedInstitute}
               onChange={(e) => setSelectedInstitute(e.target.value)}
-              className="pl-10 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none min-w-[200px]"
+              className="pl-10 md:pl-12 pr-10 py-3 md:py-3.5 bg-slate-50 border-transparent rounded-xl md:rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all appearance-none w-full sm:min-w-[240px] cursor-pointer"
             >
-              <option value="all">All Institutes</option>
+              <option value="all">All Channels</option>
               {uniqueInstitutes.map(inst => (
                 <option key={inst.id} value={inst.id}>{inst.name}</option>
               ))}
             </select>
+            <div className="absolute right-4 md:right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+               <Grid size={16} />
+            </div>
           </div>
 
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 px-6 py-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Total Revenue</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">₹{dynamicRevenue.toLocaleString()}</p>
+          <div className="bg-slate-900 px-6 md:px-8 py-4 md:py-5 rounded-xl md:rounded-[1.5rem] shadow-xl shadow-slate-200 min-w-0 sm:min-w-[200px]">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Gross Yield</p>
+            <p className="text-xl md:text-2xl font-black text-white truncate">₹{dynamicRevenue.toLocaleString()}</p>
           </div>
         </div>
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        {/* Desktop Table View */}
+        <table className="hidden md:table w-full text-left">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Institute</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Batch</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Payment ID</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Amount</th>
-              <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+            <tr className="bg-white border-b border-slate-50">
+              <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Entry Date</th>
+              <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client & Product</th>
+              <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Value</th>
+              <th className="py-5 px-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Verification</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-50">
             {filteredEnrollments.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-slate-500">
-                  No sales recorded yet.
+                <td colSpan={4} className="py-20 text-center text-slate-400 font-medium italic">
+                  No transaction data available.
                 </td>
               </tr>
             ) : (
               filteredEnrollments.map((e: any, index: number) => (
-                <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                    {new Date(e.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' })}
+                <tr key={index} className="group hover:bg-slate-50/50 transition-all">
+                  <td className="py-6 px-8">
+                    <div className="text-sm font-bold text-slate-900">{new Date(e.created_at).toLocaleDateString()}</div>
+                    <div className="text-[11px] text-slate-400 font-medium mt-1">{new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </td>
-                  <td className="py-4 px-6 text-sm font-medium text-slate-900 dark:text-white">
-                    {e.batches?.institutes?.name || 'N/A'}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
-                    {e.batches?.batch_name || 'N/A'}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-300">
+                  <td className="py-6 px-8">
                     <div className="flex flex-col">
-                      <span>{e.student_profiles?.full_name || 'Anonymous Student'}</span>
-                      <span className="text-xs text-slate-500 font-mono mt-0.5">{e.razorpay_payment_id || 'manual'}</span>
+                      <span className="text-sm font-bold text-slate-900">{e.student_profiles?.full_name || 'Anonymous'}</span>
+                      <span className="text-[11px] text-slate-400 font-medium mt-1">
+                        {e.batches?.institutes?.name || 'N/A'} • {e.batches?.batch_name || 'N/A'}
+                      </span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-xs text-slate-500 font-mono">
-                    {e.razorpay_payment_id || 'manual'}
+                  <td className="py-6 px-8 text-right">
+                    <div className="text-sm font-black text-slate-900">₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '1000').replace(/[^0-9]/g, '') || '1000', 10).toLocaleString()}</div>
+                    <div className="text-[10px] text-emerald-600 font-black uppercase tracking-widest mt-1">Settled</div>
                   </td>
-                  <td className="py-4 px-6 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">
-                    ₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '1000').replace(/[^0-9]/g, '') || '1000', 10).toLocaleString()}
-                  </td>
-                  <td className="py-4 px-6 text-right">
+                  <td className="py-6 px-8 text-right">
                     <button
                       onClick={() => setSelectedIdCard(e)}
-                      className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 rounded-lg transition-colors"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 text-[11px] font-black text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 uppercase tracking-widest shadow-sm hover:shadow-blue-500/20"
                     >
-                      <IdCard className="w-3.5 h-3.5" />
-                      View ID
+                      <IdCard className="w-4 h-4" />
+                      ID Asset
                     </button>
                   </td>
                 </tr>
@@ -129,6 +125,53 @@ export default function AdminLedger({ enrollments }: AdminLedgerProps) {
             )}
           </tbody>
         </table>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filteredEnrollments.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 font-medium italic">
+              No transaction data available.
+            </div>
+          ) : (
+            filteredEnrollments.map((e: any, index: number) => (
+              <div key={index} className="p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                      {new Date(e.created_at).toLocaleDateString()}
+                    </div>
+                    <div className="text-[15px] font-bold text-slate-900 leading-tight">
+                      {e.student_profiles?.full_name || 'Anonymous'}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[15px] font-black text-slate-900">
+                      ₹{e.amount != null ? Number(e.amount).toLocaleString() : parseInt((e.batches?.fee_structure || '1000').replace(/[^0-9]/g, '') || '1000', 10).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-emerald-600 font-black uppercase tracking-widest mt-0.5">
+                      Settled
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium bg-slate-50 p-3 rounded-xl">
+                   <div className="w-2 h-2 rounded-full bg-slate-300" />
+                   <span className="truncate">
+                     {e.batches?.institutes?.name || 'N/A'} • {e.batches?.batch_name || 'N/A'}
+                   </span>
+                </div>
+
+                <button
+                  onClick={() => setSelectedIdCard(e)}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3.5 text-[11px] font-black text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 uppercase tracking-widest shadow-sm"
+                >
+                  <IdCard className="w-4 h-4" />
+                  View ID Asset
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
       
       <IdCardModal

@@ -272,64 +272,81 @@ function AppContent() {
     }
   };
 
+  const isAdminRoute = location.pathname.startsWith('/master') || location.pathname.startsWith('/admin');
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <PlatformSEO />
       <BrowserRouter>
         <WelcomeScreen isLoading={loading} />
         <ScrollToTop />
-        <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
-          <Navigation user={user} handleSignOut={signOut} />
-          
-          <AnimatePresence>
-            {user && onboardingPending && (
-              <OnboardingManager 
-                user={user} 
-                onComplete={() => setOnboardingPending(false)} 
-              />
-            )}
-          </AnimatePresence>
-
-          <main className="flex-1 pt-20 md:pt-24 w-full">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/institute/:id" element={<InstituteDetail />} />
-              <Route path="/batch/:id" element={<BatchDetail />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/user/login" element={<UserLogin />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/master/*" element={<MasterDashboard />} />
-              <Route path="/admin/*" element={<SubAdminDashboard />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          
-          <GlobalFooter />
-          <Chatbot />
-          <RealtimeNotifications />
-          <Toaster 
-            position="top-center" 
-            toastOptions={{ 
-              duration: 6000,
-              className: '!bg-white dark:!bg-slate-900 !text-slate-900 dark:!text-white !rounded-2xl !py-4 !px-6 shadow-2xl !border !border-slate-100 dark:!border-slate-800 !font-semibold !tracking-tight',
-              success: {
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
-            }} 
-          />
-        </div>
+        <AppWithLocation 
+          user={user} 
+          loading={loading} 
+          onboardingPending={onboardingPending} 
+          setOnboardingPending={setOnboardingPending}
+          signOut={signOut}
+        />
       </BrowserRouter>
     </ThemeContext.Provider>
+  );
+}
+
+function AppWithLocation({ user, loading, onboardingPending, setOnboardingPending, signOut }: any) {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/master') || location.pathname.startsWith('/admin');
+
+  return (
+    <div className="min-h-screen bg-apple-gray dark:bg-slate-950 text-apple-text dark:text-slate-300 font-sans flex flex-col selection:bg-apple-blue/20 dark:selection:bg-blue-500/30 relative transition-colors duration-300">
+      {!isAdminRoute && <Navigation user={user} handleSignOut={signOut} />}
+      
+      <AnimatePresence>
+        {user && onboardingPending && (
+          <OnboardingManager 
+            user={user} 
+            onComplete={() => setOnboardingPending(false)} 
+          />
+        )}
+      </AnimatePresence>
+
+      <main className={`flex-1 ${!isAdminRoute ? 'pt-20 md:pt-24' : ''} w-full`}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/institute/:id" element={<InstituteDetail />} />
+          <Route path="/batch/:id" element={<BatchDetail />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/user/login" element={<UserLogin />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/master/*" element={<MasterDashboard />} />
+          <Route path="/admin/*" element={<SubAdminDashboard />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      
+      {!isAdminRoute && <GlobalFooter />}
+      <Chatbot />
+      <RealtimeNotifications />
+      <Toaster 
+        position="top-center" 
+        toastOptions={{ 
+          duration: 6000,
+          className: '!bg-white dark:!bg-slate-900 !text-slate-900 dark:!text-white !rounded-2xl !py-4 !px-6 shadow-2xl !border !border-slate-100 dark:!border-slate-800 !font-semibold !tracking-tight',
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }} 
+      />
+    </div>
   );
 }
 

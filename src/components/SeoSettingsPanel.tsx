@@ -59,50 +59,50 @@ export default function SeoSettingsPanel() {
         animate={{ opacity: 1, x: 0 }}
         className="space-y-6"
       >
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-slate-800 pb-4">
-            <Layout className="w-5 h-5 text-purple-500" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+            <Layout className="w-5 h-5 text-purple-600" />
             SEO Configuration
           </h2>
 
           <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Site Title</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Site Title</label>
               <input 
                 type="text" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. VidyaNation - Find Your Best Institute"
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-100 focus:border-purple-500 transition-all outline-none text-slate-900 text-sm font-medium"
               />
               <p className="text-[11px] text-slate-500">Recommended: 50-60 characters</p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Meta Description</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meta Description</label>
               <textarea 
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Briefly describe what your platform offers..."
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-slate-200 resize-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-100 focus:border-purple-500 transition-all outline-none text-slate-900 text-sm font-medium resize-none"
               />
               <div className="flex justify-between items-center text-[11px]">
-                <span className={description.length > 160 ? 'text-red-400' : 'text-slate-500'}>
+                <span className={description.length > 160 ? 'text-red-500 font-bold' : 'text-slate-500'}>
                   Character Count: {description.length}
                 </span>
                 <span className="text-slate-500">Recommended: 150-160 characters</span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Primary Keywords</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Primary Keywords</label>
               <input 
                 type="text" 
                 value={keywords}
                 onChange={(e) => setKeywords(e.target.value)}
                 placeholder="institute, coaching, education, exams"
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-100 focus:border-purple-500 transition-all outline-none text-slate-900 text-sm font-medium"
               />
               <p className="text-[11px] text-slate-500">Separate keywords with commas</p>
             </div>
@@ -110,7 +110,7 @@ export default function SeoSettingsPanel() {
             <button 
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {isSaving ? (
                 <>
@@ -131,10 +131,10 @@ export default function SeoSettingsPanel() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-4 py-3 rounded-xl border border-emerald-400/20"
+                  className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-3 rounded-xl border border-emerald-200 mt-4"
                 >
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span className="text-sm">Settings saved successfully! Platform metadata updated.</span>
+                  <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                  <span className="text-sm font-medium">Settings saved successfully! Platform metadata updated.</span>
                 </motion.div>
               )}
               {status === 'error' && (
@@ -142,10 +142,10 @@ export default function SeoSettingsPanel() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-3 rounded-xl border border-red-400/20"
+                  className="flex items-center gap-2 text-red-700 bg-red-50 px-4 py-3 rounded-xl border border-red-200 mt-4"
                 >
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="text-sm">Failed to save settings. Please try again.</span>
+                  <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+                  <span className="text-sm font-medium">Failed to save settings. Please try again.</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -159,40 +159,40 @@ export default function SeoSettingsPanel() {
         animate={{ opacity: 1, x: 0 }}
         className="space-y-6"
       >
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden h-full">
-          <div className="absolute top-0 right-0 p-4 opacity-[0.03]">
-            <Search className="w-48 h-48 text-white" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden h-full">
+          <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none">
+            <Search className="w-48 h-48 text-slate-900" />
           </div>
 
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-slate-800 pb-4">
-            <Globe className="w-5 h-5 text-emerald-500" />
+          <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+            <Globe className="w-5 h-5 text-blue-500" />
             Live Search Preview
           </h2>
 
           <div className="space-y-8 relative z-10">
-            <p className="text-xs text-slate-500 italic">This is how your site might appear in Google Search results:</p>
+            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">This is how your site might appear in Google Search results</p>
             
-            {/* Google Result Mimic */}
-            <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center p-1.5 overflow-hidden shrink-0">
-                   <Globe className="w-full h-full text-slate-500" />
+            {/* Google Result Mimic - Light Theme */}
+            <div className="p-5 bg-white border border-slate-100 rounded-xl shadow-md">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center p-1.5 shrink-0">
+                   <Globe className="w-full h-full text-slate-600" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs text-[#81c995] truncate font-medium">https://vidyanation.com</span>
-                  <span className="text-[10px] text-slate-500 leading-none">VidyaNation › Home</span>
+                  <span className="text-xs text-slate-800 truncate font-medium">VidyaNation</span>
+                  <span className="text-[10px] text-slate-500 leading-none">https://vidyanation.com</span>
                 </div>
               </div>
-              <h3 className="text-[#8ab4f8] text-lg font-normal mb-1 hover:underline cursor-pointer truncate">
+              <h3 className="text-[#1a0dab] text-lg font-normal mb-1 hover:underline cursor-pointer truncate">
                 {title || 'Site Title will appear here'}
               </h3>
-              <p className="text-[#bdc1c6] text-sm leading-relaxed line-clamp-2">
+              <p className="text-[#4d5156] text-sm leading-relaxed line-clamp-2">
                 {description || 'Your meta description will be displayed here in search results. Make it catchy to improve click-through rates.'}
               </p>
             </div>
 
-            <div className="bg-slate-800/30 p-5 rounded-xl border border-slate-800/50">
-              <h4 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest mb-4">SEO Health Check</h4>
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-100">
+              <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">SEO Health Check</h4>
               <div className="space-y-3">
                 <HealthIndicator 
                   label="Title Length" 
@@ -212,9 +212,9 @@ export default function SeoSettingsPanel() {
               </div>
             </div>
             
-            <div className="p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                <span className="text-purple-400 font-bold">Pro Tip:</span> Ensure your primary keywords are included in both the title and the first 100 characters of your description for optimal indexing.
+            <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+              <p className="text-[11px] text-purple-800 leading-relaxed font-medium">
+                <span className="text-purple-600 font-bold uppercase tracking-wider text-[10px] mr-1 border-b border-purple-300 pb-0.5">Pro Tip</span> Ensure your primary keywords are included in both the title and the first 100 characters of your description for optimal indexing.
               </p>
             </div>
           </div>
@@ -226,12 +226,12 @@ export default function SeoSettingsPanel() {
 
 function HealthIndicator({ label, isValid, value }: { label: string, isValid: boolean, value: string }) {
   return (
-    <div className="flex justify-between items-center bg-black/40 p-2.5 rounded-lg border border-slate-800/50">
+    <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
       <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${isValid ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse'}`} />
-        <span className="text-xs text-slate-400">{label}</span>
+        <div className={`w-2 h-2 rounded-full ${isValid ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+        <span className="text-xs font-medium text-slate-600">{label}</span>
       </div>
-      <span className={`text-[10px] font-mono ${isValid ? 'text-emerald-500' : 'text-amber-500'}`}>{value}</span>
+      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${isValid ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>{value}</span>
     </div>
   );
 }
