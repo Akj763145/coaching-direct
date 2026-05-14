@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Calendar, BookOpen, Phone, Check, 
   ArrowRight, X, Sparkles, Target, Star,
-  Search, Bookmark, MessageSquare
+  Search, Bookmark, MessageSquare, Camera, Mail
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
@@ -24,9 +24,11 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
   // Form State
   const [formData, setFormData] = useState({
     full_name: user?.user_metadata?.full_name || '',
-    age: '',
-    education_level: 'highschool',
-    phone_number: ''
+    email: user?.email || '',
+    dob: '',
+    current_class: '',
+    phone_number: '',
+    photo_url: ''
   });
 
   useEffect(() => {
@@ -34,13 +36,24 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
     
     if (!profile || !profile.onboarding_completed) {
       setShowForm(true);
+      // Pre-fill if profile exists partially
+      if (profile) {
+        setFormData({
+          full_name: profile.full_name || user?.user_metadata?.full_name || '',
+          email: profile.email || user?.email || '',
+          dob: profile.dob || '',
+          current_class: profile.current_class || '',
+          phone_number: profile.phone_number || '',
+          photo_url: profile.photo_url || ''
+        });
+      }
     } else if (!profile.tour_completed) {
       setShowTour(true);
     } else {
       onComplete();
     }
     setLoading(false);
-  }, [userLoading, profile, onComplete]);
+  }, [userLoading, profile, onComplete, user]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +61,11 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
     try {
       await updateProfile({
         full_name: formData.full_name,
-        age: parseInt(formData.age),
-        education_level: formData.education_level,
+        email: formData.email,
+        dob: formData.dob,
+        current_class: formData.current_class,
         phone_number: formData.phone_number,
+        photo_url: formData.photo_url,
         onboarding_completed: true
       });
       
@@ -143,6 +158,38 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
               </p>
 
               <form onSubmit={handleSaveProfile} className="space-y-6">
+                {/* Photo Upload */}
+                <div className="flex flex-col items-center mb-8">
+                  <div className="relative group cursor-pointer">
+                    <div className="w-24 h-24 rounded-3xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
+                      {formData.photo_url ? (
+                        <img src={formData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      )}
+                    </div>
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFormData({ ...formData, photo_url: reader.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-500/20 border-2 border-white dark:border-slate-900 group-hover:scale-110 transition-transform">
+                      <ArrowRight className="w-4 h-4 transform rotate-[-45deg]" />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Upload Photo</span>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Full Name</label>
                   <div className="relative group">
@@ -160,17 +207,14 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Age</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Date of Birth</label>
                     <div className="relative group">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                       <input
                         required
-                        type="number"
-                        placeholder="16"
-                        min="10"
-                        max="99"
-                        value={formData.age}
-                        onChange={e => setFormData({ ...formData, age: e.target.value })}
+                        type="date"
+                        value={formData.dob}
+                        onChange={e => setFormData({ ...formData, dob: e.target.value })}
                         className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
                       />
                     </div>
@@ -192,37 +236,37 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Email (Optional)</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                      type="email"
+                      placeholder="email@example.com"
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Current Class</label>
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {[
-                      { id: 'highschool', label: 'High School' },
-                      { id: 'undergraduate', label: 'Under Graduate' },
-                      { id: 'postgraduate', label: 'Post Graduate' }
-                    ].map(level => (
-                      <label
-                        key={level.id}
-                        className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
-                          formData.education_level === level.id
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400'
-                            : 'bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="education"
-                          value={level.id}
-                          checked={formData.education_level === level.id}
-                          onChange={e => setFormData({ ...formData, education_level: e.target.value })}
-                          className="hidden"
-                        />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          formData.education_level === level.id ? 'border-blue-500 bg-blue-500' : 'border-slate-300 dark:border-slate-600'
-                        }`}>
-                          {formData.education_level === level.id && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <span className="font-semibold text-sm">{level.label}</span>
-                      </label>
-                    ))}
+                  <div className="relative group">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    <select
+                      required
+                      value={formData.current_class}
+                      onChange={e => setFormData({ ...formData, current_class: e.target.value })}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium appearance-none"
+                    >
+                      <option value="" disabled>Select Class</option>
+                      <option value="9">9th Class</option>
+                      <option value="10">10th Class</option>
+                      <option value="11">11th Class</option>
+                      <option value="12">12th Class</option>
+                      <option value="ug">Under Graduate</option>
+                      <option value="pg">Post Graduate</option>
+                    </select>
                   </div>
                 </div>
 

@@ -25,29 +25,38 @@ export function IdCardModal({
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadCard = async () => {
-    if (!frontCardRef.current || !backCardRef.current) return;
+    if (!frontCardRef.current || !backCardRef.current) {
+      console.error('Refs not found');
+      return;
+    }
+    
     setIsDownloading(true);
     try {
-      // Capture Front Side
-      const canvasFront = await html2canvas(frontCardRef.current, {
-        scale: 2, // 2x for quality (matches instruction)
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
+      // Small delay to ensure rendering is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Capture Back Side
-      const canvasBack = await html2canvas(backCardRef.current, {
+      const options = {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
-        logging: false
-      });
+        logging: false,
+        onclone: (clonedDoc: Document) => {
+          // Ensure elements are visible in clone
+          const front = clonedDoc.getElementById('pdf-id-card-front');
+          const back = clonedDoc.getElementById('pdf-id-card-back');
+          if (front) front.style.transform = 'none';
+          if (back) back.style.transform = 'none';
+        }
+      };
 
-      const imgDataFront = canvasFront.toDataURL('image/png');
-      const imgDataBack = canvasBack.toDataURL('image/png');
+      // Capture Front Side
+      const canvasFront = await html2canvas(frontCardRef.current, options);
+      // Capture Back Side
+      const canvasBack = await html2canvas(backCardRef.current, options);
+
+      const imgDataFront = canvasFront.toDataURL('image/png', 1.0);
+      const imgDataBack = canvasBack.toDataURL('image/png', 1.0);
       
-      // Create PDF - Landscape 800x450 px
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
@@ -55,15 +64,18 @@ export function IdCardModal({
       });
 
       // Page 1: Front
+      pdf.setPage(1);
       pdf.addImage(imgDataFront, 'PNG', 0, 0, 800, 450);
       
       // Page 2: Back
       pdf.addPage([800, 450], 'landscape');
+      pdf.setPage(2);
       pdf.addImage(imgDataBack, 'PNG', 0, 0, 800, 450);
 
-      pdf.save(`${studentName.replace(/\s+/g, '_')}_VidyaNation_ID.pdf`);
+      pdf.save(`${studentName.split(' ')[0]}_VidyaNation_ID.pdf`);
     } catch (err) {
-      console.error('Failed to generate PDF', err);
+      console.error('PDF Generation Error:', err);
+      alert('Error generating PDF. Please ensure all images are loaded.');
     } finally {
       setIsDownloading(false);
     }
@@ -109,6 +121,7 @@ export function IdCardModal({
                   paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
                   location="Motihari, Bihar"
                   studentEmail={enrollment.student_profiles?.email || 'student@vidyanation.online'}
+                  studentPhoto={enrollment.student_profiles?.photo_url}
                 />
                 <StudentIDCardBack 
                   ref={backCardRef}

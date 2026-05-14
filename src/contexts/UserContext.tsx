@@ -5,8 +5,12 @@ interface UserProfile {
   id: string;
   full_name: string | null;
   age: number | null;
+  dob: string | null;
   education_level: string | null;
+  current_class: string | null;
   phone_number: string | null;
+  email: string | null;
+  photo_url: string | null;
   onboarding_completed: boolean;
   tour_completed: boolean;
 }
@@ -55,8 +59,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       id: user.id, 
       full_name: null, 
       age: null, 
+      dob: null,
       education_level: null, 
+      current_class: null,
       phone_number: null, 
+      email: null,
+      photo_url: null,
       onboarding_completed: false, 
       tour_completed: false, 
       ...updates 
