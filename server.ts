@@ -1543,7 +1543,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
           created_at, 
           enrollment_date,
           razorpay_payment_id,
-          batches(
+          batches:batch_id(
             id,
             batch_name, 
             teacher_name, 

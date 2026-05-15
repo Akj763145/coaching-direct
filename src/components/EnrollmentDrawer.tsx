@@ -259,7 +259,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
               }
             });
             onClose();
-            navigate('/dashboard');
+            navigate('/dashboard', { state: { tab: 'batches' } });
           } catch(err: any) {
             console.error(err);
             toast.error(`Payment verification failed: ${err.message}`);

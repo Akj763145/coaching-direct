@@ -7,7 +7,7 @@ import {
   Bell, Search, Filter, Download, LogOut, Loader2,
   X, Phone, Check, ArrowRight, User
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useFavorites } from '../hooks/useFavorites';
 import { supabase } from '../lib/supabase';
@@ -16,6 +16,7 @@ import { IdCard } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, updateProfile, signOut: userSignOut } = useUser();
   const { favorites, isFavoriteInstitite, toggleFavoriteInstitute, toggleFavoriteBatch } = useFavorites();
   const [isSignOutLoading, setIsSignOutLoading] = React.useState(false);
@@ -70,6 +71,12 @@ export default function Dashboard() {
     }
   }, [profile]);
   const [activeTab, setActiveTab] = React.useState<'overview' | 'batches' | 'materials' | 'saved' | 'notices'>('overview');
+
+  React.useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
   const [compareList, setCompareList] = React.useState<string[]>([]);
   const [selectedIdCard, setSelectedIdCard] = React.useState<any>(null);
 
@@ -103,7 +110,7 @@ export default function Dashboard() {
       }
     }
     loadBatches();
-  }, [user]);
+  }, [user, location.key]);
 
   const [resources] = React.useState([
     { id: 1, title: 'Class 10 Math Formula Sheet', type: 'PDF', size: '2.4 MB', date: 'Oct 12, 2023' },
