@@ -711,7 +711,9 @@ app.get('/api/institute/enrollments', authenticateToken, requireRole('SUB_ADMIN'
           amount,
           batches!inner (batch_name, institute_id, fee_structure)
         `)
-        .eq('batches.institute_id', inst.id);
+        .eq('batches.institute_id', inst.id)
+        .order('created_at', { ascending: false })
+        .limit(200);
       
       if (error && (error.code === 'PGRST204' || error.code === '42703')) {
         // Fallback if amount column doesn't exist
@@ -723,7 +725,9 @@ app.get('/api/institute/enrollments', authenticateToken, requireRole('SUB_ADMIN'
             student_id,
             batches!inner (batch_name, institute_id, fee_structure)
           `)
-          .eq('batches.institute_id', inst.id);
+          .eq('batches.institute_id', inst.id)
+          .order('created_at', { ascending: false })
+          .limit(200);
         data = fallbackQuery.data;
         error = fallbackQuery.error;
       }
@@ -767,12 +771,30 @@ app.get('/api/institute/enrollments', authenticateToken, requireRole('SUB_ADMIN'
     const institute = db.prepare('SELECT id FROM institutes WHERE user_id = ?').get(userId) as any;
     if (!institute) return res.status(404).json({ error: 'Institute not found' });
     
-    const localData = db.prepare(`
-      SELECT e.id, e.created_at, e.razorpay_payment_id, e.student_id, e.amount, b.batch_name as name
-      FROM enrollments e
-      JOIN batches b ON e.batch_id = b.id
-      WHERE b.institute_id = ?
-    `).all(institute.id);
+    let localData;
+    try {
+      localData = db.prepare(`
+        SELECT e.id, e.created_at, e.razorpay_payment_id, e.student_id, e.amount, b.batch_name as name
+        FROM enrollments e
+        JOIN batches b ON e.batch_id = b.id
+        WHERE b.institute_id = ?
+        ORDER BY e.created_at DESC
+        LIMIT 200
+      `).all(institute.id);
+    } catch (e: any) {
+      if (e.message && e.message.includes('has no column named amount')) {
+        localData = db.prepare(`
+          SELECT e.id, e.created_at, e.razorpay_payment_id, e.student_id, b.batch_name as name
+          FROM enrollments e
+          JOIN batches b ON e.batch_id = b.id
+          WHERE b.institute_id = ?
+          ORDER BY e.created_at DESC
+          LIMIT 200
+        `).all(institute.id);
+      } else {
+        throw e;
+      }
+    }
     
     // In local sqlite we don't have student profiles
     const formatted = localData.map((d: any) => ({
@@ -798,7 +820,9 @@ app.get('/api/master/enrollments', authenticateToken, requireRole('MASTER'), asy
           student_id,
           amount,
           batches:batch_id (batch_name, institute_id, fee_structure, institutes (name))
-        `);
+        `)
+        .order('created_at', { ascending: false })
+        .limit(200);
       
       if (error && (error.code === 'PGRST204' || error.code === '42703')) {
         const fallbackQuery = await supabase
@@ -808,7 +832,9 @@ app.get('/api/master/enrollments', authenticateToken, requireRole('MASTER'), asy
             razorpay_payment_id,
             student_id,
             batches:batch_id (batch_name, institute_id, fee_structure, institutes (name))
-          `);
+          `)
+          .order('created_at', { ascending: false })
+          .limit(200);
         data = fallbackQuery.data;
         error = fallbackQuery.error;
       }
@@ -848,12 +874,30 @@ app.get('/api/master/enrollments', authenticateToken, requireRole('MASTER'), asy
       res.status(500).json({ error: err.message });
     }
   } else {
-    const localData = db.prepare(`
-      SELECT e.id, e.created_at, e.razorpay_payment_id, e.amount, b.batch_name as batch_name, i.name as institute_name
-      FROM enrollments e
-      JOIN batches b ON e.batch_id = b.id
-      JOIN institutes i ON b.institute_id = i.id
-    `).all();
+    let localData;
+    try {
+      localData = db.prepare(`
+        SELECT e.id, e.created_at, e.razorpay_payment_id, e.amount, e.student_id, b.batch_name as batch_name, i.name as institute_name
+        FROM enrollments e
+        JOIN batches b ON e.batch_id = b.id
+        JOIN institutes i ON b.institute_id = i.id
+        ORDER BY e.created_at DESC
+        LIMIT 200
+      `).all();
+    } catch (e: any) {
+      if (e.message && e.message.includes('has no column named amount')) {
+        localData = db.prepare(`
+          SELECT e.id, e.created_at, e.razorpay_payment_id, e.student_id, b.batch_name as batch_name, i.name as institute_name
+          FROM enrollments e
+          JOIN batches b ON e.batch_id = b.id
+          JOIN institutes i ON b.institute_id = i.id
+          ORDER BY e.created_at DESC
+          LIMIT 200
+        `).all();
+      } else {
+        throw e;
+      }
+    }
     
     const formatted = localData.map((d: any) => ({
       ...d,
