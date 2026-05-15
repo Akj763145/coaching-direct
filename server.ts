@@ -1537,7 +1537,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
 
   if (isSupabaseEnabled) {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('enrollments')
         .select(`
           id, 
@@ -1558,6 +1558,30 @@ app.get('/api/student/enrollments', async (req: any, res) => {
         .eq('student_id', userId)
         .eq('status', 'active');
       
+      if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+        const fallbackRes = await supabase
+          .from('enrollments')
+          .select(`
+            id, 
+            batch_id, 
+            created_at, 
+            razorpay_payment_id,
+            batches:batch_id(
+              id,
+              batch_name, 
+              teacher_name, 
+              mode, 
+              next_class_time, 
+              zoom_link,
+              institutes(name, logo)
+            )
+          `)
+          .eq('student_id', userId)
+          .eq('status', 'active');
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
+      
       const { data: profileData } = await supabase
         .from('student_profiles')
         .select('id, full_name, phone_number, email, dob, age, photo_url, current_class')
@@ -1570,26 +1594,42 @@ app.get('/api/student/enrollments', async (req: any, res) => {
           // Table missing, fallback to sqlite
           console.warn('Supabase enrollments missing on select, fallback to sqlite');
           const localData = db.prepare(`
-            SELECT e.id, e.batch_id, e.created_at, e.razorpay_payment_id,
-                   b.batch_name as name, b.teacher_name, b.mode, b.next_class_time, b.zoom_link
-            FROM enrollments e
-            JOIN batches b ON e.batch_id = b.id
-            WHERE e.student_id = ? AND e.status = 'active'
+            SELECT id, batch_id, created_at, razorpay_payment_id
+            FROM enrollments
+            WHERE student_id = ? AND status = 'active'
           `).all(userId);
           
-          const formatted = localData.map((d: any) => ({
-            id: d.id,
-            batch_id: d.batch_id,
-            created_at: d.created_at,
-            razorpay_payment_id: d.razorpay_payment_id,
-            batches: {
-              name: d.name,
-              teacher_name: d.teacher_name,
-              mode: d.mode,
-              next_class_time: d.next_class_time,
-              zoom_link: d.zoom_link
-            }
-          }));
+          let formatted: any[] = [];
+          if (localData.length > 0) {
+            const batchIds = localData.map((d: any) => d.batch_id);
+            const { data: batchesData } = await supabase
+              .from('batches')
+              .select('id, batch_name, teacher_name, mode, next_class_time, zoom_link, institutes(name, logo)')
+              .in('id', batchIds);
+              
+            const batchesMap = new Map((batchesData || []).map((b: any) => [b.id, b]));
+            
+            formatted = localData.map((d: any) => {
+              const b = batchesMap.get(d.batch_id) || {} as any;
+              return {
+                id: d.id,
+                batch_id: d.batch_id,
+                created_at: d.created_at,
+                razorpay_payment_id: d.razorpay_payment_id,
+                batches: {
+                  name: b.batch_name || 'Unknown Batch',
+                  teacher_name: b.teacher_name,
+                  mode: b.mode,
+                  next_class_time: b.next_class_time,
+                  zoom_link: b.zoom_link,
+                  institutes: b.institutes || null
+                }
+              };
+            });
+          }
+          
+          const profileFallback = profileData || {};
+          formatted = formatted.map(f => ({ ...f, student_profiles: profileFallback }));
           return res.json(formatted);
         }
         throw error;
@@ -1665,12 +1705,20 @@ app.post('/api/verify-enrollment', async (req, res) => {
       if (error) {
         if (error.code === 'PGRST204' || error.code === '42703') { // Column not found error
           console.warn('Supabase enrollments table missing amount column, inserting without amount.', error);
-          await supabase.from('enrollments').insert({
+          const fallbackRes = await supabase.from('enrollments').insert({
             student_id,
             batch_id,
             razorpay_payment_id,
             status: 'active'
           });
+          if (fallbackRes.error) {
+            console.error('Supabase fallback insert error:', fallbackRes.error);
+            if (fallbackRes.error.code === '42P01') {
+              db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
+            } else {
+              throw fallbackRes.error;
+            }
+          }
         }
         else if (error.code === '42P01') {
           // Table doesn't exist
