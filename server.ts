@@ -937,7 +937,20 @@ app.put('/api/institute/batches/:id', authenticateToken, requireRole('SUB_ADMIN'
   const batchId = req.params.id;
   const { faculty_ids, curriculum, ...otherUpdates } = req.body;
   
-  const updates = { ...otherUpdates };
+  const allowedFields = [
+    'category_id', 'teacher_name', 'teacher_image', 'subject', 'batch_name', 
+    'batch_timing', 'batch_duration', 'start_date', 'fee_structure', 'status', 
+    'mode', 'medium', 'board_target', 'total_seats', 'available_seats', 
+    'syllabus_pdf', 'teacher_bio'
+  ];
+  
+  const updates: any = {};
+  for (const field of allowedFields) {
+    if (otherUpdates[field] !== undefined) {
+      updates[field] = otherUpdates[field];
+    }
+  }
+
   if (curriculum) {
     updates.curriculum = typeof curriculum === 'string' ? curriculum : JSON.stringify(curriculum);
   }
@@ -1485,21 +1498,63 @@ app.patch('/api/institute/reviews/:id/flag', authenticateToken, async (req: any,
   }
 });
 
-app.post('/api/create-razorpay-order', async (req, res) => {
+app.post('/api/create-razorpay-order', authenticateToken, async (req: any, res) => {
   try {
-    const { amount, batchId } = req.body;
-    if (amount === undefined || amount === null) {
-      return res.status(400).json({ error: 'Amount is required' });
-    }
+    const studentId = req.user.id;
+    const { batchId, couponCode } = req.body;
     
-    if (amount === 0) {
-      return res.status(400).json({ error: 'Amount must be greater than 0' });
+    if (!batchId) {
+      return res.status(400).json({ error: 'batchId is required' });
+    }
+
+    let basePrice = 0;
+    if (isSupabaseEnabled) {
+      const { data: batch } = await supabase.from('batches').select('fee_structure').eq('id', batchId).single();
+      if (batch && batch.fee_structure) {
+        basePrice = Number(batch.fee_structure.replace(/[^0-9]/g, ''));
+      }
+    } else {
+      const batch = db.prepare('SELECT fee_structure FROM batches WHERE id = ?').get(batchId) as any;
+      if (batch && batch.fee_structure) {
+        basePrice = Number(batch.fee_structure.replace(/[^0-9]/g, ''));
+      }
+    }
+
+    if (isNaN(basePrice) || basePrice < 0) {
+       basePrice = 0; // Default or free if not parsable
+    }
+
+    let discountAmount = 0;
+    if (couponCode) {
+      const formattedCode = String(couponCode).trim().toUpperCase();
+      const validCodes: Record<string, { type: 'percentage' | 'flat', value: number }> = {
+        'DIWALI20': { type: 'percentage', value: 20 },
+        'FLAT500': { type: 'flat', value: 500 }
+      };
+      const code = validCodes[formattedCode];
+      if (code) {
+        if (code.type === 'percentage') {
+          discountAmount = (basePrice * code.value) / 100;
+        } else {
+          discountAmount = code.value;
+        }
+      }
+    }
+
+    let finalPrice = Math.max(0, basePrice - discountAmount);
+    
+    if (finalPrice <= 0) {
+      return res.status(400).json({ error: 'Amount must be greater than 0. Free batches bypass razorpay.' });
     }
 
     const options = {
-      amount: amount * 100, // convert INR to paise
+      amount: Math.round(finalPrice * 100), // convert INR to paise
       currency: "INR",
-      receipt: `rcpt_${batchId || 'default'}`.substring(0, 40),
+      receipt: `rcpt_${batchId}`.substring(0, 40),
+      notes: {
+        batch_id: String(batchId),
+        student_id: String(studentId)
+      }
     };
 
     const order = await razorpay.orders.create(options);
@@ -1679,9 +1734,10 @@ app.get('/api/student/enrollments', async (req: any, res) => {
   }
 });
 
-app.post('/api/verify-enrollment', async (req, res) => {
+app.post('/api/verify-enrollment', authenticateToken, async (req: any, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, student_id, batch_id, amount } = req.body;
+    const studentId = req.user.id;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, batch_id } = req.body;
 
     const secret = process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret';
     const generated_signature = crypto
@@ -1693,10 +1749,24 @@ app.post('/api/verify-enrollment', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid Payment Signature. Enrollment failed.' });
     }
 
+    // Verify order metadata from Razorpay servers
+    let amount = 0;
+    try {
+      const order = await razorpay.orders.fetch(razorpay_order_id);
+      if (!order.notes || order.notes.batch_id !== String(batch_id) || order.notes.student_id !== String(studentId)) {
+        console.error("Order metadata mismatch spoofing attempt detected");
+        return res.status(400).json({ success: false, error: 'Order metadata verification failed' });
+      }
+      amount = Number(order.amount) / 100; // stored in INR
+    } catch (e: any) {
+      console.error("Razorpay order fetch failed:", e);
+      return res.status(500).json({ success: false, error: 'Payment verification failed at provider' });
+    }
+
     if (isSupabaseEnabled) {
       // Use supabase
       const { error } = await supabase.from('enrollments').insert({
-        student_id,
+        student_id: studentId,
         batch_id,
         razorpay_payment_id,
         amount,
@@ -1706,7 +1776,7 @@ app.post('/api/verify-enrollment', async (req, res) => {
         if (error.code === 'PGRST204' || error.code === '42703') { // Column not found error
           console.warn('Supabase enrollments table missing amount column, inserting without amount.', error);
           const fallbackRes = await supabase.from('enrollments').insert({
-            student_id,
+            student_id: studentId,
             batch_id,
             razorpay_payment_id,
             status: 'active'
@@ -1714,7 +1784,7 @@ app.post('/api/verify-enrollment', async (req, res) => {
           if (fallbackRes.error) {
             console.error('Supabase fallback insert error:', fallbackRes.error);
             if (fallbackRes.error.code === '42P01') {
-              db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
+              db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), studentId, batch_id, razorpay_payment_id, amount, 'active');
             } else {
               throw fallbackRes.error;
             }
@@ -1723,7 +1793,7 @@ app.post('/api/verify-enrollment', async (req, res) => {
         else if (error.code === '42P01') {
           // Table doesn't exist
           console.warn('Supabase enrollments table does not exist, falling back to SQLite.', error);
-          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
+          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), studentId, batch_id, razorpay_payment_id, amount, 'active');
         } else {
           throw error;
         }
@@ -1731,10 +1801,10 @@ app.post('/api/verify-enrollment', async (req, res) => {
     } else {
       // Use SQLite
       try {
-        db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
+        db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), studentId, batch_id, razorpay_payment_id, amount, 'active');
       } catch (e: any) {
         if (e.message && e.message.includes('has no column named amount')) {
-          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, status) VALUES (?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, 'active');
+          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, status) VALUES (?, ?, ?, ?, ?)`).run(crypto.randomUUID(), studentId, batch_id, razorpay_payment_id, 'active');
         } else {
           throw e;
         }
