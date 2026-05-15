@@ -204,11 +204,13 @@ if (isSupabaseEnabled) {
       UNIQUE(user_id, institute_id, batch_id)
     );
     CREATE TABLE IF NOT EXISTS enrollments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT PRIMARY KEY,
       student_id TEXT NOT NULL,
-      batch_id INTEGER NOT NULL,
+      batch_id TEXT NOT NULL,
+      razorpay_order_id TEXT,
       razorpay_payment_id TEXT,
-      status TEXT DEFAULT 'active',
+      amount REAL,
+      status TEXT DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -1673,7 +1675,7 @@ app.post('/api/verify-enrollment', async (req, res) => {
         else if (error.code === '42P01') {
           // Table doesn't exist
           console.warn('Supabase enrollments table does not exist, falling back to SQLite.', error);
-          db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, amount, 'active');
+          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
         } else {
           throw error;
         }
@@ -1681,10 +1683,10 @@ app.post('/api/verify-enrollment', async (req, res) => {
     } else {
       // Use SQLite
       try {
-        db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, amount, 'active');
+        db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, amount, 'active');
       } catch (e: any) {
         if (e.message && e.message.includes('has no column named amount')) {
-          db.prepare(`INSERT INTO enrollments (student_id, batch_id, razorpay_payment_id, status) VALUES (?, ?, ?, ?)`).run(student_id, batch_id, razorpay_payment_id, 'active');
+          db.prepare(`INSERT INTO enrollments (id, student_id, batch_id, razorpay_payment_id, status) VALUES (?, ?, ?, ?, ?)`).run(crypto.randomUUID(), student_id, batch_id, razorpay_payment_id, 'active');
         } else {
           throw e;
         }
