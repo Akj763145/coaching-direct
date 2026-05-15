@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply, LogOut, IdCard } from 'lucide-react';
+import { Trash2, Plus, MapPin, Download, Save, Grid, FileText, Eye, CheckSquare, Bookmark, Users, Bell, BookOpen, AlertCircle, Star, Calendar, Edit, Phone, Globe, Mail, MessageSquare, Flag, Reply, LogOut, IdCard, Image as ImageIcon } from 'lucide-react';
 import { IdCardModal } from '../../components/IdCardModal';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -551,10 +551,33 @@ export default function SubAdminDashboard() {
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Institute Name</label>
                   <input type="text" value={profile.name || ''} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Logo URL</label>
-                  <input type="text" value={profile.logo || ''} onChange={e => setProfile({...profile, logo: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" placeholder="https://..." />
+              <div className="space-y-1.5 flex flex-col pt-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Logo</label>
+                <div className="relative group cursor-pointer w-16 h-16">
+                  <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
+                    {profile.logo ? (
+                      <img src={profile.logo} alt="Logo" className="w-full h-full object-contain bg-white" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    )}
+                  </div>
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setProfile({ ...profile, logo: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
                 </div>
+              </div>
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Address</label>
                   <textarea value={profile.address || ''} onChange={e => setProfile({...profile, address: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow dark:text-white" rows={2}></textarea>
@@ -1345,8 +1368,31 @@ export default function SubAdminDashboard() {
                     <input required type="text" value={facultyForm.subject} onChange={e => setFacultyForm({...facultyForm, subject: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="Physics HOD" />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Image URL (Optional)</label>
-                    <input type="text" value={facultyForm.image_url} onChange={e => setFacultyForm({...facultyForm, image_url: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 dark:text-white" placeholder="https://..." />
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Faculty Photo</label>
+                    <div className="relative group cursor-pointer w-16 h-16">
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
+                        {facultyForm.image_url ? (
+                          <img src={facultyForm.image_url} alt="Photo" className="w-full h-full object-cover bg-white" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                        )}
+                      </div>
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFacultyForm({ ...facultyForm, image_url: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>

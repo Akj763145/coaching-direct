@@ -347,8 +347,33 @@ export default function MasterDashboard() {
                       <input required type="text" className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all text-[15px] font-medium placeholder:text-slate-300" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Acme Classes" />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Logo Link</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all text-[15px] font-medium placeholder:text-slate-300" value={logo} onChange={e => setLogo(e.target.value)} placeholder="https://..." />
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Institute Logo</label>
+                      <div className="relative group cursor-pointer w-20 h-20">
+                        <div className="w-20 h-20 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
+                          {logo ? (
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain bg-white" />
+                          ) : (
+                            <div className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            </div>
+                          )}
+                        </div>
+                        <input 
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setLogo(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Category</label>
