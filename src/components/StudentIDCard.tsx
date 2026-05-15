@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { Phone, Mail, Globe, MapPin, Hash, Calendar, CheckCircle2 } from 'lucide-react';
+import { Phone, Mail, Globe, Hash, Calendar, CheckCircle2, MapPin, User } from 'lucide-react';
 import { AuthenticityStamp } from './AuthenticityStamp';
 
 interface StudentIDCardProps {
@@ -12,7 +12,7 @@ interface StudentIDCardProps {
   instituteLogo?: string;
   paymentId?: string;
   studentEmail?: string;
-  location?: string;
+  age?: number | string;
   validityDate?: string;
   studentPhoto?: string;
 }
@@ -27,8 +27,8 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
     instituteName = "VidyaNation Academy", 
     instituteLogo,
     paymentId = "VN-00000000",
-    studentEmail = "student@vidyanation.online",
-    location = "Motihari, Bihar",
+    studentEmail,
+    age,
     validityDate = "Dec 2026",
     studentPhoto
   }, ref) => {
@@ -74,7 +74,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 </div>
               )}
             </div>
-            <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight max-w-[300px] leading-tight">
+            <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight max-w-[300px] leading-tight text-right">
               {instituteName}
             </h1>
           </div>
@@ -92,13 +92,21 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 <p className="text-xl font-black text-[#0f172a] leading-tight">{studentName}</p>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin size={14} className="text-[#2563eb]" />
-                <span className="text-[13px] font-medium text-[#475569]">{location}</span>
+                <Phone size={14} className="text-[#2563eb]" />
+                <span className="text-[13px] font-medium text-[#475569]">{studentPhone || 'N/A'}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Hash size={14} className="text-[#2563eb]" />
-                <span className="text-[13px] font-bold text-[#334155] bg-[#f8fafc] px-2 py-1 rounded-md">{paymentId}</span>
-              </div>
+              {studentEmail && (
+                <div className="flex items-center gap-2">
+                  <Mail size={14} className="text-[#2563eb]" />
+                  <span className="text-[13px] font-medium text-[#475569] truncate" title={studentEmail}>{studentEmail}</span>
+                </div>
+              )}
+              {age && (
+                <div className="flex items-center gap-2">
+                  <User size={14} className="text-[#2563eb]" />
+                  <span className="text-[13px] font-medium text-[#475569]">{age} Years Old</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -129,8 +137,12 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 <p className="text-lg font-black text-[#0f172a] leading-tight">{batchName}</p>
               </div>
               <div className="flex items-center gap-2">
+                <Hash size={14} className="text-[#2563eb]" />
+                <span className="text-[13px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md">{paymentId}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-[#2563eb]" />
-                <span className="text-[13px] font-medium text-[#475569]">Valid Till: <span className="font-bold text-[#0f172a]">{validityDate}</span></span>
+                <span className="text-[13px] font-medium text-[#475569]">Issued: <span className="font-bold text-[#0f172a]">{enrollmentDate}</span></span>
               </div>
               
               <div className="pt-4 relative">
@@ -145,26 +157,10 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
         </div>
 
         {/* FOOTER */}
-        <div className="h-16 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between px-16">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#2563eb] flex items-center justify-center text-white transition-transform hover:scale-110">
-              <Phone size={14} />
-            </div>
-            <span className="text-sm font-bold text-[#334155] tracking-tight">{studentPhone}</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#2563eb] flex items-center justify-center text-white transition-transform hover:scale-110">
-              <Mail size={14} />
-            </div>
-            <span className="text-sm font-bold text-[#334155] tracking-tight">{studentEmail}</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#2563eb] flex items-center justify-center text-white transition-transform hover:scale-110">
-              <Globe size={14} />
-            </div>
-            <span className="text-sm font-bold text-[#334155] tracking-tight">vidyanation.online</span>
+        <div className="h-16 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-center px-16">
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-bold text-[#334155] tracking-tight uppercase">vidyanation.online</span>
+            <span className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-widest mt-0.5">Verified Student Asset</span>
           </div>
         </div>
 

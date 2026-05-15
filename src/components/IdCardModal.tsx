@@ -119,8 +119,13 @@ export function IdCardModal({
                   instituteName={instituteName || enrollment.batches?.institutes?.name || 'Ritik Sir\'s Academy'}
                   instituteLogo={enrollment.batches?.institutes?.logo}
                   paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
-                  location="Motihari, Bihar"
-                  studentEmail={enrollment.student_profiles?.email || 'student@vidyanation.online'}
+                  age={
+                    enrollment.student_profiles?.age 
+                    || (enrollment.student_profiles?.dob 
+                        ? Math.floor((new Date().getTime() - new Date(enrollment.student_profiles.dob).getTime()) / 3.15576e+10)
+                        : undefined)
+                  }
+                  studentEmail={enrollment.student_profiles?.email || undefined}
                   studentPhoto={enrollment.student_profiles?.photo_url}
                 />
                 <StudentIDCardBack 
