@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface OnboardingManagerProps {
   user: any;
@@ -57,6 +58,13 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting onboarding form...', formData);
+    
+    if (!formData.full_name || !formData.dob || !formData.phone_number || !formData.current_class) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     setSaving(true);
     try {
       await updateProfile({
@@ -69,10 +77,12 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
         onboarding_completed: true
       });
       
+      toast.success('Profile updated successfully!');
       setShowForm(false);
       setShowTour(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving profile:', err);
+      toast.error('Failed to save profile: ' + (err.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

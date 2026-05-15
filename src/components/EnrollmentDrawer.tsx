@@ -133,7 +133,10 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileData.phone_number.trim() || !profileData.full_name.trim() || !profileData.dob.trim() || !profileData.current_class.trim()) return;
+    if (!profileData.phone_number.trim() || !profileData.full_name.trim() || !profileData.dob.trim() || !profileData.current_class.trim()) {
+      toast.error('Please fill in all required fields (Name, Phone, DOB, and Class)');
+      return;
+    }
 
     setIsSavingProfile(true);
     try {
