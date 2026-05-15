@@ -32,8 +32,14 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // Profile Form state
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [educationLevel, setEducationLevel] = useState('High School');
+  const [profileData, setProfileData] = useState({
+    full_name: '',
+    phone_number: '',
+    email: '',
+    dob: '',
+    current_class: '',
+    photo_url: ''
+  });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -73,16 +79,32 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
         setIsAuthenticated(true);
         const { data: profile } = await supabase
           .from('student_profiles')
-          .select('phone_number, education_level')
+          .select('full_name, phone_number, email, dob, current_class, photo_url')
           .eq('id', session.user.id)
           .single();
           
-        if (profile?.phone_number && profile?.education_level) {
+        const isComplete = profile?.full_name && profile?.phone_number && profile?.dob && profile?.current_class;
+        
+        if (isComplete) {
           setIsProfileComplete(true);
+          setProfileData({
+            full_name: profile.full_name || '',
+            phone_number: profile.phone_number || '',
+            email: profile.email || '',
+            dob: profile.dob || '',
+            current_class: profile.current_class || '',
+            photo_url: profile.photo_url || ''
+          });
         } else {
           setIsProfileComplete(false);
-          if (profile?.phone_number) setPhoneNumber(profile.phone_number);
-          if (profile?.education_level) setEducationLevel(profile.education_level);
+          setProfileData({
+            full_name: profile?.full_name || session.user.user_metadata?.full_name || '',
+            phone_number: profile?.phone_number || '',
+            email: profile?.email || session.user.email || '',
+            dob: profile?.dob || '',
+            current_class: profile?.current_class || '',
+            photo_url: profile?.photo_url || session.user.user_metadata?.avatar_url || ''
+          });
         }
       } else {
         setIsAuthenticated(false);
@@ -111,7 +133,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber.trim() || !educationLevel.trim()) return;
+    if (!profileData.phone_number.trim() || !profileData.full_name.trim() || !profileData.dob.trim() || !profileData.current_class.trim()) return;
 
     setIsSavingProfile(true);
     try {
@@ -120,8 +142,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
 
       const { error } = await supabase.from('student_profiles').upsert({
         id: session.user.id,
-        phone_number: phoneNumber,
-        education_level: educationLevel,
+        full_name: profileData.full_name,
+        phone_number: profileData.phone_number,
+        email: profileData.email,
+        dob: profileData.dob,
+        current_class: profileData.current_class,
+        photo_url: profileData.photo_url,
         updated_at: new Date().toISOString(),
       });
 
@@ -234,9 +260,9 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
           }
         },
         prefill: {
-          name: session?.user?.user_metadata?.full_name || "Student Name",
-          email: session?.user?.email || "student@example.com",
-          contact: phoneNumber || "9999999999"
+          name: profileData.full_name || session?.user?.user_metadata?.full_name || "Student Name",
+          email: profileData.email || session?.user?.email || "student@example.com",
+          contact: profileData.phone_number || "9999999999"
         },
         theme: {
           color: "#2563eb"
@@ -320,6 +346,46 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                     </p>
                     
                     <form onSubmit={handleSaveProfile} className="space-y-5">
+                      {/* Photo Upload */}
+                      <div className="flex flex-col items-center mb-6">
+                        <div className="relative group cursor-pointer w-24 h-24 rounded-full overflow-hidden bg-neutral-100 border-2 border-dashed border-neutral-300 hover:border-blue-500 transition-colors flex items-center justify-center">
+                          {profileData.photo_url ? (
+                            <img src={profileData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-neutral-400 font-medium text-xs text-center px-2">Upload Photo</div>
+                          )}
+                          <input 
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  setProfileData({ ...profileData, photo_url: reader.result as string });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={profileData.full_name}
+                          onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                          placeholder="John Doe"
+                          className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
+                        />
+                      </div>
+
                       <div>
                         <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
                           Phone Number
@@ -327,32 +393,64 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                         <input
                           type="tel"
                           required
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          value={profileData.phone_number}
+                          onChange={(e) => setProfileData({ ...profileData, phone_number: e.target.value })}
                           placeholder="+91"
                           className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
                         />
                       </div>
-                      
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                            Date of Birth
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={profileData.dob}
+                            onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
+                            className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                            Class Level
+                          </label>
+                          <select
+                            required
+                            value={profileData.current_class}
+                            onChange={(e) => setProfileData({ ...profileData, current_class: e.target.value })}
+                            className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium appearance-none cursor-pointer"
+                          >
+                            <option value="" disabled>Select Class</option>
+                            <option value="9">9th Class</option>
+                            <option value="10">10th Class</option>
+                            <option value="11">11th Class</option>
+                            <option value="12">12th Class</option>
+                            <option value="ug">Under Graduate</option>
+                            <option value="pg">Post Graduate</option>
+                          </select>
+                        </div>
+                      </div>
+
                       <div>
                         <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                          Class Level
+                          Email (Optional)
                         </label>
-                        <select
-                          required
-                          value={educationLevel}
-                          onChange={(e) => setEducationLevel(e.target.value)}
-                          className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium appearance-none cursor-pointer"
-                        >
-                          <option value="High School">High School</option>
-                          <option value="Under Grad">Under Grad</option>
-                          <option value="Post Grad">Post Grad</option>
-                        </select>
+                        <input
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                          placeholder="email@example.com"
+                          className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium"
+                        />
                       </div>
                       
                       <button
                         type="submit"
-                        disabled={isSavingProfile || !phoneNumber.trim()}
+                        disabled={isSavingProfile || !profileData.phone_number.trim() || !profileData.full_name.trim() || !profileData.dob.trim() || !profileData.current_class.trim()}
                         className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 dark:shadow-blue-900/20 transition-all flex items-center justify-center gap-2 mt-8 disabled:opacity-75 disabled:active:scale-100"
                       >
                         {isSavingProfile ? (
