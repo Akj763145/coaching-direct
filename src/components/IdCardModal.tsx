@@ -11,13 +11,15 @@ interface IdCardModalProps {
   enrollment: any;
   studentName: string;
   studentPhone: string;
+  studentPhoto?: string;
   classNameLabel?: string;
   instituteName?: string;
 }
 
 export function IdCardModal({ 
   isOpen, onClose, enrollment, 
-  studentName, studentPhone, classNameLabel, 
+  studentName, studentPhone, studentPhoto,
+  classNameLabel, 
   instituteName 
 }: IdCardModalProps) {
   const frontCardRef = useRef<HTMLDivElement>(null);
@@ -126,7 +128,7 @@ export function IdCardModal({
                         : undefined)
                   }
                   studentEmail={enrollment.student_profiles?.email || undefined}
-                  studentPhoto={enrollment.student_profiles?.photo_url}
+                  studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
                 />
                 <StudentIDCardBack 
                   ref={backCardRef}

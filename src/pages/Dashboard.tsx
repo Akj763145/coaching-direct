@@ -751,13 +751,14 @@ export default function Dashboard() {
         isOpen={!!selectedIdCard}
         onClose={() => setSelectedIdCard(null)}
         enrollment={selectedIdCard}
-        studentName={profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Ayush'}
-        studentPhone={profile?.phone_number || 'N/A'}
-        classNameLabel={profile?.education_level 
-                      ? profile.education_level === 'highschool' ? 'High School' 
-                      : profile.education_level === 'undergraduate' ? 'Under Graduate' 
-                      : 'Post Graduate'
-                      : user?.user_metadata?.class || 'Class 10 (CBSE)'}
+        studentName={selectedIdCard?.student_profiles?.full_name || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Ayush'}
+        studentPhone={selectedIdCard?.student_profiles?.phone_number || profile?.phone_number || 'N/A'}
+        studentPhoto={selectedIdCard?.student_profiles?.photo_url || profile?.photo_url || undefined}
+        classNameLabel={selectedIdCard?.student_profiles?.current_class 
+                      || profile?.current_class 
+                      || profile?.education_level 
+                      || user?.user_metadata?.class 
+                      || 'Class 10 (CBSE)'}
       />
     </main>
   );

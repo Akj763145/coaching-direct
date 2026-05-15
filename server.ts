@@ -725,7 +725,7 @@ app.get('/api/institute/enrollments', authenticateToken, requireRole('SUB_ADMIN'
       if (studentIds.length > 0) {
         const { data: profiles } = await supabase
           .from('student_profiles')
-          .select('id, full_name, phone_number')
+          .select('id, full_name, phone_number, photo_url, current_class, education_level')
           .in('id', studentIds);
         
         if (profiles) {
@@ -810,7 +810,7 @@ app.get('/api/master/enrollments', authenticateToken, requireRole('MASTER'), asy
       if (studentIds.length > 0) {
         const { data: profiles } = await supabase
           .from('student_profiles')
-          .select('id, full_name, phone_number')
+          .select('id, full_name, phone_number, photo_url, current_class, education_level')
           .in('id', studentIds);
         
         if (profiles) {
@@ -1537,9 +1537,30 @@ app.get('/api/student/enrollments', async (req: any, res) => {
     try {
       const { data, error } = await supabase
         .from('enrollments')
-        .select('id, batch_id, created_at, batches(batch_name, teacher_name, mode, next_class_time, zoom_link)')
+        .select(`
+          id, 
+          batch_id, 
+          created_at, 
+          enrollment_date,
+          razorpay_payment_id,
+          batches(
+            id,
+            batch_name, 
+            teacher_name, 
+            mode, 
+            next_class_time, 
+            zoom_link,
+            institutes(name, logo)
+          )
+        `)
         .eq('student_id', userId)
         .eq('status', 'active');
+      
+      const { data: profileData } = await supabase
+        .from('student_profiles')
+        .select('id, full_name, phone_number, email, dob, age, photo_url, current_class')
+        .eq('id', userId)
+        .single();
       
       if (error) {
         console.error('Supabase fetch enrollments error:', error);
@@ -1547,7 +1568,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
           // Table missing, fallback to sqlite
           console.warn('Supabase enrollments missing on select, fallback to sqlite');
           const localData = db.prepare(`
-            SELECT e.id, e.batch_id, e.created_at,
+            SELECT e.id, e.batch_id, e.created_at, e.razorpay_payment_id,
                    b.batch_name as name, b.teacher_name, b.mode, b.next_class_time, b.zoom_link
             FROM enrollments e
             JOIN batches b ON e.batch_id = b.id
@@ -1558,6 +1579,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
             id: d.id,
             batch_id: d.batch_id,
             created_at: d.created_at,
+            razorpay_payment_id: d.razorpay_payment_id,
             batches: {
               name: d.name,
               teacher_name: d.teacher_name,
@@ -1573,6 +1595,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
       
       const formattedData = (data || []).map((item: any) => ({
         ...item,
+        student_profiles: profileData || {},
         batches: {
           ...item.batches,
           name: item.batches?.batch_name || 'Unnamed Batch'
@@ -1586,7 +1609,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
   } else {
     try {
       const localData = db.prepare(`
-        SELECT e.id, e.batch_id, e.created_at,
+        SELECT e.id, e.batch_id, e.created_at, e.razorpay_payment_id,
                b.batch_name as name, b.teacher_name, b.mode, b.next_class_time, b.zoom_link
         FROM enrollments e
         JOIN batches b ON e.batch_id = b.id
@@ -1597,6 +1620,7 @@ app.get('/api/student/enrollments', async (req: any, res) => {
         id: d.id,
         batch_id: d.batch_id,
         created_at: d.created_at,
+        razorpay_payment_id: d.razorpay_payment_id,
         batches: {
           name: d.name,
           teacher_name: d.teacher_name,

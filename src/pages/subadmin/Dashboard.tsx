@@ -1656,6 +1656,7 @@ export default function SubAdminDashboard() {
         enrollment={selectedIdCard}
         studentName={selectedIdCard?.student_profiles?.full_name || 'Anonymous Student'}
         studentPhone={selectedIdCard?.student_profiles?.phone_number || 'N/A'}
+        studentPhoto={selectedIdCard?.student_profiles?.photo_url || undefined}
         classNameLabel={selectedIdCard?.student_profiles?.education_level || 'Student'}
         instituteName={profile?.name || 'Coaching Direct'}
       />

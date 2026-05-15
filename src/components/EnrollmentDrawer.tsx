@@ -6,6 +6,7 @@ import { createRazorpayOrder } from '../actions/payment';
 import { verifyAndEnroll } from '../actions/enrollment';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { useUser } from '../contexts/UserContext';
 
 interface EnrollmentDrawerProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface EnrollmentDrawerProps {
 
 export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: EnrollmentDrawerProps) {
   const navigate = useNavigate();
+  const { refreshProfile } = useUser();
   const [couponCode, setCouponCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponStatus, setCouponStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -155,6 +157,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       });
 
       if (error) throw error;
+      await refreshProfile();
       setIsProfileComplete(true);
     } catch (error: any) {
       toast.error(`Failed to save profile: ${error.message}`);
