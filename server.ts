@@ -255,7 +255,7 @@ if (isSupabaseEnabled) {
 }
 
 // Authentication Middleware
-const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -265,14 +265,26 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
     return;
   }
 
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      console.error('❌ JWT Verify Error:', err.message);
-      res.status(403).json({ error: 'Forbidden: Invalid token' });
-      return;
+  jwt.verify(token, SECRET_KEY, async (err, user) => {
+    if (!err && user) {
+      (req as any).user = user;
+      return next();
     }
-    (req as any).user = user;
-    next();
+
+    if (isSupabaseEnabled) {
+      try {
+        const { data, error } = await supabase.auth.getUser(token);
+        if (data && data.user && !error) {
+          (req as any).user = { id: data.user.id, email: data.user.email, role: 'STUDENT' };
+          return next();
+        }
+      } catch (e) {
+        console.error('Supabase token verification failed', e);
+      }
+    }
+
+    console.error('❌ JWT Verify Error:', err?.message || 'Invalid token');
+    res.status(403).json({ error: 'Forbidden: Invalid token' });
   });
 };
 

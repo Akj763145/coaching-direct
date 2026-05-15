@@ -232,6 +232,12 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       const token = session?.access_token || localStorage.getItem('token') || undefined;
+
+      if (!token) {
+        toast.error('Please login to continue payment');
+        navigate('/user/login');
+        return;
+      }
       
       const order = await createRazorpayOrder(finalPrice, batchDetails.id, couponCode, token);
       
