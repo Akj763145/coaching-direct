@@ -1,9 +1,14 @@
-export async function verifyAndEnroll(razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, student_id: string, batch_id: string, amount: number) {
+export async function verifyAndEnroll(razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, student_id: string, batch_id: string, amount: number, token?: string) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch('/api/verify-enrollment', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       razorpay_order_id,
       razorpay_payment_id,

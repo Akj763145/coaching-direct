@@ -1,10 +1,15 @@
-export async function createRazorpayOrder(amount: number, batchId: string) {
+export async function createRazorpayOrder(amount: number, batchId: string, couponCode?: string, token?: string) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch('/api/create-razorpay-order', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ amount, batchId }),
+    headers,
+    body: JSON.stringify({ amount, batchId, couponCode }),
   });
 
   if (!response.ok) {

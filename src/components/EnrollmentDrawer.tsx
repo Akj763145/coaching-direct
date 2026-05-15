@@ -231,8 +231,9 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
+      const token = session?.access_token || localStorage.getItem('token') || undefined;
       
-      const order = await createRazorpayOrder(finalPrice, batchDetails.id);
+      const order = await createRazorpayOrder(finalPrice, batchDetails.id, couponCode, token);
       
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'dummy_key_id',
@@ -250,7 +251,8 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
               response.razorpay_signature,
               userId,
               batchDetails.id,
-              finalPrice
+              finalPrice,
+              token
             );
             toast.success('Payment Successful! Welcome to the batch.', {
               style: {
