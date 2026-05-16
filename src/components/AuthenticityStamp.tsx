@@ -32,7 +32,7 @@ export function AuthenticityStamp({ paymentId, date, className = '' }: Authentic
 
   return (
     <div className={`relative ${className}`}>
-      <img src={dataUrl} alt="Authenticity Stamp" className="w-full h-full transform -rotate-12 opacity-80 mix-blend-multiply drop-shadow-sm" />
+      <img src={dataUrl} alt="Authenticity Stamp" className="w-full h-full transform -rotate-12 opacity-80" />
     </div>
   );
 }

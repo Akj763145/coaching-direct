@@ -34,8 +34,8 @@ export function IdCardModal({
     
     setIsDownloading(true);
     try {
-      // Small delay to ensure rendering is complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay to ensure rendering and image fetching is complete
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       const options = {
         scale: 2,
@@ -53,6 +53,16 @@ export function IdCardModal({
           const back = clonedDoc.getElementById('pdf-id-card-back');
           if (front) front.style.transform = 'none';
           if (back) back.style.transform = 'none';
+          
+          // Workaround for html2canvas oklch crash
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el) => {
+             const htmlEl = el as HTMLElement;
+             if (htmlEl && htmlEl.className && typeof htmlEl.className === 'string') {
+                htmlEl.className = htmlEl.className.replace(/shadow-[a-zA-Z0-9_-]+/g, '');
+                htmlEl.className = htmlEl.className.replace(/bg-gradient-[a-zA-Z0-9_-]+/g, '');
+             }
+          });
         }
       };
 
@@ -80,9 +90,9 @@ export function IdCardModal({
       pdf.addImage(imgDataBack, 'PNG', 0, 0, 800, 450);
 
       pdf.save(`${studentName.split(' ')[0]}_VidyaNation_ID.pdf`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('PDF Generation Error:', err);
-      alert('Error generating PDF. Please ensure all images are loaded.');
+      alert('Error generating PDF: ' + (err.message || 'Unknown error') + '. Please ensure all images are loaded.');
     } finally {
       setIsDownloading(false);
     }
@@ -132,6 +142,8 @@ export function IdCardModal({
                         ? Math.floor((new Date().getTime() - new Date(enrollment.student_profiles.dob).getTime()) / 3.15576e+10)
                         : undefined)
                   }
+                  dob={enrollment.student_profiles?.dob}
+                  teacherName={enrollment.batches?.teacher_name}
                   studentEmail={enrollment.student_profiles?.email || undefined}
                   studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
                 />

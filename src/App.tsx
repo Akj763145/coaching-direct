@@ -10,6 +10,7 @@ import BatchDetail from './pages/BatchDetail';
 import Dashboard from './pages/Dashboard';
 import MasterDashboard from './pages/master/Dashboard';
 import SubAdminDashboard from './pages/subadmin/Dashboard';
+import VerifyStudent from './pages/VerifyStudent';
 import AuthCallback from './pages/AuthCallback';
 import Chatbot from './components/Chatbot';
 import OnboardingManager from './components/OnboardingManager';
@@ -320,6 +321,7 @@ function AppWithLocation({ user, loading, onboardingPending, setOnboardingPendin
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/master/*" element={<MasterDashboard />} />
           <Route path="/admin/*" element={<SubAdminDashboard />} />
+          <Route path="/verify/:id" element={<VerifyStudent />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

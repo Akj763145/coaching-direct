@@ -1908,6 +1908,113 @@ app.put('/api/master/seo-settings', authenticateToken, requireRole('MASTER'), as
   }
 });
 
+app.get('/api/public/verify-student/:paymentId', async (req, res) => {
+  const { paymentId } = req.params;
+  
+  if (isSupabaseEnabled) {
+    try {
+      // Find the enrollment
+      const { data: enrollment, error: err } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('razorpay_payment_id', paymentId)
+        .single();
+        
+      if (err || !enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+      
+      // Get batch details
+      const { data: batch } = await supabase
+        .from('batches')
+        .select('batch_name, teacher_name, batch_timing, start_date, institute_id, board_target, medium')
+        .eq('id', enrollment.batch_id)
+        .single();
+        
+      // Get institute details
+      let institute = null;
+      if (batch) {
+        const { data: inst } = await supabase
+          .from('institutes')
+          .select('name, logo, address')
+          .eq('id', batch.institute_id)
+          .single();
+        institute = inst;
+      }
+      
+      // Get student profile
+      const { data: profile, error: profileErr } = await supabase
+        .from('student_profiles')
+        .select('full_name, photo_url, phone_number, age, dob, email')
+        .eq('id', enrollment.student_id)
+        .single();
+        
+      // Try to get email from user auth if possible, but we don't have access to auth context as admin.
+      // We will leave email empty for now in the public verification unless added to student_profiles
+        
+      res.json({
+         id: enrollment.id,
+         created_at: enrollment.created_at,
+         status: enrollment.status,
+         student_name: profile?.full_name || 'Anonymous Student',
+         student_photo_url: profile?.photo_url || null,
+         student_phone: profile?.phone_number || '',
+         student_email: profile?.email || '',
+         student_dob: profile?.dob || '',
+         student_age: profile?.age || '',
+        batch: {
+          name: batch?.batch_name,
+          standard: batch?.board_target ? `${batch.board_target} - ${batch.medium}` : '',
+          teacher: {
+            full_name: batch?.teacher_name
+          },
+          start_time: batch?.batch_timing || '',
+          end_time: '',
+          institute: {
+            name: institute?.name,
+            logo_url: institute?.logo,
+            address: institute?.address
+          }
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  } else {
+    // sqlite handling
+    try {
+      const enrollment = db.prepare('SELECT * FROM enrollments WHERE razorpay_payment_id = ?').get(paymentId) as any;
+      if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+      
+      const batch = db.prepare('SELECT * FROM batches WHERE id = ?').get(enrollment.batch_id) as any;
+      let institute = null;
+      if (batch) {
+         institute = db.prepare('SELECT * FROM institutes WHERE id = ?').get(batch.institute_id) as any;
+      }
+      
+      res.json({
+         id: enrollment.id,
+         created_at: enrollment.created_at,
+         status: enrollment.status || 'active',
+         student_name: 'Local Student',
+         student_photo_url: null,
+         batch: {
+           name: batch?.batch_name,
+           standard: batch?.board_target ? `${batch.board_target} - ${batch.medium}` : '',
+           teacher: { full_name: batch?.teacher_name },
+           start_time: batch?.batch_timing || '',
+           end_time: '',
+           institute: {
+             name: institute?.name,
+             logo_url: institute?.logo,
+             address: institute?.address
+           }
+         }
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import('vite');
