@@ -320,7 +320,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
               <div className="w-12 h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full mx-auto mb-4 sm:hidden" />
               
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Enrollment Summary</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">ID Card Details Form</h2>
                 <button
                   onClick={onClose}
                   className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"

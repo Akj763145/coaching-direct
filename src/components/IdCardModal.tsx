@@ -43,6 +43,11 @@ export function IdCardModal({
         backgroundColor: '#ffffff',
         logging: false,
         onclone: (clonedDoc: Document) => {
+          // Remove transform from the scaling wrapper
+          const wrapper = clonedDoc.getElementById('pdf-wrapper');
+          if (wrapper) {
+            wrapper.style.transform = 'none';
+          }
           // Ensure elements are visible in clone
           const front = clonedDoc.getElementById('pdf-id-card-front');
           const back = clonedDoc.getElementById('pdf-id-card-back');
@@ -109,7 +114,7 @@ export function IdCardModal({
           </div>
 
           <div className="mb-6 overflow-y-auto max-w-full p-2 flex flex-col gap-8 scrollbar-hide">
-            <div className="scale-[0.4] sm:scale-[0.55] md:scale-[0.7] lg:scale-[0.85] xl:scale-100 origin-top">
+            <div id="pdf-wrapper" className="scale-[0.4] sm:scale-[0.55] md:scale-[0.7] lg:scale-[0.85] xl:scale-100 origin-top">
               <div className="flex flex-col gap-10">
                 <StudentIDCardFront 
                   ref={frontCardRef}
