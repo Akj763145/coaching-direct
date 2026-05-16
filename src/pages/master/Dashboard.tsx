@@ -24,6 +24,7 @@ export default function MasterDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'institutes' | 'featured' | 'categories' | 'ledger' | 'seo' | 'audit' | 'health'>('institutes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -350,7 +351,9 @@ export default function MasterDashboard() {
                       <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Institute Logo</label>
                       <div className="relative group cursor-pointer w-20 h-20">
                         <div className="w-20 h-20 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
-                          {logo ? (
+                          {isUploadingPhoto ? (
+                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          ) : logo ? (
                             <img src={logo} alt="Logo" className="w-full h-full object-contain bg-white" />
                           ) : (
                             <div className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors">
@@ -362,12 +365,15 @@ export default function MasterDashboard() {
                           type="file"
                           accept="image/*"
                           className="absolute inset-0 opacity-0 cursor-pointer"
+                          disabled={isUploadingPhoto}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
+                              setIsUploadingPhoto(true);
                               const reader = new FileReader();
                               reader.onloadend = () => {
                                 setLogo(reader.result as string);
+                                setIsUploadingPhoto(false);
                               };
                               reader.readAsDataURL(file);
                             }

@@ -183,18 +183,21 @@ export default function BatchDetail() {
                 navigate(-1);
               }
             }} 
+            title="Go back"
             className="p-2 -ml-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500 group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </motion.button>
           <button 
             onClick={handleFavoriteClick}
+            title={id && isFavoriteBatch(id) ? "Remove from favorites" : "Add to favorites"}
             className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500"
           >
              <Heart className={`w-5 h-5 ${id && isFavoriteBatch(id) ? 'fill-rose-500 text-rose-500' : ''}`} />
           </button>
           <button 
             onClick={handleShare}
+            title="Share this batch"
             className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors text-slate-500"
           >
             <Share2 className="w-5 h-5" />

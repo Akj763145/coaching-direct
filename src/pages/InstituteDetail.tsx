@@ -222,6 +222,7 @@ export default function InstituteDetail() {
         <div className="flex items-center gap-3">
           <Link 
             to="/" 
+            title="Go back"
             className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -235,12 +236,14 @@ export default function InstituteDetail() {
         <div className="flex items-center gap-2">
           <button 
             onClick={handleFavoriteClick}
+            title={id && isFavoriteInstitite(id) ? "Remove from favorites" : "Add to favorites"}
             className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Heart className={`w-4 h-4 ${id && isFavoriteInstitite(id) ? 'fill-rose-500 text-rose-500' : ''}`} />
           </button>
           <button 
             onClick={handleShare}
+            title="Share this institute"
             className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Share2 className="w-4 h-4" />

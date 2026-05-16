@@ -20,6 +20,7 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
   const [showTour, setShowTour] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [tourStep, setTourStep] = useState(0);
 
   // Form State
@@ -172,7 +173,11 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
                 <div className="flex flex-col items-center mb-8">
                   <div className="relative group cursor-pointer">
                     <div className="w-24 h-24 rounded-3xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
-                      {formData.photo_url ? (
+                      {isUploadingPhoto ? (
+                        <div className="flex items-center justify-center">
+                          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : formData.photo_url ? (
                         <img src={formData.photo_url} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
                         <Camera className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
@@ -182,12 +187,15 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
                       type="file"
                       accept="image/*"
                       className="absolute inset-0 opacity-0 cursor-pointer"
+                      disabled={isUploadingPhoto}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          setIsUploadingPhoto(true);
                           const reader = new FileReader();
                           reader.onloadend = () => {
                             setFormData({ ...formData, photo_url: reader.result as string });
+                            setIsUploadingPhoto(false);
                           };
                           reader.readAsDataURL(file);
                         }

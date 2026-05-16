@@ -28,6 +28,8 @@ export default function SubAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingFacultyPhoto, setIsUploadingFacultyPhoto] = useState(false);
   const navigate = useNavigate();
 
   // Category Form
@@ -555,7 +557,9 @@ export default function SubAdminDashboard() {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Logo</label>
                 <div className="relative group cursor-pointer w-16 h-16">
                   <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
-                    {profile.logo ? (
+                    {isUploadingLogo ? (
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    ) : profile.logo ? (
                       <img src={profile.logo} alt="Logo" className="w-full h-full object-contain bg-white" />
                     ) : (
                       <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
@@ -565,12 +569,15 @@ export default function SubAdminDashboard() {
                     type="file"
                     accept="image/*"
                     className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={isUploadingLogo}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        setIsUploadingLogo(true);
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setProfile({ ...profile, logo: reader.result as string });
+                          setIsUploadingLogo(false);
                         };
                         reader.readAsDataURL(file);
                       }
@@ -794,10 +801,10 @@ export default function SubAdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleEditCategory(cat)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
+                        <button onClick={() => handleEditCategory(cat)} title="Edit category" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button disabled={deletingId === cat.id} onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-800">
+                        <button disabled={deletingId === cat.id} onClick={() => handleDeleteCategory(cat.id)} title="Delete category" className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-800">
                           {deletingId === cat.id ? <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
@@ -1371,7 +1378,9 @@ export default function SubAdminDashboard() {
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Faculty Photo</label>
                     <div className="relative group cursor-pointer w-16 h-16">
                       <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 overflow-hidden">
-                        {facultyForm.image_url ? (
+                        {isUploadingFacultyPhoto ? (
+                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        ) : facultyForm.image_url ? (
                           <img src={facultyForm.image_url} alt="Photo" className="w-full h-full object-cover bg-white" />
                         ) : (
                           <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
@@ -1381,12 +1390,15 @@ export default function SubAdminDashboard() {
                         type="file"
                         accept="image/*"
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                        disabled={isUploadingFacultyPhoto}
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            setIsUploadingFacultyPhoto(true);
                             const reader = new FileReader();
                             reader.onloadend = () => {
                               setFacultyForm({ ...facultyForm, image_url: reader.result as string });
+                              setIsUploadingFacultyPhoto(false);
                             };
                             reader.readAsDataURL(file);
                           }

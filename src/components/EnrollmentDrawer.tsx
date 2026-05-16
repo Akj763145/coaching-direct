@@ -43,6 +43,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
     photo_url: ''
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   useEffect(() => {
     // Load Razorpay script
@@ -363,7 +364,11 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                       {/* Photo Upload */}
                       <div className="flex flex-col items-center mb-6">
                         <div className="relative group cursor-pointer w-24 h-24 rounded-full overflow-hidden bg-neutral-100 border-2 border-dashed border-neutral-300 hover:border-blue-500 transition-colors flex items-center justify-center">
-                          {profileData.photo_url ? (
+                          {isUploadingPhoto ? (
+                            <div className="flex items-center justify-center">
+                              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          ) : profileData.photo_url ? (
                             <img src={profileData.photo_url} alt="Profile" className="w-full h-full object-cover" />
                           ) : (
                             <div className="text-neutral-400 font-medium text-xs text-center px-2">Upload Photo</div>
@@ -372,12 +377,15 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                             type="file"
                             accept="image/*"
                             className="absolute inset-0 opacity-0 cursor-pointer"
+                            disabled={isUploadingPhoto}
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
+                                setIsUploadingPhoto(true);
                                 const reader = new FileReader();
                                 reader.onloadend = () => {
                                   setProfileData({ ...profileData, photo_url: reader.result as string });
+                                  setIsUploadingPhoto(false);
                                 };
                                 reader.readAsDataURL(file);
                               }
