@@ -34,14 +34,18 @@ export function IdCardModal({
     
     setIsDownloading(true);
     try {
+      await document.fonts.ready;
+      window.scrollTo(0, 0);
+
       // Small delay to ensure rendering and image fetching is complete
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const options = {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
+        windowWidth: document.documentElement.offsetWidth,
         onclone: (clonedDoc: Document) => {
           // Remove transform from the scaling wrapper
           const wrapper = clonedDoc.getElementById('pdf-wrapper');

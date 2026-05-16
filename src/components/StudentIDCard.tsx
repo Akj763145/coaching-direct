@@ -74,8 +74,8 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
       <div 
         ref={ref}
         id="pdf-id-card-front"
-        className="w-[800px] h-[450px] bg-[#ffffff] rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
-        style={{ color: '#0f172a' }}
+        className="bg-[#ffffff] rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
+        style={{ color: '#0f172a', width: '800px', height: '450px' }}
       >
         {/* HEADER: Gradient Banner */}
         <div 
@@ -83,25 +83,25 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           style={{ background: 'linear-gradient(to right, #dcfce7, #eff6ff, #bfdbfe)' }}
         >
           {/* Logo & Branding */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start">
+            <div className="flex items-center justify-start">
               <svg className="w-10 h-10 shrink-0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M24 38L8 16C8 16 12 10 24 18C24 18 24 38 24 38Z" fill="#2563eb"/>
                 <path d="M24 38L40 16C40 16 36 10 24 18C24 18 24 38 24 38Z" fill="#0f172a"/>
                 <circle cx="24" cy="8" r="5" fill="#2563eb"/>
               </svg>
-              <div className="flex flex-col">
-                <span className="text-2xl font-black tracking-tight flex items-center gap-1 text-[#2563eb]">
+              <div className="flex flex-col ml-3">
+                <span className="text-2xl font-black flex items-center text-[#2563eb]">
                   VidyaNation
                 </span>
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mt-0.5">The Future of local education</span>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase mt-0.5">The Future of local education</span>
               </div>
             </div>
           </div>
 
           {/* Institute Info (Centered/Rightish) */}
-          <div className="flex-1 flex items-center justify-end gap-6 pr-4">
-            <div className="w-16 h-16 shrink-0 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center p-2">
+          <div className="flex-1 flex items-center justify-end pr-4">
+            <div className="w-16 h-16 shrink-0 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center p-2 mr-6">
               {logoDataUrl ? (
                 <div 
                   className="w-full h-full"
@@ -118,48 +118,48 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 </div>
               ) : null}
             </div>
-            <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight max-w-[300px] leading-tight text-right">
+            <h1 className="text-2xl font-black text-[#1e293b] uppercase max-w-[200px] leading-tight text-right truncate">
               {instituteName}
             </h1>
           </div>
         </div>
 
-        <div className="flex-1 grid grid-cols-[1.3fr_auto_1.3fr] gap-8 px-10 py-8 items-stretch">
+        <div className="flex-1 flex flex-row px-10 py-8 justify-between items-stretch">
           
           {/* Column 1: Student Details */}
-          <div className="space-y-6">
-            <h3 className="text-sm font-black text-[#94a3b8] uppercase tracking-widest border-b border-[#f1f5f9] pb-2">Student Details</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Full Name</p>
-                <p className="text-xl font-black text-[#0f172a] leading-tight">{studentName}</p>
+          <div className="flex flex-col w-[30%]">
+            <h3 className="text-sm font-black text-[#94a3b8] uppercase border-b border-[#f1f5f9] pb-2 mb-6">Student Details</h3>
+            <div className="flex flex-col">
+              <div className="mb-4">
+                <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Full Name</p>
+                <p className="text-xl font-black text-[#0f172a] leading-tight max-w-[150px] truncate">{studentName}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center mb-4">
                 <Phone size={14} className="text-[#2563eb]" />
-                <span className="text-[13px] font-medium text-[#475569]">{studentPhone || 'N/A'}</span>
+                <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">{studentPhone || 'N/A'}</span>
               </div>
               {studentEmail && (
-                <div className="flex items-start gap-2">
+                <div className="flex items-start mb-4">
                   <Mail size={14} className="text-[#2563eb] shrink-0 mt-0.5" />
-                  <span className="text-[12px] font-medium text-[#475569] break-all leading-tight">{studentEmail}</span>
+                  <span className="text-[12px] font-medium text-[#475569] break-all leading-tight ml-2 max-w-[150px]">{studentEmail}</span>
                 </div>
               )}
               {dob ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center mb-4">
                   <User size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569]">DOB: {dob}</span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">DOB: {dob}</span>
                 </div>
               ) : age ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center mb-4">
                   <User size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569]">{age} Years Old</span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">{age} Years Old</span>
                 </div>
               ) : null}
             </div>
           </div>
 
           {/* Column 2: Student Image */}
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center w-[30%]">
             <div className="w-48 h-48 rounded-2xl border-4 border-[#10b981] p-2 bg-[#ffffff] relative group">
               <div className="w-full h-full rounded-[14px] overflow-hidden bg-[#f8fafc] border border-[#f1f5f9]">
                 {photoDataUrl && (
@@ -182,35 +182,35 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           </div>
 
           {/* Column 3: Batch Details */}
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full w-[30%]">
             <div>
-              <h3 className="text-sm font-black text-[#94a3b8] uppercase tracking-widest border-b border-[#f1f5f9] pb-2 mb-4">Batch Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Batch Name</p>
-                  <p className="text-lg font-black text-[#0f172a] leading-tight">{batchName}</p>
+              <h3 className="text-sm font-black text-[#94a3b8] uppercase border-b border-[#f1f5f9] pb-2 mb-4">Batch Details</h3>
+              <div className="flex flex-col">
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Batch Name</p>
+                  <p className="text-lg font-black text-[#0f172a] leading-tight max-w-[150px] truncate">{batchName}</p>
                 </div>
                 {teacherName && (
-                  <div>
-                    <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Teacher</p>
-                    <p className="text-[13px] font-black text-[#334155] leading-tight">{teacherName}</p>
+                  <div className="mb-4">
+                    <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Teacher</p>
+                    <p className="text-[13px] font-black text-[#334155] leading-tight max-w-[150px] truncate">{teacherName}</p>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <Hash size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md">{paymentId}</span>
+                <div className="flex items-center mb-4">
+                  <Hash size={14} className="text-[#2563eb] shrink-0" />
+                  <span className="text-[12px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md ml-2 break-all max-w-[150px] leading-tight">{paymentId}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center mb-4">
                   <Calendar size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569]">Issued: <span className="font-bold text-[#0f172a]">{enrollmentDate}</span></span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 whitespace-nowrap">Issued: <span className="font-bold text-[#0f172a]">{enrollmentDate}</span></span>
                 </div>
               </div>
             </div>
             
             <div className="flex items-end justify-between pt-4 relative mt-auto">
-              <div className="relative pb-2 pr-2 ml-auto">
+              <div className="relative pb-2 pr-2 ml-auto w-[80px]">
                 <AuthenticityStamp paymentId={paymentId} date={enrollmentDate} className="w-[80px] h-[80px]" />
-                <p className="text-[8px] font-black text-[#94a3b8] uppercase tracking-[0.2em] text-center mt-2 absolute -bottom-2 -left-2 w-[100px]">Authorized</p>
+                <p className="text-[8px] font-black text-[#94a3b8] uppercase text-center mt-2 absolute -bottom-2 -left-2 w-[100px]">Authorized</p>
               </div>
             </div>
           </div>
@@ -219,8 +219,8 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
         {/* FOOTER */}
         <div className="h-16 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-center px-16">
           <div className="flex flex-col items-center">
-            <span className="text-sm font-bold text-[#334155] tracking-tight uppercase">vidyanation.online</span>
-            <span className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-widest mt-0.5">Verified Student Asset</span>
+            <span className="text-sm font-bold text-[#334155] uppercase">vidyanation.online</span>
+            <span className="text-[10px] font-semibold text-[#94a3b8] uppercase mt-0.5">Verified Student Asset</span>
           </div>
         </div>
 
@@ -238,11 +238,11 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
     <div 
       ref={ref}
       id="pdf-id-card-back"
-      className="w-[800px] h-[450px] rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
-      style={{ background: 'linear-gradient(to right, #dcfce7, #bfdbfe)', color: '#0f172a' }}
+      className="rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
+      style={{ background: 'linear-gradient(to right, #dcfce7, #bfdbfe)', color: '#0f172a', width: '800px', height: '450px' }}
     >
-      <div className="flex-1 flex items-center justify-center gap-16 p-12">
-        <div className="flex flex-col items-center justify-center text-center">
+      <div className="flex-1 flex flex-row items-center justify-center p-12">
+        <div className="flex flex-col items-center justify-center text-center mr-16">
           {/* Mock Logo */}
           <div className="mb-6 scale-[2.0]">
             <svg className="w-16 h-16 shrink-0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -252,18 +252,18 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
             </svg>
           </div>
 
-          <h1 className="text-5xl font-black text-[#0f172a] tracking-tighter mb-3">
+          <h1 className="text-5xl font-black text-[#0f172a] mb-3">
             VidyaNation
           </h1>
           
-          <p className="text-xl font-bold text-[#1e293b] tracking-tight opacity-80 uppercase">
+          <p className="text-xl font-bold text-[#1e293b] opacity-80 uppercase">
             The Future of Local Education Search
           </p>
         </div>
 
         {paymentId && (
-          <div className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl backdrop-blur-sm border shadow-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)', borderColor: 'rgba(255, 255, 255, 0.5)' }}>
-            <div className="bg-white p-2 rounded-xl shadow-sm">
+          <div className="flex flex-col items-center justify-center p-6 rounded-2xl backdrop-blur-sm border shadow-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)', borderColor: 'rgba(255, 255, 255, 0.5)' }}>
+            <div className="bg-white p-2 rounded-xl shadow-sm mb-3">
               <QRCodeCanvas 
                 value={`https://vidyanation.online/verify/${paymentId}`} 
                 size={140}
@@ -272,7 +272,7 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
               />
             </div>
             <div className="text-center">
-              <p className="text-sm font-black text-[#0f172a] uppercase tracking-widest leading-tight">Verify Student</p>
+              <p className="text-sm font-black text-[#0f172a] uppercase leading-tight">Verify Student</p>
               <p className="text-xs font-medium text-[#475569] mt-1">Scan QR Code</p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
         className="h-16 flex items-center justify-center px-16 border-t"
         style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(12px)', borderColor: 'rgba(255, 255, 255, 0.2)' }}
       >
-         <span className="text-sm font-black uppercase tracking-[0.4em]" style={{ color: 'rgba(15, 23, 42, 0.4)' }}>Verified Institution Asset</span>
+         <span className="text-sm font-black uppercase" style={{ color: 'rgba(15, 23, 42, 0.4)' }}>Verified Institution Asset</span>
       </div>
     </div>
   );
