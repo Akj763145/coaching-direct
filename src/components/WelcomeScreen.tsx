@@ -23,7 +23,7 @@ export default function WelcomeScreen({ isLoading }: WelcomeScreenProps) {
     const contentTimer = setTimeout(() => setShowContent(true), 100);
     const minTimeTimer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 3500);
+    }, 2000);
 
     return () => {
       clearTimeout(contentTimer);
