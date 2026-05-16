@@ -5,14 +5,14 @@ import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/
 
 const styles = StyleSheet.create({
   page: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: '#ffffff',
     width: '100%',
     height: '100%',
   },
   pageBack: {
     flexDirection: 'column',
-    backgroundColor: '#dcfce7', // Will use a solid color since gradients are complex in react-pdf
+    backgroundColor: '#dcfce7',
     width: '100%',
     height: '100%',
     alignItems: 'center',
@@ -53,24 +53,35 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 15,
     flex: 1,
-    justifyContent: 'space-between',
     width: '100%',
   },
-  column: {
+  leftColumn: {
+    width: '35%',
     flexDirection: 'column',
-    width: '30%',
+  },
+  centerColumn: {
+    width: '25%',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  rightColumn: {
+    width: '35%',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
   sectionTitle: {
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'black',
     color: '#94a3b8',
     textTransform: 'uppercase',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
     paddingBottom: 4,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   label: {
     fontSize: 6,
@@ -80,34 +91,28 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   value: {
-    fontSize: 10,
+    fontSize: 7,
     fontWeight: 'black',
     color: '#0f172a',
-    marginBottom: 6,
+    marginBottom: 2,
   },
   valueSmall: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#475569',
-    marginBottom: 6,
-  },
-  imageContainer: {
-    width: '30%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 2,
   },
   photoWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
     borderWidth: 2,
     borderColor: '#10b981',
     padding: 2,
     backgroundColor: '#ffffff',
+    borderRadius: 6,
   },
   photo: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 6,
+    width: 50,
+    height: 60,
+    objectFit: 'cover',
+    borderRadius: 4,
     backgroundColor: '#f8fafc',
   },
   footer: {
@@ -136,13 +141,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   backTitle: {
-    fontSize: 24,
+    fontSize: 12,
     fontWeight: 'black',
     color: '#0f172a',
     marginBottom: 4,
   },
   backSub: {
-    fontSize: 10,
+    fontSize: 7,
     fontWeight: 'bold',
     color: '#1e293b',
     textTransform: 'uppercase',
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   qrText: {
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'black',
     color: '#0f172a',
     textTransform: 'uppercase',
@@ -210,7 +215,7 @@ export const StudentIdPdf = ({
 }: StudentIdPdfProps) => {
   return (
     <Document>
-      <Page size={[255, 153]} orientation="landscape" style={{ flexDirection: 'column', backgroundColor: '#ffffff' }}>
+      <Page size={[242.64, 153]} orientation="landscape" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -226,7 +231,7 @@ export const StudentIdPdf = ({
 
         {/* Content */}
         <View style={styles.content}>
-          <View style={styles.column}>
+          <View style={styles.leftColumn}>
             <Text style={styles.sectionTitle}>Student Details</Text>
             
             <Text style={styles.label}>Full Name</Text>
@@ -243,7 +248,7 @@ export const StudentIdPdf = ({
             ) : null}
           </View>
 
-          <View style={styles.imageContainer}>
+          <View style={styles.centerColumn}>
             <View style={styles.photoWrapper}>
               {studentPhoto ? (
                 <Image src={studentPhoto} style={styles.photo} />
@@ -253,7 +258,7 @@ export const StudentIdPdf = ({
             </View>
           </View>
 
-          <View style={[styles.column, { justifyContent: 'space-between' }]}>
+          <View style={styles.rightColumn}>
             <View>
               <Text style={styles.sectionTitle}>Batch Details</Text>
               
@@ -284,7 +289,7 @@ export const StudentIdPdf = ({
         <View style={styles.bottomStrip} />
       </Page>
 
-      <Page size={[255, 153]} orientation="landscape" style={styles.pageBack}>
+      <Page size={[242.64, 153]} orientation="landscape" style={styles.pageBack}>
         <Text style={styles.backTitle}>VidyaNation</Text>
         <Text style={styles.backSub}>The Future of Local Education Search</Text>
 
