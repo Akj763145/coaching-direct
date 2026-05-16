@@ -101,13 +101,16 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
 
           {/* Institute Info (Centered/Rightish) */}
           <div className="flex-1 flex items-center justify-end gap-6 pr-4">
-            <div className="w-16 h-16 shrink-0 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 shrink-0 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center p-2">
               {logoDataUrl ? (
-                <img 
-                  src={logoDataUrl} 
-                  alt="Logo" 
-                  className="w-full h-full object-contain p-2" 
-                  onError={() => setLogoDataUrl(undefined)}
+                <div 
+                  className="w-full h-full"
+                  style={{ 
+                    backgroundImage: `url(${logoDataUrl})`, 
+                    backgroundSize: 'contain', 
+                    backgroundPosition: 'center', 
+                    backgroundRepeat: 'no-repeat' 
+                  }}
                 />
               ) : instituteName ? (
                 <div className="w-10 h-10 bg-[#10b981] rounded-full flex items-center justify-center text-[#ffffff] font-black text-xl">
@@ -160,11 +163,14 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
             <div className="w-48 h-48 rounded-2xl border-4 border-[#10b981] p-2 bg-[#ffffff] relative group">
               <div className="w-full h-full rounded-[14px] overflow-hidden bg-[#f8fafc] border border-[#f1f5f9]">
                 {photoDataUrl && (
-                  <img 
-                    src={photoDataUrl} 
-                    alt={studentName} 
-                    className="w-full h-full object-cover"
-                    onError={() => setPhotoDataUrl(undefined)}
+                  <div 
+                    className="w-full h-full"
+                    style={{ 
+                      backgroundImage: `url(${photoDataUrl})`, 
+                      backgroundSize: 'cover', 
+                      backgroundPosition: 'center', 
+                      backgroundRepeat: 'no-repeat' 
+                    }}
                   />
                 )}
               </div>
