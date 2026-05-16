@@ -43,20 +43,23 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
     const [photoDataUrl, setPhotoDataUrl] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-      const fetchImage = async (url: string | undefined, setter: (val: string) => void) => {
+      const fetchImage = async (url: string | undefined, setter: (val: string | undefined) => void) => {
         if (!url) return;
         if (url.startsWith('data:')) {
           setter(url);
           return;
         }
         try {
-          const res = await fetch(url);
+          // Attempt using proxy to bypass CORS
+          const proxyUrl = url.startsWith('/') ? url : `/api/proxy-image?url=${encodeURIComponent(url)}`;
+          const res = await fetch(proxyUrl);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           const blob = await res.blob();
           const reader = new FileReader();
           reader.onloadend = () => setter(reader.result as string);
           reader.readAsDataURL(blob);
         } catch (err) {
-          console.warn("Failed to fetch image as blob, falling back to url", url, err);
+          console.warn("Failed to fetch image as blob via proxy, falling back to url", url, err);
           setter(url);
         }
       };
@@ -100,7 +103,12 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           <div className="flex-1 flex items-center justify-end gap-6 pr-4">
             <div className="w-16 h-16 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center overflow-hidden">
               {logoDataUrl ? (
-                <img src={logoDataUrl} alt="Logo" className="w-12 h-12 object-contain" />
+                <img 
+                  src={logoDataUrl} 
+                  alt="Logo" 
+                  className="w-12 h-12 object-contain" 
+                  onError={() => setLogoDataUrl(undefined)}
+                />
               ) : instituteName ? (
                 <div className="w-10 h-10 bg-[#10b981] rounded-full flex items-center justify-center text-[#ffffff] font-black text-xl">
                   {instituteName.charAt(0)}
@@ -113,8 +121,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           </div>
         </div>
 
-        {/* MAIN BODY: 3-Column Grid */}
-        <div className="flex-1 grid grid-cols-3 gap-10 px-12 py-8 items-start">
+        <div className="flex-1 grid grid-cols-[1.3fr_auto_1.3fr] gap-8 px-10 py-8 items-stretch">
           
           {/* Column 1: Student Details */}
           <div className="space-y-6">
@@ -129,9 +136,9 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 <span className="text-[13px] font-medium text-[#475569]">{studentPhone || 'N/A'}</span>
               </div>
               {studentEmail && (
-                <div className="flex items-center gap-2">
-                  <Mail size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569] truncate" title={studentEmail}>{studentEmail}</span>
+                <div className="flex items-center gap-2 max-w-[200px]">
+                  <Mail size={14} className="text-[#2563eb] shrink-0" />
+                  <span className="text-[12px] font-medium text-[#475569] truncate" title={studentEmail}>{studentEmail}</span>
                 </div>
               )}
               {dob ? (
@@ -157,6 +164,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                     src={photoDataUrl} 
                     alt={studentName} 
                     className="w-full h-full object-cover"
+                    onError={() => setPhotoDataUrl(undefined)}
                   />
                 )}
               </div>
@@ -168,13 +176,14 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           </div>
 
           {/* Column 3: Batch Details */}
-          <div className="space-y-6">
-            <h3 className="text-sm font-black text-[#94a3b8] uppercase tracking-widest border-b border-[#f1f5f9] pb-2">Batch Details</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Batch Name</p>
-                <p className="text-lg font-black text-[#0f172a] leading-tight">{batchName}</p>
-              </div>
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <h3 className="text-sm font-black text-[#94a3b8] uppercase tracking-widest border-b border-[#f1f5f9] pb-2 mb-4">Batch Details</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Batch Name</p>
+                  <p className="text-lg font-black text-[#0f172a] leading-tight">{batchName}</p>
+                </div>
                 {teacherName && (
                   <div>
                     <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-widest leading-none mb-1.5">Teacher</p>
@@ -189,10 +198,11 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                   <Calendar size={14} className="text-[#2563eb]" />
                   <span className="text-[13px] font-medium text-[#475569]">Issued: <span className="font-bold text-[#0f172a]">{enrollmentDate}</span></span>
                 </div>
+              </div>
             </div>
             
-            <div className="flex items-end justify-between pt-4 relative">
-              <div className="relative pb-2 pr-2 mt-4 ml-auto">
+            <div className="flex items-end justify-between pt-4 relative mt-auto">
+              <div className="relative pb-2 pr-2 ml-auto">
                 <AuthenticityStamp paymentId={paymentId} date={enrollmentDate} className="w-[80px] h-[80px]" />
                 <p className="text-[8px] font-black text-[#94a3b8] uppercase tracking-[0.2em] text-center mt-2 absolute -bottom-2 -left-2 w-[100px]">Authorized</p>
               </div>
@@ -246,7 +256,7 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
         </div>
 
         {paymentId && (
-          <div className="flex flex-col items-center justify-center gap-3 bg-white/40 p-6 rounded-2xl backdrop-blur-sm border border-white/50 shadow-xl">
+          <div className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl backdrop-blur-sm border shadow-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)', borderColor: 'rgba(255, 255, 255, 0.5)' }}>
             <div className="bg-white p-2 rounded-xl shadow-sm">
               <QRCodeCanvas 
                 value={`https://vidyanation.online/verify/${paymentId}`} 

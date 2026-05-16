@@ -120,6 +120,9 @@ export default function MasterDashboard() {
       } else {
         alert(data.error);
       }
+    } catch (err: any) {
+      console.error(err);
+      alert('An error occurred. Please try a smaller image.');
     } finally {
       setIsSubmitting(false);
     }

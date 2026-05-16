@@ -38,7 +38,7 @@ export function IdCardModal({
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const options = {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
@@ -59,7 +59,7 @@ export function IdCardModal({
           allElements.forEach((el) => {
              const htmlEl = el as HTMLElement;
              if (htmlEl && htmlEl.className && typeof htmlEl.className === 'string') {
-                htmlEl.className = htmlEl.className.replace(/shadow-[a-zA-Z0-9_-]+/g, '');
+                htmlEl.className = htmlEl.className.replace(/\bshadow(?:-[a-zA-Z0-9_-]+)?\b/g, '');
                 htmlEl.className = htmlEl.className.replace(/bg-gradient-[a-zA-Z0-9_-]+/g, '');
              }
           });
@@ -74,22 +74,16 @@ export function IdCardModal({
       const imgDataFront = canvasFront.toDataURL('image/png', 1.0);
       const imgDataBack = canvasBack.toDataURL('image/png', 1.0);
       
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [800, 450]
-      });
-
-      // Page 1: Front
-      pdf.setPage(1);
-      pdf.addImage(imgDataFront, 'PNG', 0, 0, 800, 450);
+      const pdf = new jsPDF('p', 'mm', 'a4');
       
-      // Page 2: Back
-      pdf.addPage([800, 450], 'landscape');
-      pdf.setPage(2);
-      pdf.addImage(imgDataBack, 'PNG', 0, 0, 800, 450);
+      const cardWidthMm = 90;
+      const cardHeightMm = (canvasFront.height * cardWidthMm) / canvasFront.width;
+      const xOffset = (210 - cardWidthMm) / 2;
 
-      pdf.save(`${studentName.split(' ')[0]}_VidyaNation_ID.pdf`);
+      pdf.addImage(imgDataFront, 'PNG', xOffset, 20, cardWidthMm, cardHeightMm);
+      pdf.addImage(imgDataBack, 'PNG', xOffset, 20 + cardHeightMm + 2, cardWidthMm, cardHeightMm);
+
+      pdf.save(`VidyaNation_ID_${enrollment?.razorpay_payment_id || 'manual'}.pdf`);
     } catch (err: any) {
       console.error('PDF Generation Error:', err);
       alert('Error generating PDF: ' + (err.message || 'Unknown error') + '. Please ensure all images are loaded.');

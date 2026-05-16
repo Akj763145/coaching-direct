@@ -15,12 +15,35 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const SECRET_KEY = process.env.SECRET_KEY || 'super-secret-jwt-key-for-coaching-hub';
 
-app.use(express.json());
+app.use(express.json({ limit: '60mb' }));
+app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 
 // --- Setup Razorpay ---
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret',
+});
+
+// --- Image Proxy (For HTML2Canvas CORS issues) ---
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL required' });
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch image');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    
+    // Explicitly set CORS headers allowing any origin to request this proxied image
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType) res.setHeader('Content-Type', contentType);
+    
+    res.send(buffer);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Setup Supabase vs SQLite ---
