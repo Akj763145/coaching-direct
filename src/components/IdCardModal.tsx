@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Loader2, FileText } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { StudentIDCardFront, StudentIDCardBack } from './StudentIDCard';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { StudentIdPdf } from './StudentIdPdf';
 
 interface IdCardModalProps {
   isOpen: boolean;
@@ -22,75 +22,19 @@ export function IdCardModal({
   classNameLabel, 
   instituteName 
 }: IdCardModalProps) {
-  const frontCardRef = useRef<HTMLDivElement>(null);
-  const backCardRef = useRef<HTMLDivElement>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | undefined>(undefined);
 
-  const downloadCard = async () => {
-    if (!frontCardRef.current || !backCardRef.current) {
-      console.error('Refs not found');
-      return;
-    }
-    
-    setIsDownloading(true);
-    try {
-      await document.fonts.ready;
-      window.scrollTo(0, 0);
-
-      // Small delay to ensure rendering and image fetching is complete
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const options = {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        windowWidth: document.documentElement.offsetWidth,
-        onclone: (clonedDoc: Document) => {
-          // No need to remove transform from pdf-wrapper as refs are attached to hidden unscaled elements
-          // Ensure elements are visible in clone
-          const front = clonedDoc.getElementById('pdf-id-card-front-hidden');
-          const back = clonedDoc.getElementById('pdf-id-card-back-hidden');
-          if (front) front.style.transform = 'none';
-          if (back) back.style.transform = 'none';
-          
-          // Workaround for html2canvas oklch crash
-          const allElements = clonedDoc.querySelectorAll('*');
-          allElements.forEach((el) => {
-             const htmlEl = el as HTMLElement;
-             if (htmlEl && htmlEl.className && typeof htmlEl.className === 'string') {
-                htmlEl.className = htmlEl.className.replace(/\bshadow(?:-[a-zA-Z0-9_-]+)?\b/g, '');
-                htmlEl.className = htmlEl.className.replace(/bg-gradient-[a-zA-Z0-9_-]+/g, '');
-             }
-          });
+  React.useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        const canvas = document.getElementById('qr-view') as HTMLCanvasElement;
+        if (canvas) {
+          setQrCodeDataUrl(canvas.toDataURL('image/png'));
         }
-      };
-
-      // Capture Front Side
-      const canvasFront = await html2canvas(frontCardRef.current, options);
-      // Capture Back Side
-      const canvasBack = await html2canvas(backCardRef.current, options);
-
-      const imgDataFront = canvasFront.toDataURL('image/png', 1.0);
-      const imgDataBack = canvasBack.toDataURL('image/png', 1.0);
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const cardWidthMm = 90;
-      const cardHeightMm = (canvasFront.height * cardWidthMm) / canvasFront.width;
-      const xOffset = (210 - cardWidthMm) / 2;
-
-      pdf.addImage(imgDataFront, 'PNG', xOffset, 20, cardWidthMm, cardHeightMm);
-      pdf.addImage(imgDataBack, 'PNG', xOffset, 20 + cardHeightMm + 2, cardWidthMm, cardHeightMm);
-
-      pdf.save(`VidyaNation_ID_${enrollment?.razorpay_payment_id || 'manual'}.pdf`);
-    } catch (err: any) {
-      console.error('PDF Generation Error:', err);
-      alert('Error generating PDF: ' + (err.message || 'Unknown error') + '. Please ensure all images are loaded.');
-    } finally {
-      setIsDownloading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isOpen]);
 
   if (!isOpen || !enrollment) return null;
 
@@ -140,64 +84,67 @@ export function IdCardModal({
                   studentEmail={enrollment.student_profiles?.email || undefined}
                   studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
                 />
-                <StudentIDCardBack />
+                <StudentIDCardBack paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'} />
               </div>
             </div>
           </div>
 
-          {/* Hidden Off-Screen Print Wrapper */}
-          <div className="fixed top-[-10000px] left-[-10000px] flex flex-col" style={{ position: 'fixed', top: '-10000px', left: '-10000px', display: 'flex', flexDirection: 'column' }}>
-            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white mb-10" style={{ width: '800px', minWidth: '800px', height: '450px', minHeight: '450px', overflow: 'hidden', backgroundColor: 'white', marginBottom: '2.5rem' }}>
-              <StudentIDCardFront 
-                ref={frontCardRef}
-                isPrint={true}
-                id="pdf-id-card-front-hidden"
-                studentName={studentName || 'Ayush Kumar'}
-                studentPhone={studentPhone || '0000000000'}
-                batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'Generic Batch'}
-                className={classNameLabel || 'Student'}
-                enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
-                instituteName={instituteName || enrollment.batches?.institutes?.name || 'Ritik Sir\'s Academy'}
-                instituteLogo={enrollment.batches?.institutes?.logo}
-                paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
-                age={
-                  enrollment.student_profiles?.age 
-                  || (enrollment.student_profiles?.dob 
-                      ? Math.floor((new Date().getTime() - new Date(enrollment.student_profiles.dob).getTime()) / 3.15576e+10)
-                      : undefined)
-                }
-                dob={enrollment.student_profiles?.dob}
-                teacherName={enrollment.batches?.teacher_name}
-                studentEmail={enrollment.student_profiles?.email || undefined}
-                studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
-              />
-            </div>
-            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white" style={{ width: '800px', minWidth: '800px', height: '450px', minHeight: '450px', overflow: 'hidden', backgroundColor: 'white' }}>
-              <StudentIDCardBack 
-                ref={backCardRef}
-                isPrint={true}
-                id="pdf-id-card-back-hidden"
-                paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
-              />
-            </div>
-          </div>
-
           <div className="w-full flex flex-col sm:flex-row gap-4 items-center justify-center mt-auto">
-            <button
-              onClick={downloadCard}
-              disabled={isDownloading}
-              className="w-full sm:w-[380px] py-4.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-2xl font-black shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
-            >
-              {isDownloading ? (
+            {qrCodeDataUrl ? (
+              <PDFDownloadLink
+                document={
+                  <StudentIdPdf
+                    studentName={studentName || 'Ayush Kumar'}
+                    studentPhone={studentPhone || '0000000000'}
+                    batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'Generic Batch'}
+                    enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
+                    instituteName={instituteName || enrollment.batches?.institutes?.name || 'Ritik Sir\'s Academy'}
+                    instituteLogo={enrollment.batches?.institutes?.logo}
+                    paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
+                    age={
+                      enrollment.student_profiles?.age 
+                      || (enrollment.student_profiles?.dob 
+                          ? Math.floor((new Date().getTime() - new Date(enrollment.student_profiles.dob).getTime()) / 3.15576e+10)
+                          : undefined)
+                    }
+                    dob={enrollment.student_profiles?.dob}
+                    teacherName={enrollment.batches?.teacher_name}
+                    studentEmail={enrollment.student_profiles?.email || undefined}
+                    studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url || `https://api.dicebear.com/7.x/notionists/png?seed=${encodeURIComponent(studentName || 'user')}&backgroundColor=f1f5f9`}
+                    qrCodeDataUrl={qrCodeDataUrl}
+                  />
+                }
+                fileName={`VidyaNation_ID_${enrollment?.razorpay_payment_id || 'manual'}.pdf`}
+                className="w-full sm:w-[380px] py-4.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-2xl font-black shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-3 group px-4 h-14"
+              >
+                {({ loading }) => (
+                  <>
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        Generating Document...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+                        Download 2-Side HD ID Card
+                      </>
+                    )}
+                  </>
+                )}
+              </PDFDownloadLink>
+            ) : (
+              <button
+                disabled
+                className="w-full sm:w-[380px] py-4.5 bg-slate-900 opacity-50 text-white rounded-2xl font-black flex items-center justify-center gap-3 px-4 h-14"
+              >
                 <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <FileText className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-              )}
-              {isDownloading ? 'Capturing Sides...' : 'Download 2-Side HD ID Card'}
-            </button>
+                Preparing Canvas...
+              </button>
+            )}
             
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center sm:text-left">
-              High Definition • 2 Pages • A4/Landscape PDF
+              True Vector • 2 Pages • Credit Card Size PDF
             </p>
           </div>
         </motion.div>
