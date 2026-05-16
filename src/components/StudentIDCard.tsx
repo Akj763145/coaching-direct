@@ -101,12 +101,12 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
 
           {/* Institute Info (Centered/Rightish) */}
           <div className="flex-1 flex items-center justify-end gap-6 pr-4">
-            <div className="w-16 h-16 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 shrink-0 rounded-full bg-[#ffffff] border-2 border-[#10b981] flex items-center justify-center overflow-hidden">
               {logoDataUrl ? (
                 <img 
                   src={logoDataUrl} 
                   alt="Logo" 
-                  className="w-12 h-12 object-contain" 
+                  className="w-full h-full object-contain p-2" 
                   onError={() => setLogoDataUrl(undefined)}
                 />
               ) : instituteName ? (
@@ -136,9 +136,9 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 <span className="text-[13px] font-medium text-[#475569]">{studentPhone || 'N/A'}</span>
               </div>
               {studentEmail && (
-                <div className="flex items-center gap-2 max-w-[200px]">
-                  <Mail size={14} className="text-[#2563eb] shrink-0" />
-                  <span className="text-[12px] font-medium text-[#475569] truncate" title={studentEmail}>{studentEmail}</span>
+                <div className="flex items-start gap-2">
+                  <Mail size={14} className="text-[#2563eb] shrink-0 mt-0.5" />
+                  <span className="text-[12px] font-medium text-[#475569] break-all leading-tight">{studentEmail}</span>
                 </div>
               )}
               {dob ? (
