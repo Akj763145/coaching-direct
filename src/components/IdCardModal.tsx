@@ -47,14 +47,10 @@ export function IdCardModal({
         logging: false,
         windowWidth: document.documentElement.offsetWidth,
         onclone: (clonedDoc: Document) => {
-          // Remove transform from the scaling wrapper
-          const wrapper = clonedDoc.getElementById('pdf-wrapper');
-          if (wrapper) {
-            wrapper.style.transform = 'none';
-          }
+          // No need to remove transform from pdf-wrapper as refs are attached to hidden unscaled elements
           // Ensure elements are visible in clone
-          const front = clonedDoc.getElementById('pdf-id-card-front');
-          const back = clonedDoc.getElementById('pdf-id-card-back');
+          const front = clonedDoc.getElementById('pdf-id-card-front-hidden');
+          const back = clonedDoc.getElementById('pdf-id-card-back-hidden');
           if (front) front.style.transform = 'none';
           if (back) back.style.transform = 'none';
           
@@ -125,7 +121,6 @@ export function IdCardModal({
             <div id="pdf-wrapper" className="scale-[0.4] sm:scale-[0.55] md:scale-[0.7] lg:scale-[0.85] xl:scale-100 origin-top">
               <div className="flex flex-col gap-10">
                 <StudentIDCardFront 
-                  ref={frontCardRef}
                   studentName={studentName || 'Ayush Kumar'}
                   studentPhone={studentPhone || '0000000000'}
                   batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'Generic Batch'}
@@ -145,10 +140,45 @@ export function IdCardModal({
                   studentEmail={enrollment.student_profiles?.email || undefined}
                   studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
                 />
-                <StudentIDCardBack 
-                  ref={backCardRef}
-                />
+                <StudentIDCardBack />
               </div>
+            </div>
+          </div>
+
+          {/* Hidden Off-Screen Print Wrapper */}
+          <div className="fixed top-[-10000px] left-[-10000px] flex flex-col">
+            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white mb-10">
+              <StudentIDCardFront 
+                ref={frontCardRef}
+                isPrint={true}
+                id="pdf-id-card-front-hidden"
+                studentName={studentName || 'Ayush Kumar'}
+                studentPhone={studentPhone || '0000000000'}
+                batchName={enrollment.batches?.name || enrollment.batches?.batch_name || 'Generic Batch'}
+                className={classNameLabel || 'Student'}
+                enrollmentDate={new Date(enrollment.enrollment_date || enrollment.created_at || Date.now()).toLocaleDateString()}
+                instituteName={instituteName || enrollment.batches?.institutes?.name || 'Ritik Sir\'s Academy'}
+                instituteLogo={enrollment.batches?.institutes?.logo}
+                paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
+                age={
+                  enrollment.student_profiles?.age 
+                  || (enrollment.student_profiles?.dob 
+                      ? Math.floor((new Date().getTime() - new Date(enrollment.student_profiles.dob).getTime()) / 3.15576e+10)
+                      : undefined)
+                }
+                dob={enrollment.student_profiles?.dob}
+                teacherName={enrollment.batches?.teacher_name}
+                studentEmail={enrollment.student_profiles?.email || undefined}
+                studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
+              />
+            </div>
+            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white">
+              <StudentIDCardBack 
+                ref={backCardRef}
+                isPrint={true}
+                id="pdf-id-card-back-hidden"
+                paymentId={enrollment.razorpay_payment_id || 'manual-pay-001'}
+              />
             </div>
           </div>
 

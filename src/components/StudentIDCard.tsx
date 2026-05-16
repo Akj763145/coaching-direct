@@ -19,6 +19,8 @@ interface StudentIDCardProps {
   dob?: string;
   validityDate?: string;
   studentPhoto?: string;
+  isPrint?: boolean;
+  id?: string;
 }
 
 export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>(
@@ -36,7 +38,9 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
     age,
     dob,
     validityDate = "Dec 2026",
-    studentPhoto
+    studentPhoto,
+    isPrint,
+    id = "pdf-id-card-front"
   }, ref) => {
     
     const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
@@ -73,7 +77,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
     return (
       <div 
         ref={ref}
-        id="pdf-id-card-front"
+        id={id}
         className="bg-[#ffffff] rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
         style={{ color: '#0f172a', width: '800px', height: '450px' }}
       >
@@ -91,10 +95,10 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 <circle cx="24" cy="8" r="5" fill="#2563eb"/>
               </svg>
               <div className="flex flex-col ml-3">
-                <span className="text-2xl font-black flex items-center text-[#2563eb]">
+                <span className={`text-2xl font-black flex items-center text-[#2563eb] whitespace-nowrap`}>
                   VidyaNation
                 </span>
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase mt-0.5">The Future of local education</span>
+                <span className={`text-[10px] font-bold text-[#94a3b8] uppercase mt-0.5 whitespace-nowrap`}>The Future of local education</span>
               </div>
             </div>
           </div>
@@ -118,7 +122,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 </div>
               ) : null}
             </div>
-            <h1 className="text-2xl font-black text-[#1e293b] uppercase max-w-[200px] leading-tight text-right truncate">
+            <h1 className={`text-2xl font-black text-[#1e293b] uppercase max-w-[200px] leading-tight text-right truncate whitespace-nowrap`}>
               {instituteName}
             </h1>
           </div>
@@ -131,28 +135,28 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
             <h3 className="text-sm font-black text-[#94a3b8] uppercase border-b border-[#f1f5f9] pb-2 mb-6">Student Details</h3>
             <div className="flex flex-col">
               <div className="mb-4">
-                <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Full Name</p>
-                <p className="text-xl font-black text-[#0f172a] leading-tight max-w-[150px] truncate">{studentName}</p>
+                <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5 whitespace-nowrap">Full Name</p>
+                <p className="text-xl font-black text-[#0f172a] leading-tight max-w-[150px] truncate whitespace-nowrap">{studentName}</p>
               </div>
               <div className="flex items-center mb-4">
                 <Phone size={14} className="text-[#2563eb]" />
-                <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">{studentPhone || 'N/A'}</span>
+                <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate whitespace-nowrap">{studentPhone || 'N/A'}</span>
               </div>
               {studentEmail && (
                 <div className="flex items-start mb-4">
                   <Mail size={14} className="text-[#2563eb] shrink-0 mt-0.5" />
-                  <span className="text-[12px] font-medium text-[#475569] break-all leading-tight ml-2 max-w-[150px]">{studentEmail}</span>
+                  <span className="text-[12px] font-medium text-[#475569] leading-tight ml-2 max-w-[150px] truncate whitespace-nowrap">{studentEmail}</span>
                 </div>
               )}
               {dob ? (
                 <div className="flex items-center mb-4">
                   <User size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">DOB: {dob}</span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate whitespace-nowrap">DOB: {dob}</span>
                 </div>
               ) : age ? (
                 <div className="flex items-center mb-4">
                   <User size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate">{age} Years Old</span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 max-w-[150px] truncate whitespace-nowrap">{age} Years Old</span>
                 </div>
               ) : null}
             </div>
@@ -187,22 +191,22 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
               <h3 className="text-sm font-black text-[#94a3b8] uppercase border-b border-[#f1f5f9] pb-2 mb-4">Batch Details</h3>
               <div className="flex flex-col">
                 <div className="mb-4">
-                  <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Batch Name</p>
-                  <p className="text-lg font-black text-[#0f172a] leading-tight max-w-[150px] truncate">{batchName}</p>
+                  <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5 whitespace-nowrap">Batch Name</p>
+                  <p className="text-lg font-black text-[#0f172a] leading-tight max-w-[150px] truncate whitespace-nowrap">{batchName}</p>
                 </div>
                 {teacherName && (
                   <div className="mb-4">
-                    <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5">Teacher</p>
-                    <p className="text-[13px] font-black text-[#334155] leading-tight max-w-[150px] truncate">{teacherName}</p>
+                    <p className="text-xs font-bold text-[#94a3b8] uppercase leading-none mb-1.5 whitespace-nowrap">Teacher</p>
+                    <p className="text-[13px] font-black text-[#334155] leading-tight max-w-[150px] truncate whitespace-nowrap">{teacherName}</p>
                   </div>
                 )}
                 <div className="flex items-center mb-4">
                   <Hash size={14} className="text-[#2563eb] shrink-0" />
-                  <span className="text-[12px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md ml-2 break-all max-w-[150px] leading-tight">{paymentId}</span>
+                  <span className="text-[12px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md ml-2 max-w-[150px] leading-tight truncate whitespace-nowrap">{paymentId}</span>
                 </div>
                 <div className="flex items-center mb-4">
                   <Calendar size={14} className="text-[#2563eb]" />
-                  <span className="text-[13px] font-medium text-[#475569] ml-2 whitespace-nowrap">Issued: <span className="font-bold text-[#0f172a]">{enrollmentDate}</span></span>
+                  <span className="text-[13px] font-medium text-[#475569] ml-2 whitespace-nowrap">Issued: <span className="font-bold text-[#0f172a] whitespace-nowrap">{enrollmentDate}</span></span>
                 </div>
               </div>
             </div>
@@ -219,8 +223,8 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
         {/* FOOTER */}
         <div className="h-16 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-center px-16">
           <div className="flex flex-col items-center">
-            <span className="text-sm font-bold text-[#334155] uppercase">vidyanation.online</span>
-            <span className="text-[10px] font-semibold text-[#94a3b8] uppercase mt-0.5">Verified Student Asset</span>
+            <span className="text-sm font-bold text-[#334155] uppercase whitespace-nowrap">vidyanation.online</span>
+            <span className="text-[10px] font-semibold text-[#94a3b8] uppercase mt-0.5 whitespace-nowrap">Verified Student Asset</span>
           </div>
         </div>
 
@@ -233,11 +237,12 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
 
 export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) => {
   const paymentId = props.paymentId || "VN-00000000";
+  const id = props.id || "pdf-id-card-back";
   
   return (
     <div 
       ref={ref}
-      id="pdf-id-card-back"
+      id={id}
       className="rounded-3xl overflow-hidden flex flex-col font-sans relative border border-[#f1f5f9] shrink-0"
       style={{ background: 'linear-gradient(to right, #dcfce7, #bfdbfe)', color: '#0f172a', width: '800px', height: '450px' }}
     >
@@ -252,11 +257,11 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
             </svg>
           </div>
 
-          <h1 className="text-5xl font-black text-[#0f172a] mb-3">
+          <h1 className="text-5xl font-black text-[#0f172a] mb-3 whitespace-nowrap">
             VidyaNation
           </h1>
           
-          <p className="text-xl font-bold text-[#1e293b] opacity-80 uppercase">
+          <p className="text-xl font-bold text-[#1e293b] opacity-80 uppercase whitespace-nowrap">
             The Future of Local Education Search
           </p>
         </div>
@@ -272,8 +277,8 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
               />
             </div>
             <div className="text-center">
-              <p className="text-sm font-black text-[#0f172a] uppercase leading-tight">Verify Student</p>
-              <p className="text-xs font-medium text-[#475569] mt-1">Scan QR Code</p>
+              <p className="text-sm font-black text-[#0f172a] uppercase leading-tight whitespace-nowrap">Verify Student</p>
+              <p className="text-xs font-medium text-[#475569] mt-1 whitespace-nowrap">Scan QR Code</p>
             </div>
           </div>
         )}
@@ -288,7 +293,7 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
         className="h-16 flex items-center justify-center px-16 border-t"
         style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(12px)', borderColor: 'rgba(255, 255, 255, 0.2)' }}
       >
-         <span className="text-sm font-black uppercase" style={{ color: 'rgba(15, 23, 42, 0.4)' }}>Verified Institution Asset</span>
+         <span className="text-sm font-black uppercase whitespace-nowrap" style={{ color: 'rgba(15, 23, 42, 0.4)' }}>Verified Institution Asset</span>
       </div>
     </div>
   );
