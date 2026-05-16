@@ -31,8 +31,8 @@ export function AuthenticityStamp({ paymentId, date, className = '' }: Authentic
   const dataUrl = `data:image/svg+xml;base64,${b64}`;
 
   return (
-    <div className={`relative ${className}`}>
-      <img src={dataUrl} alt="Authenticity Stamp" className="w-full h-full transform -rotate-12 opacity-80" />
+    <div className={`relative ${className}`} style={{ position: 'relative' }}>
+      <img src={dataUrl} alt="Authenticity Stamp" className="w-full h-full transform -rotate-12 opacity-80" style={{ width: '100%', height: '100%', transform: 'rotate(-12deg)', opacity: 0.8, display: 'block' }} />
     </div>
   );
 }

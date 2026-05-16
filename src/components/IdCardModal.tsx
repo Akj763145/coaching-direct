@@ -146,8 +146,8 @@ export function IdCardModal({
           </div>
 
           {/* Hidden Off-Screen Print Wrapper */}
-          <div className="fixed top-[-10000px] left-[-10000px] flex flex-col">
-            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white mb-10">
+          <div className="fixed top-[-10000px] left-[-10000px] flex flex-col" style={{ position: 'fixed', top: '-10000px', left: '-10000px', display: 'flex', flexDirection: 'column' }}>
+            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white mb-10" style={{ width: '800px', minWidth: '800px', height: '450px', minHeight: '450px', overflow: 'hidden', backgroundColor: 'white', marginBottom: '2.5rem' }}>
               <StudentIDCardFront 
                 ref={frontCardRef}
                 isPrint={true}
@@ -172,7 +172,7 @@ export function IdCardModal({
                 studentPhoto={studentPhoto || enrollment.student_profiles?.photo_url}
               />
             </div>
-            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white">
+            <div className="w-[800px] min-w-[800px] h-[450px] min-h-[450px] overflow-hidden bg-white" style={{ width: '800px', minWidth: '800px', height: '450px', minHeight: '450px', overflow: 'hidden', backgroundColor: 'white' }}>
               <StudentIDCardBack 
                 ref={backCardRef}
                 isPrint={true}
