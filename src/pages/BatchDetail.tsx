@@ -52,11 +52,11 @@ const TeacherAvatar = ({ src, name }: { src?: string; name: string }) => {
   const [error, setError] = useState(false);
   const initials = (name || '?').substring(0, 2).toUpperCase();
   return (
-    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl overflow-hidden bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 shadow-sm shrink-0">
+    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 shadow-md shrink-0">
       {src && !error ? (
         <img src={src} alt={name || 'Teacher'} className="w-full h-full object-cover" onError={() => setError(true)} />
       ) : (
-        <div className="w-full h-full flex items-center justify-center font-bold text-2xl text-slate-400">
+        <div className="w-full h-full flex items-center justify-center font-bold text-3xl text-slate-400">
           {initials}
         </div>
       )}
@@ -318,11 +318,11 @@ export default function BatchDetail() {
                 transition={{ delay: 0.3 + (idx * 0.1) }}
                 className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 rounded-2xl p-3 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all group"
               >
-                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700 shadow-md">
                   {teacher.image || teacher.image_url ? (
                     <img src={teacher.image || teacher.image_url} alt={teacher.name} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-bold text-lg text-slate-400">{teacher.name.charAt(0)}</div>
+                    <div className="w-full h-full flex items-center justify-center font-bold text-2xl text-slate-400">{teacher.name.charAt(0)}</div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

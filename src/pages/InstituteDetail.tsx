@@ -436,7 +436,7 @@ export default function InstituteDetail() {
               {institute.faculty && institute.faculty.length > 0 ? (
                 institute.faculty.map((teacher: any) => (
                   <div key={teacher.id} className="flex flex-col items-center min-w-[100px] group">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 transition-transform group-hover:scale-105">
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-800 transition-transform group-hover:scale-105 shadow-md">
                       {teacher.image_url ? (
                         <img 
                           src={teacher.image_url} 
@@ -444,7 +444,7 @@ export default function InstituteDetail() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xl text-slate-400">
+                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-2xl text-slate-400">
                           {teacher.name.charAt(0)}
                         </div>
                       )}
