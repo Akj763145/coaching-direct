@@ -205,7 +205,7 @@ export default function OnboardingManager({ onComplete }: OnboardingManagerProps
                       <ArrowRight className="w-4 h-4 transform rotate-[-45deg]" />
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Upload Photo</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Upload Photo (Optional)</span>
                 </div>
 
                 <div className="space-y-2">

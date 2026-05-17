@@ -5,7 +5,7 @@ import {
   Target, Heart, CheckSquare, Square, ChevronRight,
   BookOpen, Star, LayoutGrid, Layers, FileText, Book,
   Bell, Search, Filter, Download, LogOut, Loader2,
-  X, Phone, Check, ArrowRight, User
+  X, Phone, Check, ArrowRight, User, Camera, Mail
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -55,18 +55,22 @@ export default function Dashboard() {
   const [isSavingProfile, setIsSavingProfile] = React.useState(false);
   const [editFormData, setEditFormData] = React.useState({
     full_name: '',
-    age: '',
-    education_level: 'highschool',
-    phone_number: ''
+    dob: '',
+    current_class: '',
+    phone_number: '',
+    email: '',
+    photo_url: ''
   });
 
   React.useEffect(() => {
     if (profile) {
       setEditFormData({
         full_name: profile.full_name || '',
-        age: profile.age?.toString() || '',
-        education_level: profile.education_level || 'highschool',
-        phone_number: profile.phone_number || ''
+        dob: profile.dob || '',
+        current_class: profile.current_class || '',
+        phone_number: profile.phone_number || '',
+        email: profile.email || '',
+        photo_url: profile.photo_url || ''
       });
     }
   }, [profile]);
@@ -141,9 +145,11 @@ export default function Dashboard() {
     try {
       await updateProfile({
         full_name: editFormData.full_name,
-        age: parseInt(editFormData.age),
-        education_level: editFormData.education_level,
+        dob: editFormData.dob,
+        current_class: editFormData.current_class,
         phone_number: editFormData.phone_number,
+        email: editFormData.email,
+        photo_url: editFormData.photo_url
       });
       setIsEditModalOpen(false);
     } catch (err) {
@@ -192,7 +198,15 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 mt-2 text-sm text-slate-600 dark:text-slate-400">
                 <span className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-md font-medium">
                   <BookOpen className="w-3.5 h-3.5" />
-                  {profile?.education_level 
+                  {profile?.current_class 
+                    ? profile.current_class === '9' ? '9th Class'
+                    : profile.current_class === '10' ? '10th Class'
+                    : profile.current_class === '11' ? '11th Class'
+                    : profile.current_class === '12' ? '12th Class'
+                    : profile.current_class === 'ug' ? 'Under Graduate'
+                    : profile.current_class === 'pg' ? 'Post Graduate'
+                    : profile.current_class
+                    : profile?.education_level 
                     ? profile.education_level === 'highschool' ? 'High School' 
                     : profile.education_level === 'undergraduate' ? 'Under Graduate' 
                     : 'Post Graduate'
@@ -287,7 +301,39 @@ export default function Dashboard() {
                   Keep your information up to date to get the best recommendations.
                 </p>
 
-                <form onSubmit={handleUpdateProfile} className="space-y-5">
+                <form onSubmit={handleUpdateProfile} className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+                  {/* Photo Edit */}
+                  <div className="flex flex-col items-center mb-6">
+                    <div className="relative group cursor-pointer">
+                      <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-500">
+                        {editFormData.photo_url ? (
+                          <img src={editFormData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <Camera className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                        )}
+                      </div>
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setEditFormData({ ...editFormData, photo_url: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white dark:border-slate-900 group-hover:scale-110 transition-transform">
+                        <Edit className="w-3 h-3" />
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Profile Photo (Optional)</span>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Full Name</label>
                     <div className="relative">
@@ -303,17 +349,30 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Email Address (Optional)</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        placeholder="email@example.com"
+                        value={editFormData.email}
+                        onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all dark:text-white"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Age</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Date of Birth</label>
                       <div className="relative">
                         <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           required
-                          type="number"
-                          placeholder="16"
-                          value={editFormData.age}
-                          onChange={e => setEditFormData({ ...editFormData, age: e.target.value })}
+                          type="date"
+                          value={editFormData.dob}
+                          onChange={e => setEditFormData({ ...editFormData, dob: e.target.value })}
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -338,32 +397,35 @@ export default function Dashboard() {
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Current Class</label>
                     <div className="grid grid-cols-1 gap-2">
                       {[
-                        { id: 'highschool', label: 'High School' },
-                        { id: 'undergraduate', label: 'Under Graduate' },
-                        { id: 'postgraduate', label: 'Post Graduate' }
-                      ].map(level => (
+                        { id: '9', label: '9th Class' },
+                        { id: '10', label: '10th Class' },
+                        { id: '11', label: '11th Class' },
+                        { id: '12', label: '12th Class' },
+                        { id: 'ug', label: 'Under Graduate' },
+                        { id: 'pg', label: 'Post Graduate' }
+                      ].map(cls => (
                         <label
-                          key={level.id}
+                          key={cls.id}
                           className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                            editFormData.education_level === level.id
+                            editFormData.current_class === cls.id
                               ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400'
                               : 'bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                           }`}
                         >
                           <input
                             type="radio"
-                            name="education"
-                            value={level.id}
-                            checked={editFormData.education_level === level.id}
-                            onChange={e => setEditFormData({ ...editFormData, education_level: e.target.value })}
+                            name="current_class"
+                            value={cls.id}
+                            checked={editFormData.current_class === cls.id}
+                            onChange={e => setEditFormData({ ...editFormData, current_class: e.target.value })}
                             className="hidden"
                           />
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            editFormData.education_level === level.id ? 'border-blue-500 bg-blue-500' : 'border-slate-300'
+                            editFormData.current_class === cls.id ? 'border-blue-500 bg-blue-500' : 'border-slate-300'
                           }`}>
-                            {editFormData.education_level === level.id && <Check className="w-3 h-3 text-white" />}
+                            {editFormData.current_class === cls.id && <Check className="w-3 h-3 text-white" />}
                           </div>
-                          <span className="font-semibold text-sm">{level.label}</span>
+                          <span className="font-semibold text-sm">{cls.label}</span>
                         </label>
                       ))}
                     </div>

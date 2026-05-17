@@ -133,7 +133,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           
           {/* Column 1: Student Details */}
           <div className="flex flex-col w-[30%]" style={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-            <h3 className="text-sm font-black text-[#64748b] uppercase border-b border-[#f1f5f9] pb-2 mb-6 font-sans leading-relaxed" style={{ fontSize: '0.875rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1.5rem', whiteSpace: 'nowrap', lineHeight: 1.625 }}>Student Details</h3>
+            <h3 className="text-sm font-black text-[#1e293b] uppercase border-b border-[#f1f5f9] pb-2 mb-6 font-sans leading-relaxed" style={{ fontSize: '0.875rem', fontWeight: 900, color: '#1e293b', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1.5rem', whiteSpace: 'nowrap', lineHeight: 1.625 }}>Student Details</h3>
             <div className="flex flex-col" style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="mb-4" style={{ marginBottom: '1rem' }}>
                 <p className="text-xs font-bold text-[#64748b] uppercase leading-relaxed mb-1.5 whitespace-nowrap font-sans pb-1" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', lineHeight: 1.625, marginBottom: '0.375rem', whiteSpace: 'nowrap' }}>Full Name</p>
@@ -141,12 +141,12 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
               </div>
               <div className="flex items-center mb-4" style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                 <Phone size={14} className="text-[#2563eb]" style={{ color: '#2563eb' }} />
-                <span className="text-[13px] font-medium text-[#1e293b] ml-2 max-w-[150px] whitespace-nowrap font-sans leading-relaxed pb-1" style={{ fontSize: '13px', fontWeight: 500, color: '#1e293b', marginLeft: '0.5rem', maxWidth: '150px', lineHeight: 1.625, whiteSpace: 'nowrap' }}>{studentPhone || 'N/A'}</span>
+                <span className="text-[13px] font-bold text-[#0f172a] ml-3 max-w-[150px] whitespace-nowrap font-sans leading-relaxed pb-1" style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginLeft: '0.75rem', maxWidth: '150px', lineHeight: 1.625, whiteSpace: 'nowrap' }}>{studentPhone || 'N/A'}</span>
               </div>
               {studentEmail && (
                 <div className="flex items-start mb-4" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <Mail size={14} className="text-[#2563eb] shrink-0 mt-0.5" style={{ color: '#2563eb', flexShrink: 0, marginTop: '0.125rem' }} />
-                  <span className="text-[12px] font-medium text-[#1e293b] leading-relaxed ml-2 max-w-[150px] whitespace-nowrap font-sans pb-1" style={{ fontSize: '12px', fontWeight: 500, color: '#1e293b', lineHeight: 1.625, marginLeft: '0.5rem', maxWidth: '150px', whiteSpace: 'nowrap' }}>{studentEmail}</span>
+                  <span className="text-[12px] font-bold text-[#0f172a] leading-relaxed ml-3 max-w-[150px] whitespace-nowrap font-sans pb-1" style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', lineHeight: 1.625, marginLeft: '0.75rem', maxWidth: '150px', whiteSpace: 'nowrap' }}>{studentEmail}</span>
                 </div>
               )}
               {dob ? (
@@ -190,7 +190,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
           {/* Column 3: Batch Details */}
           <div className="flex flex-col justify-between h-full w-[30%]" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '30%' }}>
             <div>
-              <h3 className="text-sm font-black text-[#64748b] uppercase border-b border-[#f1f5f9] pb-2 mb-4 font-sans leading-relaxed" style={{ fontSize: '0.875rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', whiteSpace: 'nowrap', lineHeight: 1.625 }}>Batch Details</h3>
+              <h3 className="text-sm font-black text-[#1e293b] uppercase border-b border-[#f1f5f9] pb-2 mb-4 font-sans leading-relaxed" style={{ fontSize: '0.875rem', fontWeight: 900, color: '#1e293b', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', whiteSpace: 'nowrap', lineHeight: 1.625 }}>Batch Details</h3>
               <div className="flex flex-col" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="mb-4" style={{ marginBottom: '1rem' }}>
                   <p className="text-xs font-bold text-[#64748b] uppercase leading-relaxed mb-1.5 whitespace-nowrap font-sans pb-1" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', lineHeight: 1.625, marginBottom: '0.375rem', whiteSpace: 'nowrap' }}>Batch Name</p>
@@ -204,7 +204,7 @@ export const StudentIDCardFront = forwardRef<HTMLDivElement, StudentIDCardProps>
                 )}
                 <div className="flex items-center mb-4" style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                   <Hash size={14} className="text-[#2563eb] shrink-0" style={{ color: '#2563eb', flexShrink: 0 }} />
-                  <span className="text-[12px] font-bold text-[#334155] bg-[#f8fafc] border border-[#e2e8f0] px-2 py-1 rounded-md ml-3 max-w-[150px] leading-relaxed whitespace-nowrap font-sans pb-1" style={{ fontSize: '12px', fontWeight: 700, color: '#334155', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', marginLeft: '0.75rem', maxWidth: '150px', lineHeight: 1.625, whiteSpace: 'nowrap' }}>{paymentId}</span>
+                  <span className="text-[12px] font-bold text-[#0f172a] bg-[#eff6ff] border border-[#bfdbfe] px-3 py-1 rounded-md ml-4 max-w-[150px] leading-relaxed whitespace-nowrap font-sans pb-1" style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '0.25rem 0.75rem', borderRadius: '0.375rem', marginLeft: '1rem', maxWidth: '150px', lineHeight: 1.625, whiteSpace: 'nowrap' }}>{paymentId}</span>
                 </div>
                 <div className="flex items-center mb-4" style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                   <Calendar size={14} className="text-[#2563eb]" style={{ color: '#2563eb' }} />
@@ -292,11 +292,14 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
       
       {/* Footer Branding Bar */}
       <div 
-        className="h-16 flex flex-col items-center justify-center px-16 border-t"
-        style={{ height: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 4rem', backgroundColor: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255, 255, 255, 0.2)', zIndex: 10, position: 'relative' }}
+        className="h-20 flex flex-col items-center justify-center px-16 border-t"
+        style={{ height: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '0 4rem', backgroundColor: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(12px)', borderTop: '2px solid rgba(255, 255, 255, 0.3)', zIndex: 10, position: 'relative' }}
       >
-         <span className="text-[11px] font-black uppercase whitespace-nowrap font-sans leading-relaxed text-[#1e293b]" style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap', color: '#1e293b', lineHeight: 1.625 }}>Verified Institution Asset</span>
-         <span className="text-[9px] font-bold uppercase whitespace-nowrap font-sans leading-relaxed text-[#475569]" style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap', color: '#475569', lineHeight: 1.625, marginTop: '2px' }}>If found, please return to the issuing institution or email support@vidyanation.online</span>
+         <span className="text-xs font-black uppercase whitespace-nowrap font-sans leading-relaxed text-[#0f172a] mb-1" style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap', color: '#0f172a', lineHeight: 1.625, marginBottom: '0.25rem' }}>If found, please return to:</span>
+         <div className="flex flex-col items-center text-center space-y-0.5" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <span className="text-[10px] font-bold text-[#1e293b] font-sans pb-1 leading-relaxed capitalize" style={{ fontSize: '10px', fontWeight: 700, color: '#1e293b', lineHeight: 1.625 }}>{props.instituteName || "VidyaNation Academy"}</span>
+            <span className="text-[9px] font-medium text-[#475569] font-sans pb-1 leading-relaxed" style={{ fontSize: '9px', fontWeight: 500, color: '#475569', lineHeight: 1.625 }}>Website: vidyanation.online • Email: support@vidyanation.online</span>
+         </div>
       </div>
     </div>
   );
