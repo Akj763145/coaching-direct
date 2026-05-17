@@ -251,8 +251,8 @@ export const StudentIDCardBack = forwardRef<HTMLDivElement, any>((props, ref) =>
       <div className="flex-1 flex flex-row items-center justify-center p-12" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: '3rem', position: 'relative', zIndex: 10 }}>
         <div className="flex flex-col items-center justify-center text-center mr-16" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', marginRight: '4rem' }}>
           {/* Mock Logo */}
-          <div className="mb-6 scale-[2.0]" style={{ marginBottom: '1.5rem', transform: 'scale(2.0)' }}>
-            <svg className="w-16 h-16 shrink-0" style={{ width: '4rem', height: '4rem', flexShrink: 0 }} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div className="mb-6 flex flex-col items-center justify-center" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="80" height="80" className="shrink-0" style={{ flexShrink: 0 }} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M24 38L8 16C8 16 12 10 24 18C24 18 24 38 24 38Z" fill="#2563eb"/>
               <path d="M24 38L40 16C40 16 36 10 24 18C24 18 24 38 24 38Z" fill="#0f172a"/>
               <circle cx="24" cy="8" r="5" fill="#2563eb"/>
