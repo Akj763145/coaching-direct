@@ -5,7 +5,7 @@ import {
   Target, Heart, CheckSquare, Square, ChevronRight,
   BookOpen, Star, LayoutGrid, Layers, FileText, Book,
   Bell, Search, Filter, Download, LogOut, Loader2,
-  X, Phone, Check, ArrowRight, User, Camera, Mail
+  X, Phone, Check, ArrowRight, User, Camera, Mail, Home
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -225,6 +225,13 @@ export default function Dashboard() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="flex flex-wrap gap-3"
             >
+              <Link 
+                to="/"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-600 border border-transparent rounded-lg text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                Back to Home
+              </Link>
               <button 
                 onClick={() => setIsEditModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-sm transition-colors"

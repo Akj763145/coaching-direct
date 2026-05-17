@@ -30,7 +30,6 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
 
   // Auth and Profile states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // Profile Form state
@@ -44,6 +43,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     // Load Razorpay script
@@ -65,6 +65,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
       setDiscountAmount(0);
       setCouponStatus('idle');
       setCouponMessage('');
+      setShowPayment(false);
       checkAuth();
     } else {
       document.body.style.overflow = 'unset';
@@ -86,32 +87,16 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
           .eq('id', session.user.id)
           .single();
           
-        const isComplete = profile?.full_name && profile?.phone_number && profile?.dob && profile?.current_class;
-        
-        if (isComplete) {
-          setIsProfileComplete(true);
-          setProfileData({
-            full_name: profile.full_name || '',
-            phone_number: profile.phone_number || '',
-            email: profile.email || '',
-            dob: profile.dob || '',
-            current_class: profile.current_class || '',
-            photo_url: profile.photo_url || ''
-          });
-        } else {
-          setIsProfileComplete(false);
-          setProfileData({
-            full_name: profile?.full_name || session.user.user_metadata?.full_name || '',
-            phone_number: profile?.phone_number || '',
-            email: profile?.email || session.user.email || '',
-            dob: profile?.dob || '',
-            current_class: profile?.current_class || '',
-            photo_url: profile?.photo_url || session.user.user_metadata?.avatar_url || ''
-          });
-        }
+        setProfileData({
+          full_name: profile?.full_name || session.user.user_metadata?.full_name || '',
+          phone_number: profile?.phone_number || '',
+          email: profile?.email || session.user.email || '',
+          dob: profile?.dob || '',
+          current_class: profile?.current_class || '',
+          photo_url: profile?.photo_url || session.user.user_metadata?.avatar_url || ''
+        });
       } else {
         setIsAuthenticated(false);
-        setIsProfileComplete(false);
       }
     } catch (err) {
       console.error('Error checking auth state:', err);
@@ -159,7 +144,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
 
       if (error) throw error;
       await refreshProfile();
-      setIsProfileComplete(true);
+      setShowPayment(true);
     } catch (error: any) {
       toast.error(`Failed to save profile: ${error.message}`);
     } finally {
@@ -353,25 +338,30 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                       Continue with Google
                     </button>
                   </div>
-                ) : !isProfileComplete ? (
+                ) : !showPayment ? (
                   <div className="py-4">
-                    <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Almost there!</h3>
-                    <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-                      We need a few more details to complete your profile before you can enroll.
+                    <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Review ID Card Details</h3>
+                    <p className="text-neutral-500 dark:text-neutral-400 mb-8 max-w-[280px]">
+                      Please verify or complete your details. These will be used for your student ID card. <span className="text-blue-500 font-medium">You can tap on the photo or fields below to edit them.</span>
                     </p>
                     
                     <form onSubmit={handleSaveProfile} className="space-y-5">
                       {/* Photo Upload */}
                       <div className="flex flex-col items-center mb-6">
-                        <div className="relative group cursor-pointer w-24 h-24 rounded-full overflow-hidden bg-neutral-100 border-2 border-dashed border-neutral-300 hover:border-blue-500 transition-colors flex items-center justify-center">
+                        <div className="relative group cursor-pointer w-24 h-24 rounded-full overflow-hidden bg-neutral-100 border-2 border-dashed border-neutral-300 hover:border-blue-500 transition-colors flex items-center justify-center shadow-sm">
                           {isUploadingPhoto ? (
                             <div className="flex items-center justify-center">
                               <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                             </div>
                           ) : profileData.photo_url ? (
-                            <img src={profileData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                            <>
+                              <img src={profileData.photo_url} alt="Profile" className="w-full h-full object-cover group-hover:opacity-70 transition-opacity" />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                                <span className="text-white text-xs font-bold bg-black/50 px-2 py-1 rounded">Edit Photo</span>
+                              </div>
+                            </>
                           ) : (
-                            <div className="text-neutral-400 font-medium text-xs text-center px-2">Upload Photo</div>
+                            <div className="text-neutral-400 font-medium text-xs text-center px-2">Tap to Upload Photo</div>
                           )}
                           <input 
                             type="file"
@@ -392,6 +382,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                             }}
                           />
                         </div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3">Profile Photo (Tap to edit)</span>
                       </div>
 
                       <div>
@@ -481,7 +472,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                             <span>Saving...</span>
                           </>
                         ) : (
-                          'Save & Continue'
+                          'Confirm Details & Continue'
                         )}
                       </button>
                     </form>
@@ -576,7 +567,7 @@ export default function EnrollmentDrawer({ isOpen, onClose, batchDetails }: Enro
                 )}
               </div>
 
-              {!isLoadingAuth && isAuthenticated && isProfileComplete && (
+              {!isLoadingAuth && isAuthenticated && showPayment && (
                 <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 mt-auto bg-white dark:bg-neutral-900 absolute bottom-0 left-0 right-0 p-6 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
                   <button
                     onClick={handlePayment}
